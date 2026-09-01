@@ -1,0 +1,13 @@
+schema_version = 1
+name = "windows-fixture"
+catalog = "powermise-profiles"
+harnesses = ["base", "gemini", "opencode"]
+
+[machine_roles.windows]
+include_apps = []
+exclude_harnesses = []
+exclude_tools = []
+
+[preferences]
+auto_prune = false
+update_system_packages = false

@@ -1,0 +1,379 @@
+schema_version = 1
+catalog = "powermise-profiles"
+catalog_revision = "2"
+
+[[harnesses]]
+id = "antigravity"
+title = "Antigravity"
+description = "Google's Antigravity agent ecosystem."
+kind = "ecosystem"
+category = "ide"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+]
+required_tool_ids = []
+integration_ids = []
+mcp_server_ids = []
+source_file = "antigravity.json"
+
+[[harnesses]]
+id = "base"
+title = "Base"
+description = "Universal tooling required by every Powermise harness profile and domain."
+kind = "terminal-agent"
+category = "terminal"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = [
+    "git",
+    "curl",
+    "jq",
+    "ripgrep",
+    "fd",
+]
+integration_ids = []
+mcp_server_ids = []
+source_file = "base.json"
+
+[[harnesses]]
+id = "claude"
+title = "Claude"
+description = "Anthropic's Claude Code CLI, plus the Claude desktop app on macOS."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = [
+    "claude-code",
+]
+desktop_tool_ids = [
+    "claude-app",
+]
+integration_ids = [
+    "claude-github",
+    "claude-mem",
+]
+mcp_server_ids = [
+    "claude-context7",
+    "claude-sequential-thinking",
+]
+source_file = "claude.json"
+
+[[harnesses]]
+id = "cline"
+title = "Cline"
+description = "AI coding assistant VS Code extension (saoudrizwan.claude-dev)."
+kind = "editor-integrated"
+category = "ide"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "win32",
+]
+required_tool_ids = [
+    "vscode",
+    "node",
+    "cline",
+]
+integration_ids = []
+mcp_server_ids = ["cline-context7"]
+source_file = "cline.json"
+
+[[harnesses]]
+id = "codex"
+title = "Codex"
+description = "OpenAI's Codex CLI, plus the Codex desktop app on macOS."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = [
+    "node",
+    "codex",
+]
+desktop_tool_ids = [
+    "codex-app",
+]
+integration_ids = ["codex-gmail"]
+mcp_server_ids = [
+    "codex-context7",
+    "codex-sequential-thinking",
+]
+source_file = "codex.json"
+
+[[harnesses]]
+id = "conductor"
+title = "Conductor"
+description = "Run a team of coding agents on your Mac in isolated workspaces."
+kind = "editor-integrated"
+category = "gui"
+extends = "base"
+supported_platforms = ["darwin"]
+required_tool_ids = []
+desktop_tool_ids = ["conductor"]
+desktop_required = true
+integration_ids = []
+mcp_server_ids = []
+source_file = "conductor.json"
+
+[[harnesses]]
+id = "cursor"
+title = "Cursor"
+description = "The AI-native code editor with built-in agent capabilities."
+kind = "editor-integrated"
+category = "ide"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "win32",
+]
+required_tool_ids = []
+desktop_tool_ids = ["cursor"]
+desktop_required = true
+integration_ids = []
+mcp_server_ids = [
+    "cursor-context7",
+    "cursor-sequential-thinking",
+]
+source_file = "cursor.json"
+
+[[harnesses]]
+id = "gemini"
+title = "Gemini"
+description = "Google's Gemini CLI agent."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = [
+    "node",
+    "gemini-cli",
+]
+integration_ids = ["gemini-workspace"]
+mcp_server_ids = [
+    "gemini-context7",
+    "gemini-sequential-thinking",
+]
+source_file = "gemini.json"
+
+[[harnesses]]
+id = "github-copilot"
+title = "GitHub Copilot"
+description = "GitHub Copilot agent experience."
+kind = "editor-integrated"
+category = "ide"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "win32",
+]
+required_tool_ids = ["vscode"]
+integration_ids = []
+mcp_server_ids = []
+source_file = "github-copilot.json"
+
+[[harnesses]]
+id = "goose"
+title = "Goose"
+description = "Block's open-source extensible AI agent."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = ["goose"]
+integration_ids = []
+mcp_server_ids = []
+source_file = "goose.json"
+
+[[harnesses]]
+id = "hermes"
+title = "Hermes Agent"
+description = "Nous Research's autonomous agent CLI with browser automation and messaging gateway support."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = ["hermes-agent"]
+integration_ids = []
+mcp_server_ids = []
+source_file = "hermes.json"
+
+[[harnesses]]
+id = "openclaw"
+title = "OpenClaw"
+description = "OpenClaw personal AI assistant."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = [
+    "node",
+    "openclaw",
+]
+integration_ids = []
+mcp_server_ids = []
+source_file = "openclaw.json"
+
+[[harnesses]]
+id = "opencode"
+title = "OpenCode"
+description = "Provider-agnostic open source coding agent for any development workflow."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = [
+    "node",
+    "opencode",
+]
+integration_ids = []
+mcp_server_ids = [
+    "opencode-context7",
+    "opencode-sequential-thinking",
+]
+source_file = "opencode.json"
+
+[[harnesses]]
+id = "paseo"
+title = "Paseo"
+description = "Agent orchestration layer that manages existing provider CLIs across devices."
+kind = "terminal-agent"
+category = "gui"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = ["paseo"]
+integration_ids = []
+mcp_server_ids = []
+source_file = "paseo.json"
+
+[[harnesses]]
+id = "pi"
+title = "Pi"
+description = "Earendil's Pi coding agent for terminal-driven AI assistance."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "win32",
+    "wsl",
+]
+required_tool_ids = ["pi"]
+integration_ids = []
+mcp_server_ids = []
+source_file = "pi.json"
+
+[[harnesses]]
+id = "superset"
+title = "Superset"
+description = "The code editor for AI agents. Orchestrate parallel coding agents with isolated Git worktrees."
+kind = "editor-integrated"
+category = "gui"
+extends = "base"
+supported_platforms = ["darwin"]
+required_tool_ids = []
+desktop_tool_ids = ["superset"]
+desktop_required = true
+integration_ids = []
+mcp_server_ids = []
+source_file = "superset.json"
+
+[[harnesses]]
+id = "t3code"
+title = "T3 Code"
+description = "Minimal GUI for AI code agents by T3 Tools."
+kind = "editor-integrated"
+category = "gui"
+extends = "base"
+supported_platforms = ["darwin"]
+required_tool_ids = []
+desktop_tool_ids = ["t3code"]
+desktop_required = true
+integration_ids = []
+mcp_server_ids = []
+source_file = "t3code.json"
+
+[[harnesses]]
+id = "zed"
+title = "Zed"
+description = "High-performance multiplayer code editor with assistant and MCP support."
+kind = "editor-integrated"
+category = "ide"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "win32",
+]
+required_tool_ids = []
+desktop_tool_ids = ["zed"]
+desktop_required = true
+integration_ids = []
+mcp_server_ids = [
+    "zed-context7",
+    "zed-sequential-thinking",
+]
+source_file = "zed.json"
+
+[[harnesses]]
+id = "fx"
+title = "fx"
+description = "Vercel's tiny, open, embeddable, native (Zig) coding agent. Model-agnostic; connects to Vercel AI Gateway, OpenAI Codex, or xAI Grok."
+kind = "terminal-agent"
+category = "terminal"
+extends = "base"
+supported_platforms = [
+    "darwin",
+    "linux",
+    "wsl",
+]
+required_tool_ids = ["fx"]
+integration_ids = []
+mcp_server_ids = []
+source_file = "fx.json"

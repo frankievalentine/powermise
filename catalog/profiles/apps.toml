@@ -1,0 +1,141 @@
+schema_version = 1
+catalog = "powermise-profiles"
+catalog_revision = "2"
+
+[[apps]]
+id = "cursor"
+title = "Cursor"
+description = "The AI-native code editor with built-in agent capabilities, selectable through a machine-role app inclusion."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "cursor"
+version = "3.18.9"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "1password"
+title = "1Password"
+description = "Password manager and secrets vault for individuals and teams."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "1password"
+version = "8.12.34"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "canva"
+title = "Canva"
+description = "User-friendly design tool for creating marketing materials, presentations, and visual content."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "canva"
+version = "1.124.1"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "figma"
+title = "Figma"
+description = "Collaborative design tool for interfaces and digital products."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "figma"
+version = "126.8.16"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "linear"
+title = "Linear"
+description = "Issue tracking and project management built for software teams."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "linear"
+version = "1.32.2"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "loom"
+title = "Loom"
+description = "Screen and video recording software for async communication."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "loom"
+version = "0.372.0"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "miro"
+title = "Miro"
+description = "Online collaborative whiteboard platform for brainstorming and planning."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "miro"
+version = "0.11.168"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "notion"
+title = "Notion"
+description = "All-in-one workspace for notes, tasks, wikis, and databases."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "notion"
+version = "7.31.3"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "slack"
+title = "Slack"
+description = "Team communication and collaboration hub."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "slack"
+version = "4.51.191"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "vscode"
+title = "Visual Studio Code"
+description = "Microsoft's lightweight but powerful source code editor."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "visual-studio-code"
+version = "1.135.0"
+supported_platforms = ["darwin"]
+
+[[apps.providers]]
+kind = "winget"
+package = "Microsoft.VisualStudioCode"
+version = "1.135.0"
+supported_platforms = ["win32"]
+
+[[apps]]
+id = "windsurf"
+title = "Windsurf"
+description = "Codeium's AI-native code editor with built-in Cascade agent."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "windsurf"
+version = "3.8.20"
+supported_platforms = ["darwin"]
+
+[[apps]]
+id = "zed"
+title = "Zed"
+description = "High-performance multiplayer code editor with built-in AI assistant."
+
+[[apps.providers]]
+kind = "bootstrap-brew-cask"
+package = "zed"
+version = "1.17.2"
+supported_platforms = ["darwin"]

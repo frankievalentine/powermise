@@ -1,0 +1,418 @@
+# Provider versions pinned 2026-08-31 against upstream channels (mise
+# ls-remote, Homebrew, npm, winget-pkgs manifests, Scoop manifests).
+# Exception: `bootstrap-apt` providers install the distribution's own package
+# version, so they deliberately stay on the distro channel.
+schema_version = 1
+catalog = "powermise-profiles"
+catalog_revision = "2"
+
+[[tools]]
+id = "git"
+title = "Git"
+description = "Version control foundation for all development workflows."
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "git"
+version = "2.55.0"
+supported_platforms = ["darwin", "linux"]
+
+[[tools.providers]]
+kind = "bootstrap-apt"
+package = "git"
+version = "latest"
+supported_platforms = ["linux", "wsl"]
+
+[[tools.providers]]
+kind = "winget"
+package = "Git.Git"
+version = "2.55.0.3"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "curl"
+title = "curl"
+description = "HTTP transfer tool used for setup and script-based installers."
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "curl"
+version = "8.21.0"
+supported_platforms = ["darwin", "linux"]
+
+[[tools.providers]]
+kind = "bootstrap-apt"
+package = "curl"
+version = "latest"
+supported_platforms = ["linux", "wsl"]
+
+[[tools.providers]]
+kind = "winget"
+package = "cURL.cURL"
+version = "8.21.0.6"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "jq"
+title = "jq"
+description = "JSON processor for CLI automation and diagnostics."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "jq"
+version = "1.8.2"
+command = "jq"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "jq"
+version = "1.8.2"
+supported_platforms = ["darwin", "linux"]
+
+[[tools.providers]]
+kind = "bootstrap-apt"
+package = "jq"
+version = "latest"
+supported_platforms = ["linux", "wsl"]
+
+[[tools.providers]]
+kind = "winget"
+package = "jqlang.jq"
+version = "1.8.2"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "ripgrep"
+title = "ripgrep"
+description = "Fast recursive search used heavily by AI coding agents and developers."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "ripgrep"
+version = "15.2.0"
+command = "rg"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "ripgrep"
+version = "15.2.0"
+supported_platforms = ["darwin", "linux"]
+
+[[tools.providers]]
+kind = "bootstrap-apt"
+package = "ripgrep"
+version = "latest"
+supported_platforms = ["linux", "wsl"]
+
+[[tools.providers]]
+kind = "winget"
+package = "BurntSushi.ripgrep.MSVC"
+version = "15.2.0"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "fd"
+title = "fd"
+description = "Fast file finder that pairs well with ripgrep and fzf."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "fd"
+version = "10.5.0"
+command = "fd"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "fd"
+version = "10.5.0"
+supported_platforms = ["darwin", "linux"]
+
+[[tools.providers]]
+kind = "winget"
+package = "sharkdp.fd"
+version = "10.5.0"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "claude-code"
+title = "Claude Code"
+description = "Anthropic's coding agent CLI for terminal workflows."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "claude-code"
+version = "2.1.251"
+command = "claude"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "claude-code"
+version = "2.1.236"
+supported_platforms = ["darwin"]
+
+[[tools]]
+id = "claude-app"
+title = "Claude App"
+description = "Anthropic's official Claude AI desktop app."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "claude"
+version = "1.40609.0"
+supported_platforms = ["darwin"]
+
+[[tools]]
+id = "vscode"
+title = "Visual Studio Code"
+description = "Microsoft's lightweight but powerful source code editor."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "visual-studio-code"
+version = "1.135.0"
+supported_platforms = ["darwin"]
+
+[[tools.providers]]
+kind = "winget"
+package = "Microsoft.VisualStudioCode"
+version = "1.135.0"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "node"
+title = "Node.js"
+description = "Required for npm-based agent tooling and parts of the web workspace."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "node"
+version = "26.8.1"
+command = "node"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "node"
+version = "26.8.1"
+supported_platforms = ["darwin", "linux"]
+
+[[tools.providers]]
+kind = "winget"
+package = "OpenJS.NodeJS"
+version = "26.7.0"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "cline"
+title = "Cline"
+description = "AI coding assistant VS Code extension (saoudrizwan.claude-dev)."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "npm:cline"
+version = "3.0.60"
+command = "cline"
+supported_platforms = ["darwin", "linux", "win32"]
+
+[[tools]]
+id = "codex"
+title = "Codex CLI"
+description = "OpenAI's terminal coding agent."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "npm:@openai/codex"
+version = "0.151.0"
+command = "codex"
+supported_platforms = ["linux", "win32"]
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "codex"
+version = "0.151.0"
+supported_platforms = ["darwin"]
+
+[[tools]]
+id = "codex-app"
+title = "Codex App"
+description = "OpenAI's Codex desktop app for managing coding agents."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "codex-app"
+version = "26.623.141536"
+supported_platforms = ["darwin"]
+
+[[tools]]
+id = "conductor"
+title = "Conductor"
+description = "Run a team of coding agents on your Mac in isolated workspaces."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "conductor"
+version = "0.83.1"
+supported_platforms = ["darwin"]
+
+[[tools]]
+id = "cursor"
+title = "Cursor"
+description = "The AI-native code editor with built-in agent capabilities."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "cursor"
+version = "3.18.9"
+supported_platforms = ["darwin"]
+
+[[tools.providers]]
+kind = "scoop"
+package = "cursor"
+version = "3.18.9"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "gemini-cli"
+title = "Gemini CLI"
+description = "Google's open-source AI agent for terminal workflows."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "npm:@google/gemini-cli"
+version = "0.57.0"
+command = "gemini"
+supported_platforms = ["linux", "win32"]
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "gemini-cli"
+version = "0.46.0"
+supported_platforms = ["darwin"]
+
+[[tools]]
+id = "goose"
+title = "Goose"
+description = "An open-source, extensible AI agent for code, workflows, and automation."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "github:aaif-goose/goose"
+version = "1.48.0"
+command = "goose"
+supported_platforms = ["darwin", "linux", "win32"]
+
+[[tools]]
+id = "hermes-agent"
+title = "Hermes Agent"
+description = "Nous Research's autonomous agent CLI with browser automation and messaging gateway support."
+providers = []
+unsupported_reason = "The authoritative manifest supplies only vendor shell and PowerShell scripts; it has no mise-compatible identifier or package-manager mapping. A pinned verified-script provider is the intended path once the vendor publishes a stable install source."
+
+[[tools]]
+id = "openclaw"
+title = "OpenClaw"
+description = "A personal AI assistant that runs on your own devices."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "npm:openclaw"
+version = "2026.7.1"
+command = "openclaw"
+supported_platforms = ["darwin", "linux", "win32"]
+
+[[tools]]
+id = "opencode"
+title = "OpenCode"
+description = "Provider-agnostic open source coding agent for terminal workflows."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "npm:opencode-ai"
+version = "1.18.25"
+command = "opencode"
+supported_platforms = ["win32"]
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "opencode"
+version = "1.18.25"
+supported_platforms = ["darwin", "linux"]
+
+[[tools]]
+id = "paseo"
+title = "Paseo"
+description = "Agent orchestration CLI that manages existing provider CLIs across devices."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "npm:@getpaseo/cli"
+version = "0.6.1"
+command = "paseo"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools]]
+id = "pi"
+title = "Pi"
+description = "Earendil's Pi coding agent for terminal-driven AI assistance."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "npm:@earendil-works/pi-coding-agent"
+version = "0.84.4"
+command = "pi"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools]]
+id = "superset"
+title = "Superset"
+description = "The code editor for AI agents. Orchestrate parallel coding agents with isolated Git worktrees."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "superset"
+version = "1.25.1"
+supported_platforms = ["darwin"]
+
+[[tools]]
+id = "t3code"
+title = "T3 Code"
+description = "Minimal GUI for AI code agents by T3 Tools."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "t3-code"
+version = "0.0.37"
+supported_platforms = ["darwin"]
+
+[[tools]]
+id = "zed"
+title = "Zed"
+description = "High-performance multiplayer code editor with built-in AI assistant."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "zed"
+version = "1.17.2"
+supported_platforms = ["darwin"]
+
+[[tools.providers]]
+kind = "scoop"
+package = "zed"
+version = "1.17.2"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "fx"
+title = "fx"
+description = "Vercel's native coding agent CLI (single static binary)."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "github:vercel-labs/fx"
+version = "0.0.7"
+command = "fx"
+supported_platforms = ["darwin", "linux", "wsl"]

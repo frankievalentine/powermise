@@ -1,0 +1,13 @@
+schema_version = 1
+name = "engineering-agents"
+catalog = "powermise-profiles"
+harnesses = ["claude", "codex", "gemini"]
+
+[machine_roles.macbook]
+include_apps = ["cursor"]
+exclude_harnesses = []
+exclude_tools = []
+
+[preferences]
+auto_prune = false
+update_system_packages = false

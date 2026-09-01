@@ -1,0 +1,133 @@
+schema_version = 1
+catalog = "powermise-profiles"
+catalog_revision = "2"
+
+[[mcp_servers]]
+id = "claude-context7"
+title = "Context7 for Claude"
+description = "Context7 MCP server that resolves current library documentation for Claude Code."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "claude"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "claude-sequential-thinking"
+title = "Sequential Thinking for Claude"
+description = "Sequential Thinking MCP server that structures multi-step reasoning for Claude Code."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "claude"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "cline-context7"
+title = "Context7 for Cline"
+description = "Context7 MCP server that resolves current library documentation inside Cline."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "cline"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "codex-context7"
+title = "Context7 for Codex"
+description = "Context7 MCP server that resolves current library documentation for Codex."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "codex"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "codex-sequential-thinking"
+title = "Sequential Thinking for Codex"
+description = "Sequential Thinking MCP server that structures multi-step reasoning for Codex."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "codex"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "cursor-context7"
+title = "Context7 for Cursor"
+description = "Context7 MCP server that resolves current library documentation inside Cursor."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "cursor"
+supported_platforms = ["darwin", "linux", "wsl"]
+
+[[mcp_servers]]
+id = "cursor-sequential-thinking"
+title = "Sequential Thinking for Cursor"
+description = "Sequential Thinking MCP server that structures multi-step reasoning inside Cursor."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "cursor"
+supported_platforms = ["darwin", "linux", "wsl"]
+
+[[mcp_servers]]
+id = "gemini-context7"
+title = "Context7 for Gemini"
+description = "Context7 MCP server that resolves current library documentation for the Gemini CLI."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "gemini"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "gemini-sequential-thinking"
+title = "Sequential Thinking for Gemini"
+description = "Sequential Thinking MCP server that structures multi-step reasoning for the Gemini CLI."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "gemini"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "opencode-context7"
+title = "Context7 for OpenCode"
+description = "Context7 MCP server that resolves current library documentation for OpenCode."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "opencode"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "opencode-sequential-thinking"
+title = "Sequential Thinking for OpenCode"
+description = "Sequential Thinking MCP server that structures multi-step reasoning for OpenCode."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "opencode"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[mcp_servers]]
+id = "zed-context7"
+title = "Context7 for Zed"
+description = "Context7 MCP server that resolves current library documentation inside Zed."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "zed"
+supported_platforms = ["darwin", "linux"]
+
+[[mcp_servers]]
+id = "zed-sequential-thinking"
+title = "Sequential Thinking for Zed"
+description = "Sequential Thinking MCP server that structures multi-step reasoning inside Zed."
+
+[[mcp_servers.providers]]
+kind = "config-adapter"
+config_target = "zed"
+supported_platforms = ["darwin", "linux"]

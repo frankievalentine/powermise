@@ -1,0 +1,43 @@
+schema_version = 1
+catalog = "powermise-profiles"
+catalog_revision = "2"
+
+[[integrations]]
+id = "claude-github"
+title = "Claude GitHub"
+description = "GitHub integration for Claude, wiring repository and issue context into Claude Code sessions."
+
+[[integrations.providers]]
+kind = "config-adapter"
+config_target = "claude"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[integrations]]
+id = "claude-mem"
+title = "Claude Memory"
+description = "Persistent memory integration for Claude Code so agent context survives across sessions."
+
+[[integrations.providers]]
+kind = "config-adapter"
+config_target = "claude"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[integrations]]
+id = "codex-gmail"
+title = "Codex Gmail"
+description = "Gmail integration for Codex, granting the agent access to inbox and mail context."
+
+[[integrations.providers]]
+kind = "config-adapter"
+config_target = "codex"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[integrations]]
+id = "gemini-workspace"
+title = "Gemini Workspace"
+description = "Google Workspace integration for the Gemini CLI agent."
+
+[[integrations.providers]]
+kind = "config-adapter"
+config_target = "gemini"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
