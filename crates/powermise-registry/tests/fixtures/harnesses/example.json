@@ -1,0 +1,1 @@
+{"id":"example","title":"Example","description":"Example harness","kind":"terminal-agent","category":"terminal","extends":"base","supportedPlatforms":["darwin"],"requiredToolIds":["git"],"integrationIds":[],"mcpServerIds":[]}
