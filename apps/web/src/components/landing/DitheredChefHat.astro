@@ -1,0 +1,112 @@
+---
+import chefHat from '../../chefhat.png';
+---
+
+<figure class="dithered-chef-hat" data-dithered-chef-hat aria-label="Dithered chef's hat">
+  <canvas class="dithered-chef-hat__canvas" data-dithered-chef-hat-canvas aria-hidden="true" tabindex="-1"></canvas>
+  <div class="dithered-chef-hat__fallback" data-dithered-chef-hat-fallback>
+    <img src={chefHat.src} width="1920" height="1920" alt="Chef's hat illustration" />
+    <figcaption>Chef's hat rendered with ordered Bayer dithering.</figcaption>
+  </div>
+</figure>
+
+<script>
+  import { initializeDitheredChefHat } from './ditheredChefHat';
+
+  document.querySelectorAll<HTMLElement>('[data-dithered-chef-hat]').forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>('[data-dithered-chef-hat-canvas]');
+    if (!canvas) return;
+
+    void initializeDitheredChefHat(container, canvas)
+      .then((dispose) => {
+        if (!dispose) {
+          container.classList.add('is-fallback');
+          return;
+        }
+        window.addEventListener('pagehide', dispose, { once: true });
+      })
+      .catch(() => container.classList.add('is-fallback'));
+  });
+</script>
+
+<style>
+  .dithered-chef-hat {
+    position: relative;
+    display: grid;
+    min-block-size: 16rem;
+    place-items: center;
+    isolation: isolate;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  .dithered-chef-hat__canvas,
+  .dithered-chef-hat__fallback {
+    grid-area: 1 / 1;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .dithered-chef-hat__canvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 180ms ease-out;
+  }
+
+  .dithered-chef-hat__fallback {
+    display: grid;
+    visibility: hidden;
+    justify-items: center;
+    align-content: center;
+    gap: 0.75rem;
+    margin: 0;
+    color: currentColor;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 180ms ease-out, visibility 180ms ease-out;
+  }
+
+  .dithered-chef-hat__fallback img {
+    display: block;
+    inline-size: min(15rem, 78%);
+    block-size: auto;
+  }
+
+  .dithered-chef-hat__fallback figcaption {
+    max-inline-size: 22rem;
+    font: inherit;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    opacity: 0.72;
+  }
+
+  .dithered-chef-hat.is-enhanced .dithered-chef-hat__canvas {
+    opacity: 1;
+  }
+
+  .dithered-chef-hat.is-painted .dithered-chef-hat__fallback {
+    opacity: 0;
+  }
+
+  .dithered-chef-hat.is-fallback .dithered-chef-hat__fallback {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  :global([data-theme='light']) .dithered-chef-hat.is-enhanced .dithered-chef-hat__canvas {
+    filter: invert(1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dithered-chef-hat__canvas {
+      display: none;
+    }
+
+    .dithered-chef-hat__fallback {
+      visibility: visible;
+      opacity: 1;
+    }
+  }
+</style>

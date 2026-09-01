@@ -1,0 +1,219 @@
+---
+import type { StarlightRouteData } from '@astrojs/starlight/route-data';
+
+interface Props {
+  sublist: StarlightRouteData['sidebar'];
+  nested?: boolean;
+}
+
+const { sublist, nested } = Astro.props;
+
+function hasCurrentEntry(entries: StarlightRouteData['sidebar']): boolean {
+  return entries.some((entry) =>
+    entry.type === 'link' ? entry.isCurrent : hasCurrentEntry(entry.entries)
+  );
+}
+---
+
+{
+  sublist.map((entry) =>
+    entry.type === 'link' ? (
+      <a
+        href={entry.href}
+        aria-current={entry.isCurrent ? 'page' : undefined}
+        class:list={['entry-link', entry.attrs.class]}
+        {...entry.attrs}
+      >
+        {entry.label}
+        {entry.badge && <span class="entry-badge">{entry.badge.text}</span>}
+      </a>
+    ) : (
+      <details
+        class:list={['sidebar-group', { nested }]}
+        data-group={entry.label}
+        open={hasCurrentEntry(entry.entries) || (!entry.collapsed && !nested)}
+      >
+        <summary class="group-label">
+          <span>{entry.label}</span>
+          <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </summary>
+        <div class="group-items">
+          <Astro.self sublist={entry.entries} nested />
+        </div>
+      </details>
+    )
+  )
+}
+
+<script>
+  const GROUPS_KEY = 'powermise-sidebar-groups';
+  const SCROLL_KEY = 'powermise-sidebar-scroll';
+
+  const getSidebar = () => document.querySelector<HTMLElement>('.sidebar');
+
+  const getSavedGroups = (): Record<string, boolean> => {
+    try {
+      return JSON.parse(sessionStorage.getItem(GROUPS_KEY) ?? '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const initGroups = () => {
+    const saved = getSavedGroups();
+
+    document.querySelectorAll<HTMLDetailsElement>('details[data-group]').forEach((element) => {
+      const label = element.dataset.group;
+      const hasActivePage = Boolean(element.querySelector('[aria-current="page"]'));
+
+      if (label && !hasActivePage && label in saved) {
+        element.open = saved[label];
+      }
+
+      element.addEventListener('toggle', () => {
+        if (!label) return;
+        const current = getSavedGroups();
+        current[label] = element.open;
+        sessionStorage.setItem(GROUPS_KEY, JSON.stringify(current));
+      });
+    });
+  };
+
+  document.addEventListener('astro:before-swap', () => {
+    const sidebar = getSidebar();
+    if (sidebar) {
+      sessionStorage.setItem(SCROLL_KEY, String(Math.round(sidebar.scrollTop)));
+    }
+  });
+
+  document.addEventListener('astro:page-load', () => {
+    initGroups();
+
+    const savedScroll = sessionStorage.getItem(SCROLL_KEY);
+    const sidebar = getSidebar();
+    if (sidebar && savedScroll !== null) {
+      requestAnimationFrame(() => {
+        sidebar.scrollTop = Number.parseInt(savedScroll, 10);
+      });
+    }
+
+    sidebar?.addEventListener(
+      'scroll',
+      () => sessionStorage.setItem(SCROLL_KEY, String(Math.round(sidebar.scrollTop))),
+      { passive: true }
+    );
+  });
+</script>
+
+<style>
+  .sidebar-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pm-space-1);
+  }
+
+  .group-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pm-space-2);
+    box-sizing: border-box;
+    min-height: var(--pm-control-height);
+    padding: var(--pm-space-1) var(--pm-space-3);
+    border: 1px solid transparent;
+    border-radius: var(--pm-radius-md);
+    cursor: pointer;
+    font-size: var(--pm-text-sm);
+    font-weight: 600;
+    line-height: var(--pm-line-height-sm);
+    list-style: none;
+    transition: background-color var(--pm-transition-fast), border-color var(--pm-transition-fast), color var(--pm-transition-fast);
+    user-select: none;
+  }
+
+  .group-label::-webkit-details-marker {
+    display: none;
+  }
+
+  .group-label:focus-visible {
+    border-color: color-mix(in srgb, var(--sl-color-accent) 16%, transparent);
+    color: var(--sl-color-text-accent);
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: var(--pm-space-1);
+  }
+
+  .chevron {
+    flex-shrink: 0;
+    opacity: 0.45;
+    transition: opacity var(--pm-transition-fast), transform var(--pm-transition-fast);
+  }
+
+  .group-label:focus-visible .chevron {
+    opacity: 0.75;
+  }
+
+  details[open] > .group-label .chevron {
+    transform: rotate(180deg);
+  }
+
+  .group-items {
+    display: grid;
+    gap: var(--pm-space-1);
+    margin-top: var(--pm-space-1);
+    margin-left: var(--pm-space-3);
+    padding-left: var(--pm-space-3);
+    border-left: 1px solid color-mix(in srgb, var(--sl-color-gray-4) 58%, transparent);
+  }
+
+  .nested > .group-label {
+    font-size: var(--pm-text-sm);
+    font-weight: 500;
+  }
+
+  .entry-link {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--pm-control-height);
+    padding: var(--pm-space-1) var(--pm-space-3);
+    border: 1px solid transparent;
+    border-radius: var(--pm-radius-md);
+    color: inherit;
+    font-size: var(--pm-text-sm);
+    font-weight: 500;
+    line-height: var(--pm-line-height-sm);
+    text-decoration: inherit;
+    text-underline-offset: var(--pm-space-1);
+    transition: background-color var(--pm-transition-fast), border-color var(--pm-transition-fast), color var(--pm-transition-fast);
+  }
+
+  .entry-link[aria-current='page'] {
+    border-color: color-mix(in srgb, var(--sl-color-accent) 24%, transparent);
+    background-color: color-mix(in srgb, var(--sl-color-accent) 14%, transparent);
+    color: var(--sl-color-text-accent);
+  }
+
+  .entry-link:focus-visible {
+    border-color: color-mix(in srgb, var(--sl-color-accent) 16%, transparent);
+    color: var(--sl-color-text-accent);
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: var(--pm-space-1);
+  }
+
+  .entry-link[aria-current='page']:focus-visible {
+    border-color: color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
+  }
+
+  .entry-badge {
+    margin-left: var(--pm-space-2);
+    padding: var(--pm-space-1) var(--pm-space-2);
+    border-radius: var(--pm-radius-sm);
+    background-color: var(--sl-color-accent);
+    color: var(--sl-color-black);
+    font-size: var(--pm-text-xs);
+    line-height: 1;
+  }
+</style>

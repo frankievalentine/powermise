@@ -1,0 +1,54 @@
+---
+import DitheredChefHat from './DitheredChefHat.astro';
+
+const installCommand = 'git clone https://github.com/frankievalentine/powermise.git && cd powermise && cargo install --path crates/powermise-cli';
+---
+
+<section class="focus-hero" aria-labelledby="hero-heading">
+  <div class="focus-brand">
+    <h1 id="hero-heading">powermise</h1>
+  </div>
+
+  <div class="focus-hero-object">
+    <DitheredChefHat />
+  </div>
+
+  <div class="focus-hero-details">
+    <p>Your <em>mise-en-place</em> for curated AI harnesses, tools, and integrations.</p>
+    <div class="install-command">
+      <code>{installCommand}</code>
+      <button class="copy-command" type="button" data-copy-command data-command={installCommand} aria-label="Copy install command">
+        <svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="8" y="8" width="11" height="11" rx="2" />
+          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+        </svg>
+        <svg class="check-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m5 12 4 4L19 6" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  const copyButton = document.querySelector<HTMLButtonElement>('[data-copy-command]');
+
+  copyButton?.addEventListener('click', async () => {
+    const command = copyButton.dataset.command;
+    if (!command) return;
+
+    try {
+      await navigator.clipboard.writeText(command);
+    } catch {
+      copyButton.setAttribute('aria-label', 'Unable to copy install command');
+      return;
+    }
+    copyButton.dataset.copied = 'true';
+    copyButton.setAttribute('aria-label', 'Install command copied');
+
+    window.setTimeout(() => {
+      delete copyButton.dataset.copied;
+      copyButton.setAttribute('aria-label', 'Copy install command');
+    }, 4000);
+  });
+</script>

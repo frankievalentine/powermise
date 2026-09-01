@@ -1,0 +1,64 @@
+---
+import '@fontsource-variable/plus-jakarta-sans';
+
+import Hero from '../components/landing/Hero.astro';
+import Nav from '../components/landing/Nav.astro';
+import '../styles/landing.css';
+
+const title = 'Powermise — a starting point for AI workflows';
+const description =
+  'Extending mise-en-place to be your starting point for AI workflows on macOS, Windows, and Linux.';
+const canonical = 'https://powermise.dev/';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="powermise" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <title>{title}</title>
+    <script is:inline>
+      (() => {
+        const stored = localStorage.getItem('starlight-theme');
+        const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <Nav />
+    <main id="main">
+      <Hero />
+    </main>
+    <script>
+      const html = document.documentElement;
+      const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+
+      const applyTheme = (theme: 'light' | 'dark') => {
+        html.setAttribute('data-theme', theme);
+        const nextTheme = theme === 'dark' ? 'light' : 'dark';
+        themeButton?.setAttribute('aria-label', `Use ${nextTheme} theme`);
+      };
+
+      applyTheme((html.getAttribute('data-theme') as 'light' | 'dark') ?? 'dark');
+
+      themeButton?.addEventListener('click', () => {
+        const currentTheme = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        const theme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(theme);
+        localStorage.setItem('starlight-theme', theme);
+      });
+    </script>
+  </body>
+</html>

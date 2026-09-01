@@ -1,0 +1,22 @@
+---
+import { features } from '../../data/landing.ts';
+---
+
+<section class="section" id="workflow" aria-labelledby="workflow-heading">
+  <p class="section-label">A reviewable workflow</p>
+  <h2 class="section-heading" id="workflow-heading">From declared selection to compiled configuration.</h2>
+  <div class="features-grid">
+    {features.map((feature) => (
+      <article class="feature" id={feature.id}>
+        <p class="feature-number">{feature.number}</p>
+        <h3>{feature.title}</h3>
+        <p>{feature.description}</p>
+        {feature.command ? (
+          <code class="feature-command"><span aria-hidden="true">$ </span>{feature.command}</code>
+        ) : (
+          <p class="feature-availability">{feature.availability}</p>
+        )}
+      </article>
+    ))}
+  </div>
+</section>

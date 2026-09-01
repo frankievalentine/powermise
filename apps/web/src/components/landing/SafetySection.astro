@@ -1,0 +1,12 @@
+---
+import { safeguards } from '../../data/landing.ts';
+---
+
+<section class="safeguard-bar" aria-label="Powermise safeguards">
+  {safeguards.map(([title, description]) => (
+    <div>
+      <strong>{title}</strong>
+      <span>{description}</span>
+    </div>
+  ))}
+</section>

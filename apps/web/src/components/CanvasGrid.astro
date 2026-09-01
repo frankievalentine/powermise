@@ -1,0 +1,58 @@
+<canvas class="canvas-grid" aria-hidden="true"></canvas>
+
+<script>
+  const canvas = document.currentScript?.previousElementSibling as HTMLCanvasElement | null;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  if (canvas && !reducedMotion.matches) {
+    const context = canvas.getContext('2d');
+    let pointer = { x: -9999, y: -9999 };
+    let frame = 0;
+
+    const resize = () => {
+      const { width, height } = canvas.getBoundingClientRect();
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      context?.setTransform(ratio, 0, 0, ratio, 0, 0);
+    };
+
+    const draw = (time: number) => {
+      if (!context) return;
+      const { width, height } = canvas.getBoundingClientRect();
+      context.clearRect(0, 0, width, height);
+      const spacing = 42;
+      const drift = Math.sin(time / 1800) * 4;
+      context.lineWidth = 1;
+
+      for (let x = -spacing; x < width + spacing; x += spacing) {
+        const distance = Math.abs(pointer.x - x);
+        context.strokeStyle = distance < 180 ? `rgba(92, 241, 162, ${0.10 - distance / 3000})` : 'rgba(137, 160, 153, 0.07)';
+        context.beginPath();
+        context.moveTo(x + drift, 0);
+        context.lineTo(x - drift, height);
+        context.stroke();
+      }
+      for (let y = -spacing; y < height + spacing; y += spacing) {
+        const distance = Math.abs(pointer.y - y);
+        context.strokeStyle = distance < 180 ? `rgba(92, 241, 162, ${0.10 - distance / 3000})` : 'rgba(137, 160, 153, 0.07)';
+        context.beginPath();
+        context.moveTo(0, y - drift);
+        context.lineTo(width, y + drift);
+        context.stroke();
+      }
+      frame = requestAnimationFrame(draw);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      pointer = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+    };
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    canvas.parentElement?.addEventListener('pointermove', handlePointerMove);
+    frame = requestAnimationFrame(draw);
+    window.addEventListener('pagehide', () => cancelAnimationFrame(frame), { once: true });
+  }
+</script>

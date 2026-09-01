@@ -1,0 +1,23 @@
+---
+import { profiles } from '../../data/landing.ts';
+---
+
+<section class="section" aria-labelledby="catalog-heading">
+  <p class="section-label">// curated catalog</p>
+  <h2 class="section-heading" id="catalog-heading">Profiles are explicit by design.</h2>
+  <p class="section-sub">A selection references actual harness IDs and their declared dependencies. Powermise validates each dependency against its provider registry before it can be selected.</p>
+
+  <ul class="profile-grid">
+    {profiles.map((profile) => (
+      <li class="profile-card">
+        <p class="profile-id">{profile.id}</p>
+        <h3>{profile.title}</h3>
+        <p>{profile.description}</p>
+        <div class="profile-tags" aria-label={`${profile.title} profile attributes`}>
+          {profile.tags.map((tag) => <span>{tag}</span>)}
+        </div>
+      </li>
+    ))}
+  </ul>
+  <a class="section-link" href="/catalog/">Explore the catalog <span aria-hidden="true">→</span></a>
+</section>
