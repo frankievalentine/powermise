@@ -1,0 +1,14 @@
+{
+  "name": "powermise",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.14",
+  "scripts": {
+    "web:dev": "bun run --cwd apps/web dev --host",
+    "web:check": "bun run --cwd apps/web check",
+    "web:build": "bun run --cwd apps/web build",
+    "test:mise-spike": "scripts/verify-mise-spike.sh"
+  },
+  "workspaces": ["apps/*"]
+}

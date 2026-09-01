@@ -1,0 +1,14 @@
+# Rust
+/target
+
+# Node
+node_modules/
+apps/web/dist/
+.astro/
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store

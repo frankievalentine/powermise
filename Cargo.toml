@@ -1,0 +1,25 @@
+[workspace]
+members = [
+  "crates/powermise-domain",
+  "crates/powermise-registry",
+  "crates/powermise-compiler",
+  "crates/powermise-state",
+  "crates/powermise-mise",
+  "crates/powermise-providers",
+  "crates/powermise-lifecycle",
+  "crates/powermise-cli",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/frankievalentine/powermise"
+
+[workspace.dependencies]
+clap = { version = "4.5.53", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+thiserror = "2.0.17"
+toml = "0.9.8"
