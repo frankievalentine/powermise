@@ -11,9 +11,9 @@ mod selection;
 mod shell;
 mod status;
 mod stub;
-mod uninstall;
 #[cfg(test)]
 mod tests;
+mod uninstall;
 
 pub use activate::{ActivationOutput, activate};
 pub use apply::{ApplyOptions, ApplyReport, BootstrapOutcome, apply};
@@ -22,12 +22,18 @@ pub use doctor::{Finding, FindingSeverity, doctor, has_errors};
 pub use exec::{ExecReport, exec};
 pub use prune::{PruneAction, PruneReport, prune};
 pub use selection::SelectionStore;
-pub use shell::{Shell, ShellInstallReport, ShellUninstallReport, install_shell_integration, uninstall_shell_integration};
+pub use shell::{
+    Shell, ShellInstallReport, ShellUninstallReport, install_shell_integration,
+    uninstall_shell_integration,
+};
 pub use status::{NativeStatus, StatusReport, status};
 pub use stub::{StubInstallReport, StubRemoveReport, install_stubs, remove_stubs};
 pub use uninstall::{UninstallAction, UninstallReport, uninstall};
 
-use std::{env, fs, io, path::{Path, PathBuf}};
+use std::{
+    env, fs, io,
+    path::{Path, PathBuf},
+};
 
 use powermise_compiler::{compile_mise, compile_plan};
 use powermise_domain::{
@@ -125,11 +131,7 @@ impl PowermiseLayout {
     }
 
     fn ensure_directories(&self) -> Result<(), LifecycleError> {
-        for directory in [
-            &self.selections,
-            &self.manifests,
-            &self.run_reports,
-        ] {
+        for directory in [&self.selections, &self.manifests, &self.run_reports] {
             fs::create_dir_all(directory).map_err(|source| LifecycleError::Io {
                 path: directory.clone(),
                 source,
@@ -156,8 +158,15 @@ pub fn compile_context(
     let selection = load_selection(selection_path)?;
     validate_selection(&selection, &catalog, target, machine_role)?;
     validate_selection_app_references(&selection, &apps)?;
-    let resolved =
-        resolve_selection(&selection, &catalog, &tools, &integrations, &mcp, target, machine_role)?;
+    let resolved = resolve_selection(
+        &selection,
+        &catalog,
+        &tools,
+        &integrations,
+        &mcp,
+        target,
+        machine_role,
+    )?;
     let config = compile_mise(&resolved, &tools, &apps, target)?;
     let plan = compile_plan(
         &selection.name,
@@ -288,30 +297,34 @@ pub fn record_generated_ownership(
         .ok()
         .map(|bytes| powermise_state::content_fingerprint(&bytes));
     let mut ledger = load_ledger(&layout.ledger_path)?;
-    ledger.record_verified(&generated_config_operation(selection, artifact), observed_fingerprint)?;
+    ledger.record_verified(
+        &generated_config_operation(selection, artifact),
+        observed_fingerprint,
+    )?;
     write_ledger(&layout.ledger_path, &ledger)?;
     Ok(true)
 }
 
 /// Loads the persisted manifest for a selection, if present.
-pub fn load_manifest(layout: &PowermiseLayout, selection: &str) -> Result<Option<GeneratedManifest>, LifecycleError> {
+pub fn load_manifest(
+    layout: &PowermiseLayout,
+    selection: &str,
+) -> Result<Option<GeneratedManifest>, LifecycleError> {
     let path = layout.manifest_path(selection);
     let contents = match fs::read(&path) {
         Ok(contents) => contents,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
         Err(source) => {
-            return Err(LifecycleError::Io {
-                path,
-                source,
-            });
+            return Err(LifecycleError::Io { path, source });
         }
     };
-    let manifest: GeneratedManifest =
-        serde_json::from_slice(&contents).map_err(|source| LifecycleError::State(StateError::Json {
+    let manifest: GeneratedManifest = serde_json::from_slice(&contents).map_err(|source| {
+        LifecycleError::State(StateError::Json {
             operation: "parse generated manifest",
             path,
             source,
-        }))?;
+        })
+    })?;
     Ok(Some(manifest))
 }
 

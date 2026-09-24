@@ -13,7 +13,7 @@ use std::{
 use powermise_compiler::{StubEntry, compile_stubs};
 use powermise_domain::{
     Operation, OperationAction, OperationOwnership, OperationProvider, OperationReversibility,
-    OperationVerification, Platform, ReversibilityKind, ResourceKind, VerificationKind,
+    OperationVerification, Platform, ResourceKind, ReversibilityKind, VerificationKind,
 };
 use powermise_registry::load_tool_catalog;
 use powermise_state::{
@@ -112,8 +112,8 @@ pub fn install_stubs(
         )?;
     }
 
-    let ledger_updated = write_ledger(&layout.ledger_path, &ledger)?
-        != AtomicWriteResult::Unchanged;
+    let ledger_updated =
+        write_ledger(&layout.ledger_path, &ledger)? != AtomicWriteResult::Unchanged;
     Ok(StubInstallReport {
         selection: selection.into(),
         bin_dir,
@@ -209,9 +209,10 @@ fn ensure_writable(
             ),
         });
     }
-    let owned_here = ledger.resources.values().any(|record| {
-        record.resource_id == resource_id && record.selection == selection
-    });
+    let owned_here = ledger
+        .resources
+        .values()
+        .any(|record| record.resource_id == resource_id && record.selection == selection);
     if !owned_here {
         return Err(LifecycleError::Other {
             message: format!(
@@ -331,10 +332,9 @@ mod tests {
         );
         assert!(contents.starts_with("#!/bin/sh\n"));
         assert!(contents.contains("Managed by Powermise for selection `engineering-agents`"));
-        assert!(
-            contents
-                .contains("exec mise x --env powermise-engineering-agents claude-code -- claude \"$@\"")
-        );
+        assert!(contents.contains(
+            "exec mise x --env powermise-engineering-agents claude-code -- claude \"$@\""
+        ));
     }
 
     #[test]
@@ -346,7 +346,11 @@ mod tests {
         );
         assert!(contents.starts_with("@echo off\r\n"));
         assert!(contents.ends_with("%*\r\n"));
-        assert!(contents.contains("mise x --env powermise-engineering-agents npm:@openai/codex -- codex %*"));
+        assert!(
+            contents.contains(
+                "mise x --env powermise-engineering-agents npm:@openai/codex -- codex %*"
+            )
+        );
     }
 
     #[test]

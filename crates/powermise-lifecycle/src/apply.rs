@@ -148,16 +148,16 @@ where
                 let result = match runner.bootstrap_status(&mise_request(&context)) {
                     Ok(status) => {
                         mise_follow_ups.extend(status.follow_up_actions());
-                        let message = match (&bootstrap_outcome, status.follow_up_actions().is_empty())
-                        {
-                            (Some(BootstrapOutcome::Converged), true) => {
-                                "converged by real mise bootstrap"
-                            }
-                            (Some(BootstrapOutcome::Converged), false) => {
-                                "mise bootstrap ran; follow-up work remains"
-                            }
-                            _ => "declared in generated configuration",
-                        };
+                        let message =
+                            match (&bootstrap_outcome, status.follow_up_actions().is_empty()) {
+                                (Some(BootstrapOutcome::Converged), true) => {
+                                    "converged by real mise bootstrap"
+                                }
+                                (Some(BootstrapOutcome::Converged), false) => {
+                                    "mise bootstrap ran; follow-up work remains"
+                                }
+                                _ => "declared in generated configuration",
+                            };
                         operation_result(
                             operation.id.as_str(),
                             OperationOutcome::Succeeded,
@@ -218,11 +218,10 @@ where
     report_progress("persisting run report");
     let run_report = RunReport::new(name, target, results.clone());
     let run_report_path = layout.run_report_path(name);
-    let contents = serde_json::to_vec_pretty(&run_report).map_err(|source| {
-        LifecycleError::Other {
+    let contents =
+        serde_json::to_vec_pretty(&run_report).map_err(|source| LifecycleError::Other {
             message: format!("could not serialize run report: {source}"),
-        }
-    })?;
+        })?;
     powermise_state::write_atomically(&run_report_path, &contents)?;
 
     Ok(ApplyReport {
@@ -238,7 +237,11 @@ where
     })
 }
 
-fn operation_result(operation_id: &str, outcome: OperationOutcome, message: &str) -> OperationResult {
+fn operation_result(
+    operation_id: &str,
+    outcome: OperationOutcome,
+    message: &str,
+) -> OperationResult {
     OperationResult {
         operation_id: operation_id.into(),
         outcome,

@@ -18,3 +18,6 @@ powermise-mise = { path = "../powermise-mise" }
 powermise-providers = { path = "../powermise-providers" }
 powermise-state = { path = "../powermise-state" }
 powermise-lifecycle = { path = "../powermise-lifecycle" }
+
+[lints]
+workspace = true

@@ -77,10 +77,11 @@ impl JsonManagedAdapter {
     }
 
     fn desired_value(&self, request: &ConfigAdapterRequest) -> Result<Value, ConfigAdapterError> {
-        serde_json::from_str::<Value>(&request.managed_block.contents)
-            .map_err(|_| ConfigAdapterError::InvalidManagedBlock {
+        serde_json::from_str::<Value>(&request.managed_block.contents).map_err(|_| {
+            ConfigAdapterError::InvalidManagedBlock {
                 resource_id: request.resource_id.clone(),
-            })
+            }
+        })
     }
 
     fn record<'a>(
@@ -266,11 +267,9 @@ impl ConfigMutator for JsonManagedAdapter {
             .expect("serializing a JSON object cannot fail");
         let after_fingerprint = content_fingerprint(&bytes);
         let result = if removed {
-            write_atomically(&request.path, &bytes).map_err(|source| {
-                ConfigAdapterError::Write {
-                    path: request.path.clone(),
-                    source,
-                }
+            write_atomically(&request.path, &bytes).map_err(|source| ConfigAdapterError::Write {
+                path: request.path.clone(),
+                source,
             })?
         } else {
             AtomicWriteResult::Unchanged
@@ -317,11 +316,7 @@ impl ManagedBlockAdapter {
         }
     }
 
-    fn locate(
-        &self,
-        document: &str,
-        marker: &str,
-    ) -> Option<(usize, usize)> {
+    fn locate(&self, document: &str, marker: &str) -> Option<(usize, usize)> {
         let begin = Self::begin_marker(marker);
         let end = Self::end_marker(marker);
         let begin_index = document.find(&begin)?;
@@ -332,7 +327,10 @@ impl ManagedBlockAdapter {
 
     fn reconcile(&self, request: &ConfigAdapterRequest) -> Result<Vec<u8>, ConfigAdapterError> {
         let mut document = self.read_document(&request.path)?.unwrap_or_default();
-        let block = self.block(&request.managed_block.marker, &request.managed_block.contents);
+        let block = self.block(
+            &request.managed_block.marker,
+            &request.managed_block.contents,
+        );
         if let Some((start, end)) = self.locate(&document, &request.managed_block.marker) {
             document.replace_range(start..end, &block);
         } else {
@@ -356,10 +354,16 @@ impl ConfigMutator for ManagedBlockAdapter {
         let Some(document) = self.read_document(&request.path)? else {
             return Ok(ConfigAdapterCheckOutput {
                 state: ConfigAdapterState::Missing,
-                detail: format!("configuration file `{}` does not exist", request.path.display()),
+                detail: format!(
+                    "configuration file `{}` does not exist",
+                    request.path.display()
+                ),
             });
         };
-        let block = self.block(&request.managed_block.marker, &request.managed_block.contents);
+        let block = self.block(
+            &request.managed_block.marker,
+            &request.managed_block.contents,
+        );
         let Some((start, end)) = self.locate(&document, &request.managed_block.marker) else {
             return Ok(ConfigAdapterCheckOutput {
                 state: ConfigAdapterState::Missing,
@@ -467,11 +471,9 @@ impl ConfigMutator for ManagedBlockAdapter {
         let bytes = document.into_bytes();
         let after_fingerprint = content_fingerprint(&bytes);
         let result = if removed {
-            write_atomically(&request.path, &bytes).map_err(|source| {
-                ConfigAdapterError::Write {
-                    path: request.path.clone(),
-                    source,
-                }
+            write_atomically(&request.path, &bytes).map_err(|source| ConfigAdapterError::Write {
+                path: request.path.clone(),
+                source,
             })?
         } else {
             AtomicWriteResult::Unchanged
@@ -655,11 +657,18 @@ mod tests {
         let adapter = JsonManagedAdapter;
         let path = claude_settings_path(&directory.path);
 
-        let first = adapter.apply(&claude_request(&directory.path, None)).unwrap();
+        let first = adapter
+            .apply(&claude_request(&directory.path, None))
+            .unwrap();
         assert!(first.changed);
         assert!(first.before_fingerprint.is_none());
         let fingerprint = first.after_fingerprint;
-        assert_eq!(fs::read(&path).unwrap(), adapter.reconcile(&claude_request(&directory.path, None)).unwrap());
+        assert_eq!(
+            fs::read(&path).unwrap(),
+            adapter
+                .reconcile(&claude_request(&directory.path, None))
+                .unwrap()
+        );
 
         let second = adapter
             .apply(&claude_request(&directory.path, Some(fingerprint.clone())))
@@ -671,8 +680,7 @@ mod tests {
             .unwrap();
         assert_eq!(check.state, ConfigAdapterState::Current);
 
-        let mut drifted_object: Value =
-            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let mut drifted_object: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
         drifted_object
             .as_object_mut()
             .unwrap()
@@ -692,10 +700,14 @@ mod tests {
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, "{\"userKey\": true}").unwrap();
 
-        let applied = adapter.apply(&claude_request(&directory.path, None)).unwrap();
+        let applied = adapter
+            .apply(&claude_request(&directory.path, None))
+            .unwrap();
         assert!(applied.changed);
 
-        let restored = adapter.restore(&claude_request(&directory.path, None)).unwrap();
+        let restored = adapter
+            .restore(&claude_request(&directory.path, None))
+            .unwrap();
         assert!(restored.changed);
         let contents = fs::read_to_string(&path).unwrap();
         let object: Value = serde_json::from_str(&contents).unwrap();

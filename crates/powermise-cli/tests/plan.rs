@@ -168,7 +168,10 @@ fn assert_fixture_plan(target: &str, selection: &str, expected_marker: &str) {
         String::from_utf8_lossy(&output.stderr)
     );
     let stdout = String::from_utf8(output.stdout).expect("plan output should be UTF-8");
-    assert!(stdout.contains("operations:"), "{target} plan should render operations");
+    assert!(
+        stdout.contains("operations:"),
+        "{target} plan should render operations"
+    );
     assert!(
         stdout.contains(expected_marker),
         "{target} plan should emit `{expected_marker}` operations, got:\n{stdout}"
@@ -182,16 +185,15 @@ fn assert_fixture_plan(target: &str, selection: &str, expected_marker: &str) {
         .map(|entry| entry.expect("entry should be readable").file_name())
         .collect::<Vec<_>>();
     entries_after.sort();
-    assert_eq!(entries_after, entries_before, "{target} plan must not mutate the config dir");
+    assert_eq!(
+        entries_after, entries_before,
+        "{target} plan must not mutate the config dir"
+    );
 }
 
 #[test]
 fn plan_win32_fixture_compiles_with_native_providers() {
-    assert_fixture_plan(
-        "win32",
-        "selections/windows-fixture.toml",
-        "native-winget:",
-    );
+    assert_fixture_plan("win32", "selections/windows-fixture.toml", "native-winget:");
 }
 
 /// Asserts that a Windows-only fixture is explicitly rejected for the distinct

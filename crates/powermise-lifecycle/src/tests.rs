@@ -1,17 +1,16 @@
 //! End-to-end lifecycle tests over isolated temporary layouts.
 use std::{
     error::Error,
-    fmt,
-    fs,
+    fmt, fs,
     path::{Path, PathBuf},
     sync::Mutex,
 };
 
 use powermise_domain::{
     MiseBootstrapApplyOutput, MiseBootstrapApplyRequest, MiseBootstrapStatus, MiseBootstrapTool,
-    MiseDryRunOutput, MiseDryRunRequest, MiseRunner, Operation, OperationAction, OperationOwnership,
-    OperationProvider, OperationReversibility, OperationVerification, Platform, ResourceKind,
-    ReversibilityKind, VerificationKind,
+    MiseDryRunOutput, MiseDryRunRequest, MiseRunner, Operation, OperationAction,
+    OperationOwnership, OperationProvider, OperationReversibility, OperationVerification, Platform,
+    ResourceKind, ReversibilityKind, VerificationKind,
 };
 use powermise_state::{load_ledger, write_ledger};
 
@@ -156,8 +155,15 @@ fn cross_machine_transfer_recreates_desired_state() {
         .import(&root.join("selections/engineering-agents.toml"), None)
         .expect("import should succeed on machine A");
 
-    activate(&layout_a, &paths, "engineering-agents", Platform::Darwin, None, &mise_a)
-        .expect("activate should succeed on machine A");
+    activate(
+        &layout_a,
+        &paths,
+        "engineering-agents",
+        Platform::Darwin,
+        None,
+        &mise_a,
+    )
+    .expect("activate should succeed on machine A");
 
     let exported = SelectionStore::new(&layout_a)
         .export("engineering-agents")
@@ -171,16 +177,29 @@ fn cross_machine_transfer_recreates_desired_state() {
         .import(&transfer_path, None)
         .expect("import should succeed on machine B");
 
-    activate(&layout_b, &paths, "engineering-agents", Platform::Darwin, None, &mise_b)
-        .expect("activate should succeed on machine B");
+    activate(
+        &layout_b,
+        &paths,
+        "engineering-agents",
+        Platform::Darwin,
+        None,
+        &mise_b,
+    )
+    .expect("activate should succeed on machine B");
 
     let generated_a = read_generated_config(&mise_a, "engineering-agents");
     let generated_b = read_generated_config(&mise_b, "engineering-agents");
-    assert_eq!(generated_a, generated_b, "transferred selection must reproduce identical bytes");
+    assert_eq!(
+        generated_a, generated_b,
+        "transferred selection must reproduce identical bytes"
+    );
 
     let manifest_a = fs::read(layout_a.manifest_path("engineering-agents")).unwrap();
     let manifest_b = fs::read(layout_b.manifest_path("engineering-agents")).unwrap();
-    assert_eq!(manifest_a, manifest_b, "manifests must be identical after transfer");
+    assert_eq!(
+        manifest_a, manifest_b,
+        "manifests must be identical after transfer"
+    );
 }
 
 #[test]
@@ -194,43 +213,75 @@ fn activate_diff_prune_and_uninstall_are_ledger_scoped() {
     SelectionStore::new(&layout)
         .import(&root.join("selections/engineering-agents.toml"), None)
         .expect("import should succeed");
-    activate(&layout, &paths, "engineering-agents", Platform::Darwin, None, &mise_config_dir)
-        .expect("activate should succeed");
+    activate(
+        &layout,
+        &paths,
+        "engineering-agents",
+        Platform::Darwin,
+        None,
+        &mise_config_dir,
+    )
+    .expect("activate should succeed");
 
-    let initial = diff(&layout, &paths, "engineering-agents", Platform::Darwin, None, &mise_config_dir)
-        .expect("diff should run");
+    let initial = diff(
+        &layout,
+        &paths,
+        "engineering-agents",
+        Platform::Darwin,
+        None,
+        &mise_config_dir,
+    )
+    .expect("diff should run");
     assert_eq!(
         initial.change.kind,
         powermise_state::GeneratedFileChangeKind::Unchanged,
         "a freshly activated selection should be unchanged"
     );
-    assert!(initial.drift.is_none(), "no drift expected after activation");
+    assert!(
+        initial.drift.is_none(),
+        "no drift expected after activation"
+    );
 
     let config_path = mise_config_dir.join("config.powermise-engineering-agents.toml");
     let before_prune = fs::read(&config_path).unwrap();
 
     let prune_dry = prune(&layout, &mise_config_dir, true).expect("dry-run prune should run");
-    assert!(prune_dry.actions.is_empty(), "managed selection must not be pruned");
-    assert!(!prune_dry.ledger_updated, "dry-run must not touch the ledger");
+    assert!(
+        prune_dry.actions.is_empty(),
+        "managed selection must not be pruned"
+    );
+    assert!(
+        !prune_dry.ledger_updated,
+        "dry-run must not touch the ledger"
+    );
     assert_eq!(
         fs::read(&config_path).unwrap(),
         before_prune,
         "dry-run must not modify the generated configuration"
     );
 
-    let uninstall_dry =
-        uninstall(&layout, "engineering-agents", &mise_config_dir, true).expect("dry-run uninstall");
-    assert!(uninstall_dry.dry_run, "uninstall should stay in dry-run mode");
+    let uninstall_dry = uninstall(&layout, "engineering-agents", &mise_config_dir, true)
+        .expect("dry-run uninstall");
+    assert!(
+        uninstall_dry.dry_run,
+        "uninstall should stay in dry-run mode"
+    );
     assert!(
         !uninstall_dry.actions.is_empty(),
         "dry-run uninstall should report the actions it would take"
     );
-    assert!(config_path.exists(), "dry-run uninstall must not remove the configuration");
+    assert!(
+        config_path.exists(),
+        "dry-run uninstall must not remove the configuration"
+    );
 
     let uninstall_real =
         uninstall(&layout, "engineering-agents", &mise_config_dir, false).expect("real uninstall");
     assert!(!uninstall_real.actions.is_empty());
-    assert!(!config_path.exists(), "uninstall must remove the generated configuration");
+    assert!(
+        !config_path.exists(),
+        "uninstall must remove the generated configuration"
+    );
     assert!(
         !layout.manifest_path("engineering-agents").exists(),
         "uninstall must remove the manifest"
@@ -245,8 +296,15 @@ fn activate_diff_prune_and_uninstall_are_ledger_scoped() {
         "uninstall must remove the ownership entry"
     );
 
-    let after = diff(&layout, &paths, "engineering-agents", Platform::Darwin, None, &mise_config_dir)
-        .expect("diff should run after uninstall");
+    let after = diff(
+        &layout,
+        &paths,
+        "engineering-agents",
+        Platform::Darwin,
+        None,
+        &mise_config_dir,
+    )
+    .expect("diff should run after uninstall");
     assert_eq!(
         after.change.kind,
         powermise_state::GeneratedFileChangeKind::Create,
@@ -312,7 +370,10 @@ fn apply_converges_with_a_real_mise_bootstrap() {
         report.mise_follow_ups.is_empty(),
         "a converged selection must surface no mise follow-ups"
     );
-    assert!(report.run_report_path.exists(), "run report must be persisted");
+    assert!(
+        report.run_report_path.exists(),
+        "run report must be persisted"
+    );
 
     let ledger = load_ledger(&layout.ledger_path).expect("ledger should load");
     let owned = ledger
@@ -324,7 +385,11 @@ fn apply_converges_with_a_real_mise_bootstrap() {
                 && record.resource_kind == ResourceKind::GeneratedFile
         })
         .collect::<Vec<_>>();
-    assert_eq!(owned.len(), 1, "apply must record generated-config ownership");
+    assert_eq!(
+        owned.len(),
+        1,
+        "apply must record generated-config ownership"
+    );
 
     let findings = doctor(
         &layout,
@@ -335,7 +400,10 @@ fn apply_converges_with_a_real_mise_bootstrap() {
         &mise_config_dir,
         Path::new("mise"),
     );
-    assert!(!has_errors(&findings), "doctor should report no errors after apply");
+    assert!(
+        !has_errors(&findings),
+        "doctor should report no errors after apply"
+    );
 }
 
 #[test]
@@ -370,7 +438,9 @@ fn apply_runs_the_real_bootstrap_before_verifying_operations() {
         .position(|event| event == "bootstrap:powermise-engineering-agents")
         .expect("the real bootstrap should have been invoked");
     assert!(
-        events[bootstrap_index + 1..].iter().all(|event| event == "status"),
+        events[bootstrap_index + 1..]
+            .iter()
+            .all(|event| event == "status"),
         "every post-bootstrap verification must happen after the real bootstrap"
     );
 }
@@ -404,14 +474,22 @@ fn apply_without_bootstrap_stays_declare_only_and_surfaces_follow_ups() {
     };
     let report = apply(&runner, &options, "engineering-agents").expect("apply should succeed");
 
-    assert!(runner.bootstrap_calls().is_empty(), "--skip-bootstrap must not invoke a real mise bootstrap");
+    assert!(
+        runner.bootstrap_calls().is_empty(),
+        "--skip-bootstrap must not invoke a real mise bootstrap"
+    );
     assert_eq!(
         report.bootstrap,
-        BootstrapOutcome::Skipped { reason: "declared only (--skip-bootstrap)".into() },
+        BootstrapOutcome::Skipped {
+            reason: "declared only (--skip-bootstrap)".into()
+        },
         "declare-only mode must be reported as skipped"
     );
     assert!(
-        report.mise_follow_ups.iter().any(|action| action.starts_with("node")),
+        report
+            .mise_follow_ups
+            .iter()
+            .any(|action| action.starts_with("node")),
         "declare-only mode must surface pending tool installs as follow-ups"
     );
     assert!(
@@ -432,7 +510,10 @@ fn apply_without_bootstrap_stays_declare_only_and_surfaces_follow_ups() {
             .get("_powermise")
             .expect("managed blocks should live under _powermise");
         assert!(
-            managed.as_object().map(|blocks| !blocks.is_empty()).unwrap_or(false),
+            managed
+                .as_object()
+                .map(|blocks| !blocks.is_empty())
+                .unwrap_or(false),
             "claude config-adapter operations should write managed blocks even without a real bootstrap"
         );
     }
@@ -475,29 +556,39 @@ fn apply_reports_failure_when_the_real_mise_bootstrap_fails() {
         failure.contains("fake mise error"),
         "the bootstrap failure must carry the underlying cause"
     );
-    assert_eq!(runner.bootstrap_calls().len(), 1, "exactly one real bootstrap attempt");
+    assert_eq!(
+        runner.bootstrap_calls().len(),
+        1,
+        "exactly one real bootstrap attempt"
+    );
+    assert!(
+        report.results.iter().any(|result| {
+            result
+                .message
+                .as_deref()
+                .is_some_and(|message| message.starts_with("real mise bootstrap did not converge"))
+                && result.outcome == powermise_domain::OperationOutcome::Failed
+        }),
+        "mise-owned operations must be marked failed when the bootstrap fails"
+    );
+    assert!(
+        report
+            .recovery_guidance
+            .iter()
+            .any(|guidance| guidance.contains("mise bootstrap --yes")),
+        "failure-boundary guidance must explain how to recover from the failed bootstrap"
+    );
     assert!(
         report
             .results
             .iter()
-            .any(|result| {
-                result
-                    .message
-                    .as_deref()
-                    .is_some_and(|message| message.starts_with("real mise bootstrap did not converge"))
-                    && result.outcome == powermise_domain::OperationOutcome::Failed
-            }),
-        "mise-owned operations must be marked failed when the bootstrap fails"
-    );
-    assert!(
-        report.recovery_guidance.iter().any(|guidance| guidance.contains("mise bootstrap --yes")),
-        "failure-boundary guidance must explain how to recover from the failed bootstrap"
-    );
-    assert!(
-        report.results.iter().any(|result| result.outcome == powermise_domain::OperationOutcome::Succeeded),
+            .any(|result| result.outcome == powermise_domain::OperationOutcome::Succeeded),
         "independent config-adapter and native operations must still be attempted"
     );
-    assert!(report.run_report_path.exists(), "the run report must persist the partial failure");
+    assert!(
+        report.run_report_path.exists(),
+        "the run report must persist the partial failure"
+    );
 }
 
 #[test]
@@ -515,10 +606,7 @@ fn apply_invokes_the_progress_reporter_for_each_phase() {
 
     let progress_messages = std::sync::Mutex::new(Vec::new());
     let progress = |message: &str| {
-        progress_messages
-            .lock()
-            .unwrap()
-            .push(message.to_owned());
+        progress_messages.lock().unwrap().push(message.to_owned());
     };
 
     let options = ApplyOptions {
@@ -531,16 +619,19 @@ fn apply_invokes_the_progress_reporter_for_each_phase() {
         run_mise_bootstrap: true,
         progress: Some(&progress),
     };
-    apply(&FakeRunner::default(), &options, "engineering-agents")
-        .expect("apply should succeed");
+    apply(&FakeRunner::default(), &options, "engineering-agents").expect("apply should succeed");
 
     let messages = progress_messages.into_inner().unwrap();
     assert!(
-        messages.iter().any(|message| message == "writing generated configuration"),
+        messages
+            .iter()
+            .any(|message| message == "writing generated configuration"),
         "progress should report the configuration write phase"
     );
     assert!(
-        messages.iter().any(|message| message == "recording ownership ledger"),
+        messages
+            .iter()
+            .any(|message| message == "recording ownership ledger"),
         "progress should report the ledger phase"
     );
     assert!(
@@ -550,7 +641,9 @@ fn apply_invokes_the_progress_reporter_for_each_phase() {
         "progress should report the real bootstrap convergence phase"
     );
     assert!(
-        messages.iter().any(|message| message.starts_with("applying ")),
+        messages
+            .iter()
+            .any(|message| message.starts_with("applying ")),
         "progress should report each operation"
     );
     assert!(
@@ -582,10 +675,24 @@ fn user_owned_global_mise_config_survives_all_commands() {
     let runner = FakeRunner::default();
     let target = Platform::Darwin;
 
-    activate(&layout, &paths, "engineering-agents", target, None, &mise_config_dir)
-        .expect("activate should succeed");
-    let _ = diff(&layout, &paths, "engineering-agents", target, None, &mise_config_dir)
-        .expect("diff should run");
+    activate(
+        &layout,
+        &paths,
+        "engineering-agents",
+        target,
+        None,
+        &mise_config_dir,
+    )
+    .expect("activate should succeed");
+    let _ = diff(
+        &layout,
+        &paths,
+        "engineering-agents",
+        target,
+        None,
+        &mise_config_dir,
+    )
+    .expect("diff should run");
     let _ = doctor(
         &layout,
         &paths,
@@ -657,25 +764,50 @@ fn status_reports_expected_state_after_apply_and_surfaces_follow_ups() {
     };
     apply(&runner, &options, "engineering-agents").expect("apply should succeed");
 
-    let report = status(&runner, &layout, &paths, "engineering-agents", Platform::Darwin, None, &mise_config_dir)
-        .expect("status should run");
+    let report = status(
+        &runner,
+        &layout,
+        &paths,
+        "engineering-agents",
+        Platform::Darwin,
+        None,
+        &mise_config_dir,
+    )
+    .expect("status should run");
     assert_eq!(report.environment, "powermise-engineering-agents");
-    assert!(report.ledger_owned, "status must observe the ownership entry");
-    assert!(report.run_report_exists, "status must observe the run report");
+    assert!(
+        report.ledger_owned,
+        "status must observe the ownership entry"
+    );
+    assert!(
+        report.run_report_exists,
+        "status must observe the run report"
+    );
     assert_eq!(
         report.change.kind,
         powermise_state::GeneratedFileChangeKind::Unchanged,
         "a freshly applied selection should be unchanged"
     );
     assert!(report.drift.is_none(), "no drift expected after apply");
-    assert!(report.native.is_empty(), "darwin selection has no native operations");
+    assert!(
+        report.native.is_empty(),
+        "darwin selection has no native operations"
+    );
     assert!(
         !report.satisfied,
         "pending mise follow-ups mean the selection is not yet satisfied"
     );
 
-    let satisfied = status(&FakeRunner::default(), &layout, &paths, "engineering-agents", Platform::Darwin, None, &mise_config_dir)
-        .expect("status should run");
+    let satisfied = status(
+        &FakeRunner::default(),
+        &layout,
+        &paths,
+        "engineering-agents",
+        Platform::Darwin,
+        None,
+        &mise_config_dir,
+    )
+    .expect("status should run");
     assert!(
         satisfied.satisfied,
         "a fully converged selection with no follow-ups should be satisfied"
@@ -803,7 +935,9 @@ fn stubs_install_idempotently_and_remove_is_ledger_scoped() {
 
     let claude_stub = fs::read_to_string(bin_dir.join("claude")).unwrap();
     assert!(
-        claude_stub.contains("exec mise x --env powermise-engineering-agents claude-code -- claude \"$@\""),
+        claude_stub.contains(
+            "exec mise x --env powermise-engineering-agents claude-code -- claude \"$@\""
+        ),
         "stub must lazily run the tool through the selection environment, got: {claude_stub}"
     );
     let rg_stub = fs::read_to_string(bin_dir.join("rg")).unwrap();
@@ -825,7 +959,11 @@ fn stubs_install_idempotently_and_remove_is_ledger_scoped() {
         .values()
         .filter(|record| record.resource_kind == ResourceKind::StubScript)
         .count();
-    assert_eq!(stub_records, expected_commands.len(), "every stub must be ledger-owned");
+    assert_eq!(
+        stub_records,
+        expected_commands.len(),
+        "every stub must be ledger-owned"
+    );
 
     let second = install_stubs(
         &layout,
@@ -849,7 +987,10 @@ fn stubs_install_idempotently_and_remove_is_ledger_scoped() {
     let real = remove_stubs(&layout, "engineering-agents", false).expect("real remove");
     assert!(!real.dry_run);
     assert_eq!(real.removed.len(), expected_commands.len());
-    assert!(!bin_dir.join("rg").exists(), "real remove must delete stubs");
+    assert!(
+        !bin_dir.join("rg").exists(),
+        "real remove must delete stubs"
+    );
     assert!(
         mise_config_dir
             .join("config.powermise-engineering-agents.toml")
@@ -919,7 +1060,11 @@ fn stub_install_refuses_files_owned_by_another_selection() {
         Some(&bin_dir),
     )
     .expect_err("a stub owned by another selection must be refused");
-    assert!(error.to_string().contains("already owned by selection `other-selection`"));
+    assert!(
+        error
+            .to_string()
+            .contains("already owned by selection `other-selection`")
+    );
 }
 
 #[test]
@@ -938,8 +1083,8 @@ fn uninstall_and_prune_remove_ledger_owned_stubs() {
     )
     .expect("stub install should succeed");
 
-    let dry_uninstall =
-        uninstall(&layout, "engineering-agents", &mise_config_dir, true).expect("dry-run uninstall");
+    let dry_uninstall = uninstall(&layout, "engineering-agents", &mise_config_dir, true)
+        .expect("dry-run uninstall");
     assert!(
         dry_uninstall
             .actions
@@ -947,10 +1092,16 @@ fn uninstall_and_prune_remove_ledger_owned_stubs() {
             .any(|action| action.path.parent() == Some(bin_dir.as_path())),
         "dry-run uninstall must report the stubs it would remove"
     );
-    assert!(bin_dir.join("claude").exists(), "dry-run must not remove stubs");
+    assert!(
+        bin_dir.join("claude").exists(),
+        "dry-run must not remove stubs"
+    );
 
     uninstall(&layout, "engineering-agents", &mise_config_dir, false).expect("real uninstall");
-    assert!(!bin_dir.join("claude").exists(), "uninstall must remove stubs");
+    assert!(
+        !bin_dir.join("claude").exists(),
+        "uninstall must remove stubs"
+    );
     assert!(!bin_dir.join("rg").exists(), "uninstall must remove stubs");
     let ledger = load_ledger(&layout.ledger_path).unwrap();
     assert!(
@@ -994,9 +1145,18 @@ fn uninstall_and_prune_remove_ledger_owned_stubs() {
             .any(|action| matches!(action, crate::PruneAction::Remove { path, .. } if path.parent() == Some(bin_dir.as_path()))),
         "dry-run prune must report the stubs it would remove"
     );
-    assert!(bin_dir.join("claude").exists(), "dry-run prune must not remove stubs");
+    assert!(
+        bin_dir.join("claude").exists(),
+        "dry-run prune must not remove stubs"
+    );
 
     prune(&layout, &mise_config_dir, false).expect("real prune");
-    assert!(!bin_dir.join("claude").exists(), "prune must remove stale stubs");
-    assert!(!bin_dir.join("rg").exists(), "prune must remove stale stubs");
+    assert!(
+        !bin_dir.join("claude").exists(),
+        "prune must remove stale stubs"
+    );
+    assert!(
+        !bin_dir.join("rg").exists(),
+        "prune must remove stale stubs"
+    );
 }

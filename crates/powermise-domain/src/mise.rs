@@ -1,8 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    error::Error,
-    path::PathBuf,
-};
+use std::{collections::BTreeMap, error::Error, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -81,7 +77,10 @@ impl MiseBootstrapStatus {
             .iter()
             .filter(|package| package.state != "installed")
             .map(|package| {
-                format!("{}:{} {}", package.source, package.package, package.requested_version)
+                format!(
+                    "{}:{} {}",
+                    package.source, package.package, package.requested_version
+                )
             })
             .collect::<Vec<_>>();
         actions.extend(
@@ -224,10 +223,7 @@ mod tests {
         assert_eq!(status.tools.len(), 2);
         assert_eq!(
             status.follow_up_actions(),
-            [
-                "brew:jq latest",
-                "node@24.19.0"
-            ]
+            ["brew:jq latest", "node@24.19.0"]
         );
     }
 

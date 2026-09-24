@@ -52,7 +52,14 @@ fn shell_install_is_idempotent_and_uninstall_is_dry_run_first() {
     let install = Command::new(env!("CARGO_BIN_EXE_powermise"))
         .current_dir(&repository)
         .env("HOME", &home.0)
-        .args(["shell", "install", "--name", "engineering-agents", "--shell", "zsh"])
+        .args([
+            "shell",
+            "install",
+            "--name",
+            "engineering-agents",
+            "--shell",
+            "zsh",
+        ])
         .output()
         .expect("shell install should execute");
     assert!(
@@ -69,7 +76,14 @@ fn shell_install_is_idempotent_and_uninstall_is_dry_run_first() {
     let second = Command::new(env!("CARGO_BIN_EXE_powermise"))
         .current_dir(&repository)
         .env("HOME", &home.0)
-        .args(["shell", "install", "--name", "engineering-agents", "--shell", "zsh"])
+        .args([
+            "shell",
+            "install",
+            "--name",
+            "engineering-agents",
+            "--shell",
+            "zsh",
+        ])
         .output()
         .expect("second shell install should execute");
     assert!(second.status.success());
@@ -83,7 +97,14 @@ fn shell_install_is_idempotent_and_uninstall_is_dry_run_first() {
     let dry = Command::new(env!("CARGO_BIN_EXE_powermise"))
         .current_dir(&repository)
         .env("HOME", &home.0)
-        .args(["shell", "uninstall", "--name", "engineering-agents", "--shell", "zsh"])
+        .args([
+            "shell",
+            "uninstall",
+            "--name",
+            "engineering-agents",
+            "--shell",
+            "zsh",
+        ])
         .output()
         .expect("shell uninstall should execute");
     assert!(dry.status.success());
@@ -97,7 +118,15 @@ fn shell_install_is_idempotent_and_uninstall_is_dry_run_first() {
     let real = Command::new(env!("CARGO_BIN_EXE_powermise"))
         .current_dir(&repository)
         .env("HOME", &home.0)
-        .args(["shell", "uninstall", "--name", "engineering-agents", "--shell", "zsh", "--yes"])
+        .args([
+            "shell",
+            "uninstall",
+            "--name",
+            "engineering-agents",
+            "--shell",
+            "zsh",
+            "--yes",
+        ])
         .output()
         .expect("real shell uninstall should execute");
     assert!(real.status.success());
@@ -114,7 +143,16 @@ fn shell_install_json_reports_rc_path_and_inserted() {
     let output = Command::new(env!("CARGO_BIN_EXE_powermise"))
         .current_dir(&repository)
         .env("HOME", &home.0)
-        .args(["shell", "install", "--name", "engineering-agents", "--shell", "bash", "--output", "json"])
+        .args([
+            "shell",
+            "install",
+            "--name",
+            "engineering-agents",
+            "--shell",
+            "bash",
+            "--output",
+            "json",
+        ])
         .output()
         .expect("shell install should execute");
     assert!(output.status.success());
@@ -169,7 +207,9 @@ fn interactive_flow_writes_the_same_selection_model() {
         .expect("stdin should be piped")
         .write_all(b"1,3\n")
         .expect("answers should be written");
-    let output = child.wait_with_output().expect("interactive flow should finish");
+    let output = child
+        .wait_with_output()
+        .expect("interactive flow should finish");
 
     assert!(
         output.status.success(),

@@ -28,7 +28,9 @@ pub enum NativeProviderError {
     },
     #[error("verified script requires a pinned immutable source URL and SHA-256")]
     UnverifiedScript,
-    #[error("verified script artifact `{artifact}` does not match pinned SHA-256 `{expected}`; got `{actual}`")]
+    #[error(
+        "verified script artifact `{artifact}` does not match pinned SHA-256 `{expected}`; got `{actual}`"
+    )]
     IntegrityMismatch {
         artifact: PathBuf,
         expected: String,
@@ -44,10 +46,7 @@ pub enum NativeProviderError {
     },
 }
 
-fn run(
-    executable: &str,
-    arguments: &[String],
-) -> Result<Output, NativeProviderError> {
+fn run(executable: &str, arguments: &[String]) -> Result<Output, NativeProviderError> {
     let output = Command::new(executable)
         .args(arguments)
         .output()
@@ -86,7 +85,12 @@ fn required(provider: OperationProvider) -> Result<(), NativeProviderError> {
 
 /// The exact argument array for a noninteractive winget presence check.
 pub fn winget_check_args(package: &str) -> Vec<String> {
-    vec!["list".into(), "--id".into(), package.into(), "--exact".into()]
+    vec![
+        "list".into(),
+        "--id".into(),
+        package.into(),
+        "--exact".into(),
+    ]
 }
 
 /// The exact argument array for a noninteractive winget install.
@@ -114,7 +118,12 @@ pub fn scoop_install_args(package: &str) -> Vec<String> {
 
 /// The exact argument array for a global npm presence check.
 pub fn npm_check_args(package: &str) -> Vec<String> {
-    vec!["ls".into(), "--global".into(), "--depth=0".into(), package.into()]
+    vec![
+        "ls".into(),
+        "--global".into(),
+        "--depth=0".into(),
+        package.into(),
+    ]
 }
 
 /// The exact argument array for a global npm install.
@@ -162,7 +171,9 @@ pub fn native_check_command(
         OperationProvider::Scoop => ("scoop", scoop_check_args(package)),
         OperationProvider::Npm => ("npm", npm_check_args(package)),
         OperationProvider::VerifiedScript => {
-            return Ok(format!("verify pinned immutable source and SHA-256 for `{package}`"));
+            return Ok(format!(
+                "verify pinned immutable source and SHA-256 for `{package}`"
+            ));
         }
         _ => unreachable!("required() rejects unsupported kinds"),
     };
@@ -227,11 +238,7 @@ impl NativeInstaller for WingetProvider {
         required(request.provider)?;
         Ok(NativeApplyOutput {
             changed: true,
-            message: native_plan_command(
-                request.provider,
-                &request.package,
-                &request.version,
-            )?,
+            message: native_plan_command(request.provider, &request.package, &request.version)?,
         })
     }
 
@@ -301,11 +308,7 @@ impl NativeInstaller for ScoopProvider {
         required(request.provider)?;
         Ok(NativeApplyOutput {
             changed: true,
-            message: native_plan_command(
-                request.provider,
-                &request.package,
-                &request.version,
-            )?,
+            message: native_plan_command(request.provider, &request.package, &request.version)?,
         })
     }
 
@@ -374,11 +377,7 @@ impl NativeInstaller for NpmProvider {
         required(request.provider)?;
         Ok(NativeApplyOutput {
             changed: true,
-            message: native_plan_command(
-                request.provider,
-                &request.package,
-                &request.version,
-            )?,
+            message: native_plan_command(request.provider, &request.package, &request.version)?,
         })
     }
 
@@ -420,7 +419,11 @@ pub struct VerifiedScriptProvider {
 }
 
 impl VerifiedScriptProvider {
-    pub fn new(url: impl Into<String>, sha256: impl Into<String>, shell: impl Into<String>) -> Self {
+    pub fn new(
+        url: impl Into<String>,
+        sha256: impl Into<String>,
+        shell: impl Into<String>,
+    ) -> Self {
         let sha256 = sha256.into();
         Self {
             url: url.into(),
@@ -431,7 +434,8 @@ impl VerifiedScriptProvider {
     }
 
     fn artifact_path(&self) -> PathBuf {
-        self.artifact_dir.join(format!("{}-{}", self.sha256, self.staged_name()))
+        self.artifact_dir
+            .join(format!("{}-{}", self.sha256, self.staged_name()))
     }
 
     fn staged_name(&self) -> String {
@@ -498,7 +502,11 @@ impl NativeInstaller for VerifiedScriptProvider {
             detail: format!(
                 "verified script artifact for `{}` is {}",
                 request.package,
-                if present { "staged and integrity-verified" } else { "not staged" }
+                if present {
+                    "staged and integrity-verified"
+                } else {
+                    "not staged"
+                }
             ),
         })
     }
@@ -621,13 +629,18 @@ mod tests {
                 "--accept-source-agreements",
             ]
         );
-        assert_eq!(winget_check_args("Git.Git"), ["list", "--id", "Git.Git", "--exact"]);
+        assert_eq!(
+            winget_check_args("Git.Git"),
+            ["list", "--id", "Git.Git", "--exact"]
+        );
     }
 
     #[test]
     fn plan_commands_are_non_mutating_and_rendered() {
         let winget = WingetProvider::default();
-        let plan = winget.plan(&request(OperationProvider::Winget, "Git.Git")).unwrap();
+        let plan = winget
+            .plan(&request(OperationProvider::Winget, "Git.Git"))
+            .unwrap();
         assert!(plan.changed);
         assert_eq!(
             plan.message,
@@ -638,7 +651,10 @@ mod tests {
         let plan = npm
             .plan(&request(OperationProvider::Npm, "@openai/codex"))
             .unwrap();
-        assert!(plan.message.starts_with("npm install --global @openai/codex"));
+        assert!(
+            plan.message
+                .starts_with("npm install --global @openai/codex")
+        );
     }
 
     #[test]
@@ -652,7 +668,9 @@ mod tests {
 
         assert!(matches!(
             winget.check(&request),
-            Err(NativeProviderError::UnsupportedKind(OperationProvider::MiseTools))
+            Err(NativeProviderError::UnsupportedKind(
+                OperationProvider::MiseTools
+            ))
         ));
     }
 
@@ -661,22 +679,24 @@ mod tests {
         let mut installer = fake::FakeInstaller::default();
         installer.mark_present("git");
 
-        assert!(installer
-            .check(&request(OperationProvider::Winget, "git"))
-            .unwrap()
-            .present);
-        assert!(!installer
-            .check(&request(OperationProvider::Winget, "curl"))
-            .unwrap()
-            .present);
+        assert!(
+            installer
+                .check(&request(OperationProvider::Winget, "git"))
+                .unwrap()
+                .present
+        );
+        assert!(
+            !installer
+                .check(&request(OperationProvider::Winget, "curl"))
+                .unwrap()
+                .present
+        );
     }
 
     #[test]
     fn sha256_verification_matches_pinned_digest() {
-        let directory = std::env::temp_dir().join(format!(
-            "powermise-verify-test-{}",
-            std::process::id()
-        ));
+        let directory =
+            std::env::temp_dir().join(format!("powermise-verify-test-{}", std::process::id()));
         fs::create_dir_all(&directory).unwrap();
         let artifact = directory.join("script.sh");
         fs::write(&artifact, b"#!/bin/sh\nexit 0\n").unwrap();

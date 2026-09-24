@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.2",
   "scripts": {
+    "check": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets --locked && bun run web:check",
+    "build": "cargo build --workspace --locked && bun run web:build",
+    "build:release": "cargo build --workspace --locked --release",
+    "test": "cargo test --workspace --locked",
+    "fmt": "cargo fmt --all",
     "web:dev": "bun run --cwd apps/web dev --host",
     "web:check": "bun run --cwd apps/web check",
     "web:build": "bun run --cwd apps/web build",
+    "clean": "cargo clean && rm -rf apps/web/dist apps/web/.astro",
     "test:mise-spike": "scripts/verify-mise-spike.sh"
   },
   "workspaces": ["apps/*"]

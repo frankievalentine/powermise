@@ -6,9 +6,7 @@ use powermise_domain::Platform;
 use powermise_mise::MiseExecutable;
 use powermise_state::{content_fingerprint, load_ledger};
 
-use crate::{
-    CatalogPaths, PowermiseLayout, SelectionStore, compile_context, load_manifest,
-};
+use crate::{CatalogPaths, PowermiseLayout, SelectionStore, compile_context, load_manifest};
 
 /// Severity of a doctor finding.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -85,15 +83,16 @@ pub fn doctor(
                 Ok(Some(manifest)) => {
                     let config_path = context.artifact.config_path(mise_config_dir);
                     match std::fs::read(&config_path) {
-                        Ok(contents) if content_fingerprint(&contents) != manifest.content_sha256 => {
+                        Ok(contents)
+                            if content_fingerprint(&contents) != manifest.content_sha256 =>
+                        {
                             findings.push(Finding::warning(format!(
                                 "generated configuration `{}` drifted from its manifest",
                                 config_path.display()
                             )));
                         }
-                        Ok(_) => findings.push(Finding::ok(
-                            "generated configuration matches its manifest",
-                        )),
+                        Ok(_) => findings
+                            .push(Finding::ok("generated configuration matches its manifest")),
                         Err(source) if source.kind() == std::io::ErrorKind::NotFound => {
                             findings.push(Finding::warning(format!(
                                 "generated configuration `{}` is missing despite a manifest",
@@ -108,12 +107,14 @@ pub fn doctor(
                 Ok(None) => findings.push(Finding::warning(format!(
                     "no manifest recorded for `{name}`; run `powermise selection activate`"
                 ))),
-                Err(error) => findings.push(Finding::error(format!(
-                    "could not load manifest: {error}"
-                ))),
+                Err(error) => {
+                    findings.push(Finding::error(format!("could not load manifest: {error}")))
+                }
             }
         }
-        Err(error) => findings.push(Finding::error(format!("selection does not compile: {error}"))),
+        Err(error) => findings.push(Finding::error(format!(
+            "selection does not compile: {error}"
+        ))),
     }
 
     match load_ledger(&layout.ledger_path) {

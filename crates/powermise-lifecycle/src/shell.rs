@@ -291,8 +291,14 @@ mod tests {
         let rc = fs::read_to_string(&rc_path).unwrap();
         assert!(!rc.contains(&start_marker("engineering-agents")));
         assert!(!rc.contains("MISE_ENV=powermise-engineering-agents"));
-        assert!(rc.contains("# my own alias"), "user content must be preserved");
-        assert!(rc.contains("alias g='git'"), "user content must be preserved");
+        assert!(
+            rc.contains("# my own alias"),
+            "user content must be preserved"
+        );
+        assert!(
+            rc.contains("alias g='git'"),
+            "user content must be preserved"
+        );
     }
 
     #[test]
@@ -315,8 +321,9 @@ mod tests {
     #[test]
     fn install_writes_a_powershell_block() {
         let home = home_dir();
-        let report = install_shell_integration(&Shell::Powershell, "engineering-agents", Some(&home))
-            .expect("install should succeed");
+        let report =
+            install_shell_integration(&Shell::Powershell, "engineering-agents", Some(&home))
+                .expect("install should succeed");
         assert!(report.inserted);
         assert_eq!(
             report.rc_path,
@@ -334,8 +341,9 @@ mod tests {
         let home = home_dir();
         install_shell_integration(&Shell::Powershell, "engineering-agents", Some(&home))
             .expect("first install should succeed");
-        let report = install_shell_integration(&Shell::Powershell, "engineering-agents", Some(&home))
-            .expect("second install should succeed");
+        let report =
+            install_shell_integration(&Shell::Powershell, "engineering-agents", Some(&home))
+                .expect("second install should succeed");
         assert!(!report.inserted, "a repeated install must be a no-op");
         let profile = fs::read_to_string(&report.rc_path).unwrap();
         let occurrences = profile.matches(&start_marker("engineering-agents")).count();
@@ -347,12 +355,20 @@ mod tests {
         let home = home_dir();
         let profile_path = Shell::Powershell.rc_path(Some(&home)).unwrap();
         fs::create_dir_all(profile_path.parent().unwrap()).unwrap();
-        fs::write(&profile_path, "# my own profile\nSet-PSReadLineOption -HistoryNoDuplicates\n").unwrap();
+        fs::write(
+            &profile_path,
+            "# my own profile\nSet-PSReadLineOption -HistoryNoDuplicates\n",
+        )
+        .unwrap();
         install_shell_integration(&Shell::Powershell, "engineering-agents", Some(&home))
             .expect("install should succeed");
-        let report =
-            uninstall_shell_integration(&Shell::Powershell, "engineering-agents", Some(&home), true)
-                .expect("uninstall should succeed");
+        let report = uninstall_shell_integration(
+            &Shell::Powershell,
+            "engineering-agents",
+            Some(&home),
+            true,
+        )
+        .expect("uninstall should succeed");
         assert!(report.removed);
         let profile = fs::read_to_string(&profile_path).unwrap();
         assert!(!profile.contains(&start_marker("engineering-agents")));

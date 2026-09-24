@@ -92,14 +92,24 @@ pub trait ConfigMutator {
     type Error: Error + Send + Sync + 'static;
 
     /// Reports whether the managed block is present, current, or drifted.
-    fn check(&self, request: &ConfigAdapterRequest) -> Result<ConfigAdapterCheckOutput, Self::Error>;
+    fn check(
+        &self,
+        request: &ConfigAdapterRequest,
+    ) -> Result<ConfigAdapterCheckOutput, Self::Error>;
 
     /// Computes the would-be apply outcome without mutating the file.
-    fn plan(&self, request: &ConfigAdapterRequest) -> Result<ConfigAdapterApplyOutput, Self::Error>;
+    fn plan(&self, request: &ConfigAdapterRequest)
+    -> Result<ConfigAdapterApplyOutput, Self::Error>;
 
     /// Reconciles the managed block and returns before/after fingerprints.
-    fn apply(&self, request: &ConfigAdapterRequest) -> Result<ConfigAdapterApplyOutput, Self::Error>;
+    fn apply(
+        &self,
+        request: &ConfigAdapterRequest,
+    ) -> Result<ConfigAdapterApplyOutput, Self::Error>;
 
     /// Removes the managed block, restoring the file to its prior state.
-    fn restore(&self, request: &ConfigAdapterRequest) -> Result<ConfigAdapterApplyOutput, Self::Error>;
+    fn restore(
+        &self,
+        request: &ConfigAdapterRequest,
+    ) -> Result<ConfigAdapterApplyOutput, Self::Error>;
 }

@@ -29,11 +29,11 @@ where
     SelectionStore::new(layout).read(name)?;
     let context = compile_context(paths, &layout.selection_path(name), target, machine_role)?;
     let environment = context.artifact.manifest().environment.clone();
-    let status = runner.exec(&environment, command).map_err(|error| {
-        LifecycleError::Other {
+    let status = runner
+        .exec(&environment, command)
+        .map_err(|error| LifecycleError::Other {
             message: format!("mise exec failed: {error}"),
-        }
-    })?;
+        })?;
     Ok(ExecReport {
         selection: name.into(),
         environment,

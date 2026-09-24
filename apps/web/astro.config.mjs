@@ -7,11 +7,9 @@ import starlightThemeBlack from 'starlight-theme-black';
 export default defineConfig({
   site: 'https://powermise.dev',
   vite: {
-    optimizeDeps: {
-      include: ['three'],
-    },
     build: {
-      cssMinify: 'esbuild'
+      cssMinify: 'esbuild',
+      chunkSizeWarningLimit: 500
     },
     resolve: {
       alias: {

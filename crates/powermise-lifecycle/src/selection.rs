@@ -26,12 +26,11 @@ impl<'a> SelectionStore<'a> {
                 path,
             });
         }
-        let contents = toml::to_string(selection).map_err(|source| {
-            LifecycleError::TomlSerialize {
+        let contents =
+            toml::to_string(selection).map_err(|source| LifecycleError::TomlSerialize {
                 path: path.clone(),
                 source,
-            }
-        })?;
+            })?;
         fs::write(&path, contents).map_err(|source| LifecycleError::Io {
             path: path.clone(),
             source,

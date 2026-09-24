@@ -29,9 +29,8 @@ pub fn run_interactive_selection(
     if harness_indices.is_empty() {
         return Err("no harnesses selected; a selection requires at least one harness".into());
     }
-    let harness_ids = map_indices_to_ids(&harness_indices, &catalog.harnesses, |harness| {
-        &harness.id
-    });
+    let harness_ids =
+        map_indices_to_ids(&harness_indices, &catalog.harnesses, |harness| &harness.id);
 
     let mut machine_roles = std::collections::BTreeMap::new();
     if let Some(role) = machine_role {
@@ -131,11 +130,7 @@ fn map_indices_to_ids<T>(
 
 /// Parses a numbered multi-select line: comma-separated 1-based numbers,
 /// `all` (every entry), or `none`/blank (nothing).
-fn prompt_ids(
-    input: &mut dyn BufRead,
-    prompt: &str,
-    count: usize,
-) -> Result<Vec<String>, String> {
+fn prompt_ids(input: &mut dyn BufRead, prompt: &str, count: usize) -> Result<Vec<String>, String> {
     print!("{prompt}");
     std::io::Write::flush(&mut std::io::stdout()).map_err(|error| error.to_string())?;
 

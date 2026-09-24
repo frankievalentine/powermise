@@ -41,10 +41,7 @@ impl BootstrapConfig {
 #[derive(Debug, Error)]
 pub enum CompilerError {
     #[error("selected {kind} `{id}` does not exist in the {kind} catalog")]
-    MissingEntry {
-        kind: ResourceKind,
-        id: String,
-    },
+    MissingEntry { kind: ResourceKind, id: String },
     #[error(
         "selected {kind} `{id}` has no compatible mise provider for {target:?}{reason_suffix}",
         reason_suffix = format_unsupported_reason(unsupported_reason)
@@ -105,8 +102,7 @@ pub fn compile_mise(
     app_catalog: &AppCatalog,
     target: Platform,
 ) -> Result<CompiledMiseConfig, CompilerError> {
-    compile_installables(selection, tool_catalog, app_catalog, target)
-        .map(|(config, _)| config)
+    compile_installables(selection, tool_catalog, app_catalog, target).map(|(config, _)| config)
 }
 
 /// A single lazy-install stub: the `mise-tool` package backing a resolved tool
@@ -347,10 +343,7 @@ pub fn compile_plan_from_config(
         .map_err(Into::into)
 }
 
-fn operations_from_config(
-    selection_name: &str,
-    config: &CompiledMiseConfig,
-) -> Vec<Operation> {
+fn operations_from_config(selection_name: &str, config: &CompiledMiseConfig) -> Vec<Operation> {
     let ownership = || OperationOwnership {
         owner: "powermise".into(),
         selection: selection_name.into(),
@@ -419,9 +412,9 @@ fn native_operations(selection_name: &str, natives: &[NativeInstallable]) -> Vec
             },
             verification: OperationVerification {
                 kind: VerificationKind::Command,
-                expected: native_check_command(native.provider, &native.package).unwrap_or_else(|_| {
-                    format!("{} present for `{}`", native.provider, native.package)
-                }),
+                expected: native_check_command(native.provider, &native.package).unwrap_or_else(
+                    |_| format!("{} present for `{}`", native.provider, native.package),
+                ),
             },
             reversibility: OperationReversibility {
                 kind: ReversibilityKind::NotAutomated,
@@ -551,7 +544,9 @@ fn insert_package(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use powermise_domain::{App, Integration, McpServer, Tool, ToolCatalog, ToolProvider, ToolProviderKind};
+    use powermise_domain::{
+        App, Integration, McpServer, Tool, ToolCatalog, ToolProvider, ToolProviderKind,
+    };
 
     fn provider(
         kind: ToolProviderKind,
@@ -832,7 +827,10 @@ mod tests {
             linux.contains("\"apt:git\" = \"latest\""),
             "linux compilation must prefer the distro apt channel, got: {linux}"
         );
-        assert!(!linux.contains("brew:"), "apt must win the linux priority over brew");
+        assert!(
+            !linux.contains("brew:"),
+            "apt must win the linux priority over brew"
+        );
 
         let darwin = compile_mise(&selection, &catalog, &empty_app_catalog(), Platform::Darwin)
             .unwrap()
@@ -948,8 +946,8 @@ mod tests {
         let mut selection = empty_selection();
         selection.tool_ids = vec!["windows-only".into()];
 
-        let error = compile_mise(&selection, &catalog, &empty_app_catalog(), Platform::Darwin)
-            .unwrap_err();
+        let error =
+            compile_mise(&selection, &catalog, &empty_app_catalog(), Platform::Darwin).unwrap_err();
 
         assert!(matches!(
             error,
@@ -967,8 +965,13 @@ mod tests {
         let mut selection = empty_selection();
         selection.tool_ids = vec!["missing".into()];
 
-        let error = compile_mise(&selection, &catalog(vec![]), &empty_app_catalog(), Platform::Linux)
-            .unwrap_err();
+        let error = compile_mise(
+            &selection,
+            &catalog(vec![]),
+            &empty_app_catalog(),
+            Platform::Linux,
+        )
+        .unwrap_err();
 
         assert!(matches!(
             error,

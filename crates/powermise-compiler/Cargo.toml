@@ -11,3 +11,6 @@ powermise-registry = { path = "../powermise-registry" }
 serde.workspace = true
 thiserror.workspace = true
 toml.workspace = true
+
+[lints]
+workspace = true

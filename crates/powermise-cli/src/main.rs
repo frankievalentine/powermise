@@ -1,5 +1,6 @@
 use std::{
-    env, error::Error,
+    env,
+    error::Error,
     io::{self, IsTerminal, Write},
     path::{Path, PathBuf},
     process::ExitCode,
@@ -11,16 +12,14 @@ use powermise_domain::{
     Platform,
 };
 use powermise_lifecycle::{
-    ApplyOptions, ActivationOutput, BootstrapOutcome, CatalogPaths, DiffOutput, ExecReport, Finding,
-    PowermiseLayout, PruneReport, SelectionStore, StatusReport, UninstallReport, apply, activate,
-    compile_context, diff, doctor, exec, has_errors, prune, status, uninstall,
+    ActivationOutput, ApplyOptions, BootstrapOutcome, CatalogPaths, DiffOutput, ExecReport,
+    Finding, PowermiseLayout, PruneReport, SelectionStore, StatusReport, UninstallReport, activate,
+    apply, compile_context, diff, doctor, exec, has_errors, prune, status, uninstall,
 };
 use powermise_mise::MiseExecutable;
 use powermise_providers::native_plan_command;
 use powermise_registry::{ResolvedSelection, load_app_catalog, load_catalog};
-use powermise_state::{
-    GeneratedFileChange, GeneratedFileChangeKind, inspect_generated_file,
-};
+use powermise_state::{GeneratedFileChange, GeneratedFileChangeKind, inspect_generated_file};
 
 mod interactive;
 mod presentation;
@@ -106,7 +105,11 @@ enum Command {
         target: Target,
         #[arg(long)]
         machine_role: Option<String>,
-        #[arg(last = true, required = true, help = "the command to run inside the selection environment")]
+        #[arg(
+            last = true,
+            required = true,
+            help = "the command to run inside the selection environment"
+        )]
         command: Vec<String>,
     },
     Prune {
@@ -172,11 +175,17 @@ impl CatalogArgs {
 
 #[derive(Args)]
 struct EnvironmentArgs {
-    #[arg(long, help = "the Powermise root directory (default: ~/.config/powermise)")]
+    #[arg(
+        long,
+        help = "the Powermise root directory (default: ~/.config/powermise)"
+    )]
     powermise_dir: Option<PathBuf>,
     #[arg(long, help = "the mise configuration directory")]
     mise_config_dir: Option<PathBuf>,
-    #[arg(long, help = "the adapters configuration directory for managed config blocks")]
+    #[arg(
+        long,
+        help = "the adapters configuration directory for managed config blocks"
+    )]
     adapters_config_dir: Option<PathBuf>,
     #[arg(long, default_value = "mise")]
     mise: PathBuf,
@@ -274,7 +283,7 @@ enum SelectionCommand {
         #[arg(long)]
         machine_role: Option<String>,
     },
-Interactive {
+    Interactive {
         #[arg(long)]
         name: String,
         #[command(flatten)]
@@ -426,22 +435,31 @@ fn main() -> ExitCode {
 fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn Error>> {
     let output: Output = match command {
         Command::Registry {
-            command:
-                RegistryCommand::Validate { catalog },
+            command: RegistryCommand::Validate { catalog },
         } => {
             let paths = catalog.into_paths();
             validate_registry_files(&paths)?;
             Output::Valid
         }
         Command::Selection {
-            command: SelectionCommand::Create { name, selection, environment },
+            command:
+                SelectionCommand::Create {
+                    name,
+                    selection,
+                    environment,
+                },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             let imported = SelectionStore::new(&layout).import(&selection, Some(&name))?;
             Output::Created(imported)
         }
         Command::Selection {
-            command: SelectionCommand::Import { selection, name, environment },
+            command:
+                SelectionCommand::Import {
+                    selection,
+                    name,
+                    environment,
+                },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             let imported = SelectionStore::new(&layout).import(&selection, name.as_deref())?;
@@ -462,11 +480,23 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             Output::Exported(contents)
         }
         Command::Selection {
-            command: SelectionCommand::Show { name, catalog, environment, target, machine_role },
+            command:
+                SelectionCommand::Show {
+                    name,
+                    catalog,
+                    environment,
+                    target,
+                    machine_role,
+                },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             let paths = catalog.into_paths();
-            let context = compile_context(&paths, &layout.selection_path(&name), target.into(), machine_role.as_deref())?;
+            let context = compile_context(
+                &paths,
+                &layout.selection_path(&name),
+                target.into(),
+                machine_role.as_deref(),
+            )?;
             Output::Resolved(context.resolved)
         }
         Command::Selection {
@@ -497,7 +527,14 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             Output::Compiled(context.artifact.contents().into())
         }
         Command::Selection {
-            command: SelectionCommand::Activate { name, catalog, environment, target, machine_role },
+            command:
+                SelectionCommand::Activate {
+                    name,
+                    catalog,
+                    environment,
+                    target,
+                    machine_role,
+                },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             let paths = catalog.into_paths();
@@ -512,7 +549,14 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             )?)
         }
         Command::Selection {
-            command: SelectionCommand::Diff { name, catalog, environment, target, machine_role },
+            command:
+                SelectionCommand::Diff {
+                    name,
+                    catalog,
+                    environment,
+                    target,
+                    machine_role,
+                },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             let paths = catalog.into_paths();
@@ -527,7 +571,13 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             )?)
         }
         Command::Selection {
-            command: SelectionCommand::Interactive { name, catalog, environment, machine_role },
+            command:
+                SelectionCommand::Interactive {
+                    name,
+                    catalog,
+                    environment,
+                    machine_role,
+                },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             let paths = catalog.into_paths();
@@ -553,30 +603,44 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             Output::Created(written)
         }
         Command::Shell {
-            command: ShellCommand::Install { name, shell, environment },
+            command:
+                ShellCommand::Install {
+                    name,
+                    shell,
+                    environment,
+                },
         } => {
             let _ = environment;
             let shell: powermise_lifecycle::Shell = shell.into();
             Output::ShellInstalled(powermise_lifecycle::install_shell_integration(
-                &shell,
-                &name,
-                None,
+                &shell, &name, None,
             )?)
         }
         Command::Shell {
-            command: ShellCommand::Uninstall { name, shell, yes, environment },
+            command:
+                ShellCommand::Uninstall {
+                    name,
+                    shell,
+                    yes,
+                    environment,
+                },
         } => {
             let _ = environment;
             let shell: powermise_lifecycle::Shell = shell.into();
             Output::ShellUninstalled(powermise_lifecycle::uninstall_shell_integration(
-                &shell,
-                &name,
-                None,
-                yes,
+                &shell, &name, None, yes,
             )?)
         }
         Command::Stub {
-            command: StubCommand::Install { name, target, machine_role, bin_dir, catalog, environment },
+            command:
+                StubCommand::Install {
+                    name,
+                    target,
+                    machine_role,
+                    bin_dir,
+                    catalog,
+                    environment,
+                },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             let paths = catalog.into_paths();
@@ -592,7 +656,12 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             )?)
         }
         Command::Stub {
-            command: StubCommand::Remove { name, yes, environment },
+            command:
+                StubCommand::Remove {
+                    name,
+                    yes,
+                    environment,
+                },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             Output::StubRemoved(powermise_lifecycle::remove_stubs(&layout, &name, !yes)?)
@@ -693,7 +762,11 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             let mise_config_dir = resolve_mise_config_directory(environment.mise_config_dir)?;
             Output::Pruned(prune(&layout, &mise_config_dir, !yes)?)
         }
-        Command::Uninstall { environment, name, yes } => {
+        Command::Uninstall {
+            environment,
+            name,
+            yes,
+        } => {
             let layout = resolve_layout(environment.powermise_dir)?;
             let mise_config_dir = resolve_mise_config_directory(environment.mise_config_dir)?;
             Output::Uninstalled(uninstall(&layout, &name, &mise_config_dir, !yes)?)
@@ -764,14 +837,23 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
             ExitCode::SUCCESS
         }
         Output::Created(path) => {
-            println!("{}", presentation.ok(format!("created selection at {}", path.display())));
+            println!(
+                "{}",
+                presentation.ok(format!("created selection at {}", path.display()))
+            );
             ExitCode::SUCCESS
         }
         Output::Listed(names) => {
             if names.is_empty() {
                 println!("{}", presentation.dim("(no managed selections)"));
             } else {
-                println!("{}", render_table(&["selection"], &names.into_iter().map(|name| vec![name]).collect::<Vec<_>>()));
+                println!(
+                    "{}",
+                    render_table(
+                        &["selection"],
+                        &names.into_iter().map(|name| vec![name]).collect::<Vec<_>>()
+                    )
+                );
             }
             ExitCode::SUCCESS
         }
@@ -780,7 +862,10 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
             ExitCode::SUCCESS
         }
         Output::Imported(path) => {
-            println!("{}", presentation.ok(format!("imported selection at {}", path.display())));
+            println!(
+                "{}",
+                presentation.ok(format!("imported selection at {}", path.display()))
+            );
             ExitCode::SUCCESS
         }
         Output::Activated(activation) => {
@@ -877,7 +962,13 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
                         ]
                     })
                     .collect::<Vec<_>>();
-                print!("{}", render_table(&["operation", "provider", "package", "state", "detail"], &rows));
+                print!(
+                    "{}",
+                    render_table(
+                        &["operation", "provider", "package", "state", "detail"],
+                        &rows
+                    )
+                );
             }
             let satisfied = if report.satisfied {
                 presentation.ok("satisfied")
@@ -895,7 +986,10 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
             if !report.status.success() {
                 eprintln!(
                     "command exited with status {}",
-                    report.status.code().map_or_else(|| "signal".into(), |code| code.to_string())
+                    report
+                        .status
+                        .code()
+                        .map_or_else(|| "signal".into(), |code| code.to_string())
                 );
                 ExitCode::from(u8::MAX)
             } else {
@@ -903,14 +997,26 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
             }
         }
         Output::Pruned(report) => {
-            let mode = if report.dry_run { "would remove" } else { "removed" };
+            let mode = if report.dry_run {
+                "would remove"
+            } else {
+                "removed"
+            };
             for action in &report.actions {
                 match action {
                     powermise_lifecycle::PruneAction::Remove { path, reason } => {
-                        println!("{} {mode} {} ({reason})", presentation.warning("prune:"), path.display());
+                        println!(
+                            "{} {mode} {} ({reason})",
+                            presentation.warning("prune:"),
+                            path.display()
+                        );
                     }
                     powermise_lifecycle::PruneAction::SkipUnmanaged { path } => {
-                        println!("{} skipped unmanaged {}", presentation.dim("skip:"), path.display());
+                        println!(
+                            "{} skipped unmanaged {}",
+                            presentation.dim("skip:"),
+                            path.display()
+                        );
                     }
                 }
             }
@@ -918,16 +1024,29 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
                 "{}: {} {} artifact(s), {} unmanaged skipped, ledger_updated={}",
                 presentation.accent("prune"),
                 report.removed(),
-                if report.dry_run { "candidates" } else { "removed" },
+                if report.dry_run {
+                    "candidates"
+                } else {
+                    "removed"
+                },
                 report.skipped_unmanaged(),
                 report.ledger_updated
             );
             ExitCode::SUCCESS
         }
         Output::Uninstalled(report) => {
-            let mode = if report.dry_run { "would remove" } else { "removed" };
+            let mode = if report.dry_run {
+                "would remove"
+            } else {
+                "removed"
+            };
             for action in &report.actions {
-                println!("{} {mode} {} ({})", presentation.warning("uninstall:"), action.path.display(), action.reason);
+                println!(
+                    "{} {mode} {} ({})",
+                    presentation.warning("uninstall:"),
+                    action.path.display(),
+                    action.reason
+                );
             }
             println!(
                 "{} {}: {} artifact(s), ledger_updated={}",
@@ -964,7 +1083,11 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
                     );
                 }
                 BootstrapOutcome::Skipped { reason } => {
-                    println!("{} {}", presentation.dim("mise bootstrap:"), presentation.dim(reason));
+                    println!(
+                        "{} {}",
+                        presentation.dim("mise bootstrap:"),
+                        presentation.dim(reason)
+                    );
                 }
             }
             if !report.results.is_empty() {
@@ -1017,7 +1140,11 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
             ExitCode::SUCCESS
         }
         Output::ShellUninstalled(report) => {
-            let mode = if report.dry_run { "would remove" } else { "removed" };
+            let mode = if report.dry_run {
+                "would remove"
+            } else {
+                "removed"
+            };
             if report.removed {
                 println!(
                     "{} {mode} managed shell block from {}",
@@ -1061,7 +1188,11 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
             ExitCode::SUCCESS
         }
         Output::StubRemoved(report) => {
-            let mode = if report.dry_run { "would remove" } else { "removed" };
+            let mode = if report.dry_run {
+                "would remove"
+            } else {
+                "removed"
+            };
             if report.removed.is_empty() {
                 println!(
                     "{} no stubs owned by selection {}",
@@ -1089,14 +1220,19 @@ fn validate_registry_files(paths: &CatalogPaths) -> Result<(), powermise_registr
         powermise_registry::validate_catalog(&catalog).and_then(|()| {
             powermise_registry::load_tool_catalog(&paths.tools).and_then(|tools| {
                 powermise_registry::load_app_catalog(&paths.apps).and_then(|apps| {
-                    powermise_registry::load_integration_catalog(&paths.integrations)
-                        .and_then(|integrations| {
+                    powermise_registry::load_integration_catalog(&paths.integrations).and_then(
+                        |integrations| {
                             powermise_registry::load_mcp_catalog(&paths.mcp).and_then(|mcp| {
                                 powermise_registry::validate_registry(
-                                    &catalog, &tools, &integrations, &mcp, &apps,
+                                    &catalog,
+                                    &tools,
+                                    &integrations,
+                                    &mcp,
+                                    &apps,
                                 )
                             })
-                        })
+                        },
+                    )
                 })
             })
         })
@@ -1112,12 +1248,7 @@ fn validate_selection_files(
     powermise_registry::load_catalog(&paths.harnesses).and_then(|catalog| {
         powermise_registry::validate_catalog(&catalog).and_then(|()| {
             powermise_registry::load_selection(selection).and_then(|selection| {
-                powermise_registry::validate_selection(
-                    &selection,
-                    &catalog,
-                    target,
-                    machine_role,
-                )
+                powermise_registry::validate_selection(&selection, &catalog, target, machine_role)
             })
         })
     })
@@ -1127,7 +1258,9 @@ fn resolve_layout(override_dir: Option<PathBuf>) -> Result<PowermiseLayout, Box<
     Ok(PowermiseLayout::resolve(override_dir)?)
 }
 
-fn resolve_mise_config_directory(override_path: Option<PathBuf>) -> Result<PathBuf, Box<dyn Error>> {
+fn resolve_mise_config_directory(
+    override_path: Option<PathBuf>,
+) -> Result<PathBuf, Box<dyn Error>> {
     if let Some(path) = override_path {
         return Ok(path);
     }
@@ -1180,7 +1313,10 @@ fn confirm_apply(name: &str, presentation: &Presentation) -> Result<(), Box<dyn 
     io::stderr().flush()?;
     let mut answer = String::new();
     io::stdin().read_line(&mut answer)?;
-    let confirmed = matches!(answer.trim().to_ascii_lowercase().as_str(), "y" | "ye" | "yes");
+    let confirmed = matches!(
+        answer.trim().to_ascii_lowercase().as_str(),
+        "y" | "ye" | "yes"
+    );
     if confirmed {
         Ok(())
     } else {
@@ -1189,15 +1325,24 @@ fn confirm_apply(name: &str, presentation: &Presentation) -> Result<(), Box<dyn 
 }
 
 fn print_resolved(resolved: &ResolvedSelection, presentation: &Presentation) {
-    println!("harnesses: {}", presentation.accent(resolved.harness_ids.join(", ")));
-    println!("tools: {}", presentation.accent(resolved.tool_ids.join(", ")));
+    println!(
+        "harnesses: {}",
+        presentation.accent(resolved.harness_ids.join(", "))
+    );
+    println!(
+        "tools: {}",
+        presentation.accent(resolved.tool_ids.join(", "))
+    );
     if !resolved.desktop_app_ids.is_empty() {
         println!(
             "desktop apps: {}",
             presentation.accent(resolved.desktop_app_ids.join(", "))
         );
     } else {
-        println!("desktop apps: {}", presentation.dim("none (opt in with preferences.include_desktop_apps)"));
+        println!(
+            "desktop apps: {}",
+            presentation.dim("none (opt in with preferences.include_desktop_apps)")
+        );
     }
     if !resolved.unavailable_desktop_ids.is_empty() {
         println!(
@@ -1206,8 +1351,14 @@ fn print_resolved(resolved: &ResolvedSelection, presentation: &Presentation) {
         );
     }
     println!("apps: {}", presentation.accent(resolved.app_ids.join(", ")));
-    println!("integrations: {}", presentation.accent(resolved.integration_ids.join(", ")));
-    println!("mcp servers: {}", presentation.accent(resolved.mcp_server_ids.join(", ")));
+    println!(
+        "integrations: {}",
+        presentation.accent(resolved.integration_ids.join(", "))
+    );
+    println!(
+        "mcp servers: {}",
+        presentation.accent(resolved.mcp_server_ids.join(", "))
+    );
 }
 
 fn print_plan(output: PlanOutput, presentation: &Presentation) {
@@ -1305,9 +1456,7 @@ fn json_document(output: &Output) -> serde_json::Value {
         Output::Compiled(toml) => ("selection-compile", serde_json::json!({ "toml": toml })),
         Output::Plan(plan) => ("plan", plan_json(plan)),
         Output::Created(path) => ("selection-create", serde_json::json!({ "path": path })),
-        Output::Listed(names) => {
-            ("selection-list", serde_json::json!({ "selections": names }))
-        }
+        Output::Listed(names) => ("selection-list", serde_json::json!({ "selections": names })),
         Output::Exported(contents) => ("selection-export", serde_json::json!({ "toml": contents })),
         Output::Imported(path) => ("selection-import", serde_json::json!({ "path": path })),
         Output::Activated(activation) => ("selection-activate", activation_json(activation)),
@@ -1318,14 +1467,8 @@ fn json_document(output: &Output) -> serde_json::Value {
         Output::Pruned(report) => ("prune", prune_json(report)),
         Output::Uninstalled(report) => ("uninstall", uninstall_json(report)),
         Output::Applied(report) => ("apply", apply_json(report)),
-        Output::ShellInstalled(report) => (
-            "shell-install",
-            shell_installed_json(report),
-        ),
-        Output::ShellUninstalled(report) => (
-            "shell-uninstall",
-            shell_uninstalled_json(report),
-        ),
+        Output::ShellInstalled(report) => ("shell-install", shell_installed_json(report)),
+        Output::ShellUninstalled(report) => ("shell-uninstall", shell_uninstalled_json(report)),
         Output::StubInstalled(report) => ("stub-install", stub_installed_json(report)),
         Output::StubRemoved(report) => ("stub-remove", stub_removed_json(report)),
     };
@@ -1565,9 +1708,7 @@ fn shell_installed_json(report: &powermise_lifecycle::ShellInstallReport) -> ser
     })
 }
 
-fn shell_uninstalled_json(
-    report: &powermise_lifecycle::ShellUninstallReport,
-) -> serde_json::Value {
+fn shell_uninstalled_json(report: &powermise_lifecycle::ShellUninstallReport) -> serde_json::Value {
     serde_json::json!({
         "rc_path": report.rc_path,
         "dry_run": report.dry_run,

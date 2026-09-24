@@ -605,9 +605,7 @@ pub fn resolve_selection(
         }
         let wants_companions = desktop_opt_in || harness.desktop_required;
         for tool_id in &harness.desktop_tool_ids {
-            if excluded_tools.contains(tool_id.as_str())
-                || desktop_app_ids.contains(tool_id)
-            {
+            if excluded_tools.contains(tool_id.as_str()) || desktop_app_ids.contains(tool_id) {
                 continue;
             }
             if !wants_companions {
@@ -650,7 +648,13 @@ pub fn resolve_selection(
         &integrations
             .integrations
             .iter()
-            .map(|entry| (&entry.id, &entry.providers[..], entry.unsupported_reason.as_deref()))
+            .map(|entry| {
+                (
+                    &entry.id,
+                    &entry.providers[..],
+                    entry.unsupported_reason.as_deref(),
+                )
+            })
             .collect::<Vec<_>>(),
         target,
     )?;
@@ -662,7 +666,13 @@ pub fn resolve_selection(
             .cloned(),
         &mcp.mcp_servers
             .iter()
-            .map(|entry| (&entry.id, &entry.providers[..], entry.unsupported_reason.as_deref()))
+            .map(|entry| {
+                (
+                    &entry.id,
+                    &entry.providers[..],
+                    entry.unsupported_reason.as_deref(),
+                )
+            })
             .collect::<Vec<_>>(),
         target,
     )?;
@@ -817,7 +827,12 @@ harnesses = ["conductor"]
         assert_eq!(resolved.app_ids, ["cursor"]);
         assert_eq!(
             resolved.integration_ids,
-            ["claude-github", "claude-mem", "codex-gmail", "gemini-workspace"]
+            [
+                "claude-github",
+                "claude-mem",
+                "codex-gmail",
+                "gemini-workspace"
+            ]
         );
         assert_eq!(
             resolved.mcp_server_ids,
@@ -902,8 +917,8 @@ harnesses = ["conductor"]
             .providers
             .retain(|provider| provider.supported_platforms.contains(&Platform::Darwin));
 
-        let error = validate_registry(&catalog, &tools, &integrations(), &mcp(), &apps())
-            .unwrap_err();
+        let error =
+            validate_registry(&catalog, &tools, &integrations(), &mcp(), &apps()).unwrap_err();
         assert!(error.to_string().contains("desktop-first harness `zed`"));
     }
 
@@ -981,10 +996,13 @@ harnesses = ["conductor"]
                 },
             );
 
-        let error =
-            validate_registry(&catalog, &pinned_catalog, &integrations(), &mcp(), &apps())
-                .unwrap_err();
-        assert!(error.to_string().contains("must pin an explicit resolved version"));
+        let error = validate_registry(&catalog, &pinned_catalog, &integrations(), &mcp(), &apps())
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("must pin an explicit resolved version")
+        );
 
         // The apt provider's deliberate distro-channel "latest" stays valid.
         let mut apt_catalog = tools();
@@ -1026,12 +1044,17 @@ harnesses = ["conductor"]
     fn harness_references_an_unknown_integration() {
         let catalog = catalog();
         let mut integrations = integrations();
-        integrations.integrations.retain(|entry| entry.id != "claude-github");
+        integrations
+            .integrations
+            .retain(|entry| entry.id != "claude-github");
 
-        let error =
-            validate_harness_integration_references(&catalog, &integrations).unwrap_err();
+        let error = validate_harness_integration_references(&catalog, &integrations).unwrap_err();
 
-        assert!(error.to_string().contains("unknown integration `claude-github`"));
+        assert!(
+            error
+                .to_string()
+                .contains("unknown integration `claude-github`")
+        );
     }
 
     #[test]
@@ -1043,9 +1066,11 @@ harnesses = ["conductor"]
 
         let error = validate_harness_mcp_references(&catalog, &mcp).unwrap_err();
 
-        assert!(error
-            .to_string()
-            .contains("unknown mcp server `codex-sequential-thinking`"));
+        assert!(
+            error
+                .to_string()
+                .contains("unknown mcp server `codex-sequential-thinking`")
+        );
     }
 
     #[test]
@@ -1080,8 +1105,10 @@ harnesses = ["conductor"]
         )
         .unwrap_err();
 
-        assert!(error
-            .to_string()
-            .contains("integration `claude-github` has no config-adapter provider"));
+        assert!(
+            error
+                .to_string()
+                .contains("integration `claude-github` has no config-adapter provider")
+        );
     }
 }

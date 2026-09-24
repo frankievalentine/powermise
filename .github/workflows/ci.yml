@@ -10,6 +10,20 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
+  fmt:
+    name: fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
   test:
     name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -41,11 +55,34 @@ jobs:
         with:
           components: clippy
 
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
       - name: Build
-        run: cargo build --workspace --verbose
+        run: cargo build --workspace --locked
 
       - name: Clippy
-        run: cargo clippy --workspace --all-targets --verbose
+        run: cargo clippy --workspace --all-targets --locked
 
       - name: Test
-        run: cargo test --workspace --verbose
+        run: cargo test --workspace --locked
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install web dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Web check
+        run: bun run web:check
+
+      - name: Web build
+        run: bun run web:build

@@ -144,7 +144,13 @@ fn apply_refuses_to_run_without_yes_on_a_non_interactive_terminal() {
     assert!(import.status.success());
 
     let apply = run(
-        &["apply", "--name", "engineering-agents", "--target", "darwin"],
+        &[
+            "apply",
+            "--name",
+            "engineering-agents",
+            "--target",
+            "darwin",
+        ],
         &powermise_dir,
         &mise_dir,
     )
@@ -159,7 +165,9 @@ fn apply_refuses_to_run_without_yes_on_a_non_interactive_terminal() {
         "the refusal must explain how to proceed"
     );
     assert!(
-        !mise_dir.join("config.powermise-engineering-agents.toml").exists(),
+        !mise_dir
+            .join("config.powermise-engineering-agents.toml")
+            .exists(),
         "a refused apply must not write the generated configuration"
     );
 }

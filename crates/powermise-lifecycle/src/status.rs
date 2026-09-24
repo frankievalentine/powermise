@@ -10,8 +10,8 @@ use powermise_providers::{NpmProvider, ScoopProvider, WingetProvider};
 use powermise_state::{GeneratedFileChange, load_ledger};
 
 use crate::{
-    CatalogPaths, LifecycleError, PowermiseLayout, SelectionStore, compile_context,
-    inspect_config, mise_request,
+    CatalogPaths, LifecycleError, PowermiseLayout, SelectionStore, compile_context, inspect_config,
+    mise_request,
 };
 
 /// The observed presence of a single native operation.
@@ -85,7 +85,11 @@ where
         ) {
             continue;
         }
-        native.push(check_native(operation.id.as_str(), operation.provider, &operation.resource_id));
+        native.push(check_native(
+            operation.id.as_str(),
+            operation.provider,
+            &operation.resource_id,
+        ));
     }
 
     let run_report_exists = layout.run_report_path(name).exists();
@@ -109,11 +113,7 @@ where
     })
 }
 
-fn check_native(
-    operation_id: &str,
-    provider: OperationProvider,
-    package: &str,
-) -> NativeStatus {
+fn check_native(operation_id: &str, provider: OperationProvider, package: &str) -> NativeStatus {
     if provider == OperationProvider::VerifiedScript {
         return NativeStatus {
             operation_id: operation_id.into(),

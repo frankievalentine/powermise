@@ -11,10 +11,7 @@ use crate::{LifecycleError, PowermiseLayout, SelectionStore, load_manifest};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PruneAction {
     /// A ledger-owned artifact was (or would be) removed.
-    Remove {
-        path: PathBuf,
-        reason: String,
-    },
+    Remove { path: PathBuf, reason: String },
     /// An unmanaged generated-looking file was found but never removed.
     SkipUnmanaged { path: PathBuf },
 }

@@ -9,3 +9,6 @@ powermise-domain = { path = "../powermise-domain" }
 thiserror.workspace = true
 toml.workspace = true
 serde.workspace = true
+
+[lints]
+workspace = true

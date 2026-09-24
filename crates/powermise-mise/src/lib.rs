@@ -62,10 +62,12 @@ impl MiseExecutable {
             .arg("exec")
             .arg("--")
             .args(command);
-        process.status().map_err(|source| MiseAdapterError::Execute {
-            executable: self.executable.clone(),
-            source,
-        })
+        process
+            .status()
+            .map_err(|source| MiseAdapterError::Execute {
+                executable: self.executable.clone(),
+                source,
+            })
     }
 
     fn command(&self, request: &MiseDryRunRequest, sandbox: &Sandbox) -> Command {
@@ -203,12 +205,13 @@ impl MiseRunner for MiseExecutable {
         request: &MiseBootstrapApplyRequest,
     ) -> Result<MiseBootstrapApplyOutput, Self::Error> {
         validate_environment_name(&request.environment)?;
-        let output = self.bootstrap_apply_command(request).output().map_err(|source| {
-            MiseAdapterError::Execute {
+        let output = self
+            .bootstrap_apply_command(request)
+            .output()
+            .map_err(|source| MiseAdapterError::Execute {
                 executable: self.executable.clone(),
                 source,
-            }
-        })?;
+            })?;
         let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
         let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
 
