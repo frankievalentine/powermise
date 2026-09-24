@@ -271,8 +271,10 @@ main,
 
   .nav-docs:hover,
   .theme-switch:hover {
-    background: color-mix(in srgb, white 10%, transparent);
-    transform: translateY(-1px);
+    background: transparent;
+    box-shadow: none;
+    color: var(--pm-ink);
+    transform: none;
   }
 }
 
