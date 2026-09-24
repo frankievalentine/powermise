@@ -1,13 +1,20 @@
 ---
 import '@fontsource-variable/plus-jakarta-sans';
 
+import BuildSection from '../components/landing/BuildSection.astro';
+import CatalogSection from '../components/landing/CatalogSection.astro';
+import Cta from '../components/landing/Cta.astro';
+import Features from '../components/landing/Features.astro';
+import Footer from '../components/landing/Footer.astro';
 import Hero from '../components/landing/Hero.astro';
 import Nav from '../components/landing/Nav.astro';
+import SafetySection from '../components/landing/SafetySection.astro';
+import TransferNote from '../components/landing/TransferNote.astro';
+import Why from '../components/landing/Why.astro';
 import '../styles/landing.css';
 
-const title = 'Powermise — a starting point for AI workflows';
-const description =
-  'Extending mise-en-place to be your starting point for AI workflows on macOS, Windows, and Linux.';
+const title = 'Powermise — your mise-en-place for AI work';
+const description = 'Choose from a curated catalog of AI harnesses and let Powermise bring the right tools, settings, and integrations together.';
 const canonical = 'https://powermise.dev/';
 ---
 
@@ -28,6 +35,7 @@ const canonical = 'https://powermise.dev/';
     <meta name="twitter:description" content={description} />
     <title>{title}</title>
     <script is:inline>
+      document.documentElement.classList.add('js');
       (() => {
         const stored = localStorage.getItem('starlight-theme');
         const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
@@ -40,7 +48,41 @@ const canonical = 'https://powermise.dev/';
     <Nav />
     <main id="main">
       <Hero />
+      <SafetySection />
+      <CatalogSection />
+      <BuildSection />
+      <Features />
+      <Why />
+      <TransferNote />
+      <Cta />
     </main>
+    <Footer />
+
+    <script>
+      const revealElements = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
+      const leafRevealElements = revealElements.filter((element) => !element.querySelector('[data-reveal]'));
+      const parentRevealElements = revealElements.filter((element) => element.querySelector('[data-reveal]'));
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const revealElement = (element: HTMLElement) => element.classList.add('is-revealed');
+
+      parentRevealElements.forEach((element) => element.removeAttribute('data-reveal'));
+
+      if (reducedMotion || !('IntersectionObserver' in window)) {
+        leafRevealElements.forEach(revealElement);
+      } else {
+        const revealObserver = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              revealElement(entry.target as HTMLElement);
+              revealObserver.unobserve(entry.target);
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
+        );
+        leafRevealElements.forEach((element) => revealObserver.observe(element));
+      }
+    </script>
     <script>
       const html = document.documentElement;
       const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');

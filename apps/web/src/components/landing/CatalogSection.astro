@@ -1,23 +1,42 @@
 ---
-import { profiles } from '../../data/landing.ts';
+import { harnesses } from '../../data/landing.ts';
 ---
 
-<section class="section" aria-labelledby="catalog-heading">
-  <p class="section-label">// curated catalog</p>
-  <h2 class="section-heading" id="catalog-heading">Profiles are explicit by design.</h2>
-  <p class="section-sub">A selection references actual harness IDs and their declared dependencies. Powermise validates each dependency against its provider registry before it can be selected.</p>
+<section class="section catalog-section catalog-section--marquee" id="catalog" aria-labelledby="catalog-heading" data-reveal>
+  <div class="catalog-heading">
+    <div>
+      <p class="section-label">The catalog</p>
+      <h2 class="section-heading" id="catalog-heading">Choose the harnesses that fit your work.</h2>
+    </div>
+    <div class="catalog-heading__aside">
+      <p class="section-sub">A considered set of AI harnesses, each with its own tools, integrations, and way of working. Mix and match without starting from a blank profile.</p>
+      <div class="catalog-stats" aria-label="Catalog summary">
+        <span><strong>18</strong> harnesses</span>
+        <span><strong>24</strong> tools</span>
+      </div>
+    </div>
+  </div>
 
-  <ul class="profile-grid">
-    {profiles.map((profile) => (
-      <li class="profile-card">
-        <p class="profile-id">{profile.id}</p>
-        <h3>{profile.title}</h3>
-        <p>{profile.description}</p>
-        <div class="profile-tags" aria-label={`${profile.title} profile attributes`}>
-          {profile.tags.map((tag) => <span>{tag}</span>)}
-        </div>
-      </li>
-    ))}
-  </ul>
-  <a class="section-link" href="/catalog/">Explore the catalog <span aria-hidden="true">→</span></a>
+  <div class="harness-marquee" aria-label="Supported harnesses">
+    <div class="marquee-track">
+      <div class="marquee-group">
+        {harnesses.map((harness) => (
+          <span class:list={['marquee-item', { 'marquee-item--gap': harness.status === 'provider-gap' }]}>
+            <strong>{harness.title}</strong>
+            <small>{harness.category}</small>
+          </span>
+        ))}
+      </div>
+      <div class="marquee-group" aria-hidden="true">
+        {harnesses.map((harness) => (
+          <span class:list={['marquee-item', { 'marquee-item--gap': harness.status === 'provider-gap' }]}>
+            <strong>{harness.title}</strong>
+            <small>{harness.category}</small>
+          </span>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <a class="text-link" href="/catalog/">Read the full catalog <span aria-hidden="true">↗</span></a>
 </section>

@@ -1,23 +1,96 @@
 ---
+import { Image } from 'astro:assets';
 import chefHat from '../../chefhat.png';
+
+interface Props {
+  compact?: boolean;
+  showCaption?: boolean;
+}
+
+const { compact = false, showCaption = true } = Astro.props;
 ---
 
-<figure class="dithered-chef-hat" data-dithered-chef-hat aria-label="Dithered chef's hat">
+<figure
+  class:list={['dithered-chef-hat', { 'dithered-chef-hat--compact': compact }]}
+  data-dithered-chef-hat
+  aria-label={compact ? undefined : "Dithered chef's hat"}
+  aria-hidden={compact ? 'true' : undefined}
+>
   <canvas class="dithered-chef-hat__canvas" data-dithered-chef-hat-canvas aria-hidden="true" tabindex="-1"></canvas>
   <div class="dithered-chef-hat__fallback" data-dithered-chef-hat-fallback>
-    <img src={chefHat.src} width="1920" height="1920" alt="Chef's hat illustration" />
-    <figcaption>Chef's hat rendered with ordered Bayer dithering.</figcaption>
+    <Image
+      src={chefHat}
+      widths={compact ? [64, 128] : [240, 480]}
+      sizes={compact ? '32px' : '(max-width: 640px) 240px, 240px'}
+      alt={compact ? '' : "Chef's hat illustration"}
+      loading={compact ? 'eager' : 'lazy'}
+      decoding="async"
+    />
+    {showCaption && !compact && <figcaption>Chef's hat rendered with ordered Bayer dithering.</figcaption>}
   </div>
 </figure>
 
 <script>
-  import { initializeDitheredChefHat } from './ditheredChefHat';
+  type HatBounds = { left: number; top: number; width: number; height: number };
 
-  document.querySelectorAll<HTMLElement>('[data-dithered-chef-hat]').forEach((container) => {
+  const containers = document.querySelectorAll<HTMLElement>('[data-dithered-chef-hat]');
+  const pointerBounds = new WeakMap<HTMLElement, HatBounds>();
+
+  const updatePointerBounds = (container: HTMLElement) => {
+    const rect = container.getBoundingClientRect();
+    pointerBounds.set(container, {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    });
+  };
+
+  const resetPointer = (container: HTMLElement) => {
+    container.style.setProperty('--hat-rotate-x', '0deg');
+    container.style.setProperty('--hat-rotate-y', '0deg');
+  };
+
+  const recordCssPointer = (container: HTMLElement, clientX: number, clientY: number) => {
+    const bounds = pointerBounds.get(container);
+    if (!bounds || bounds.width <= 0 || bounds.height <= 0) return;
+    const normalizedX = Math.max(-1, Math.min(1, ((clientX - bounds.left) / bounds.width) * 2 - 1));
+    const normalizedY = Math.max(-1, Math.min(1, ((clientY - bounds.top) / bounds.height) * 2 - 1));
+    container.style.setProperty('--hat-rotate-x', `${normalizedY * -5}deg`);
+    container.style.setProperty('--hat-rotate-y', `${normalizedX * 7}deg`);
+  };
+
+  const bindCssPointer = (container: HTMLElement) => {
+    updatePointerBounds(container);
+    container.addEventListener('pointerenter', () => updatePointerBounds(container));
+    container.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch') return;
+      recordCssPointer(container, event.clientX, event.clientY);
+    }, { passive: true });
+    container.addEventListener('pointerleave', () => resetPointer(container));
+    container.addEventListener('pointercancel', () => resetPointer(container));
+  };
+
+  if ('ResizeObserver' in window) {
+    const boundsObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target instanceof HTMLElement) updatePointerBounds(entry.target);
+      }
+    });
+    containers.forEach((container) => boundsObserver.observe(container));
+  }
+
+  containers.forEach(bindCssPointer);
+
+  const enhance = (container: HTMLElement) => {
     const canvas = container.querySelector<HTMLCanvasElement>('[data-dithered-chef-hat-canvas]');
-    if (!canvas) return;
+    if (!canvas) {
+      container.classList.add('is-fallback');
+      return;
+    }
 
-    void initializeDitheredChefHat(container, canvas)
+    import('./ditheredChefHat')
+      .then(({ initializeDitheredChefHat }) => initializeDitheredChefHat(container, canvas))
       .then((dispose) => {
         if (!dispose) {
           container.classList.add('is-fallback');
@@ -26,11 +99,33 @@ import chefHat from '../../chefhat.png';
         window.addEventListener('pagehide', dispose, { once: true });
       })
       .catch(() => container.classList.add('is-fallback'));
-  });
+  };
+
+  if (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    !('IntersectionObserver' in window)
+  ) {
+    containers.forEach((container) => container.classList.add('is-fallback'));
+  } else {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const container = entry.target as HTMLElement;
+          observer.unobserve(container);
+          enhance(container);
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    containers.forEach((container) => observer.observe(container));
+  }
 </script>
 
 <style>
   .dithered-chef-hat {
+    --hat-rotate-x: 0deg;
+    --hat-rotate-y: 0deg;
     position: relative;
     display: grid;
     min-block-size: 16rem;
@@ -38,6 +133,14 @@ import chefHat from '../../chefhat.png';
     isolation: isolate;
     overflow: hidden;
     margin: 0;
+    pointer-events: auto;
+    transform: perspective(60rem) rotateX(var(--hat-rotate-x)) rotateY(var(--hat-rotate-y));
+    transition: transform 700ms var(--pm-ease-out);
+    will-change: transform;
+  }
+
+  .dithered-chef-hat--compact {
+    min-block-size: 0;
   }
 
   .dithered-chef-hat__canvas,
@@ -74,6 +177,12 @@ import chefHat from '../../chefhat.png';
     block-size: auto;
   }
 
+  .dithered-chef-hat--compact .dithered-chef-hat__fallback img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+  }
+
   .dithered-chef-hat__fallback figcaption {
     max-inline-size: 22rem;
     font: inherit;
@@ -100,6 +209,12 @@ import chefHat from '../../chefhat.png';
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .dithered-chef-hat {
+      transform: none;
+      transition: none;
+      will-change: auto;
+    }
+
     .dithered-chef-hat__canvas {
       display: none;
     }

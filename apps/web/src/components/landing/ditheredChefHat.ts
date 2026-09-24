@@ -1,9 +1,17 @@
-import * as THREE from 'three';
+import type * as THREEType from 'three';
 import chefHatUrl from '../../chefhat.png?url';
 
 const MAX_PIXEL_RATIO = 2;
 const CAMERA_DISTANCE = 4.4;
 const CAMERA_FOV = 48;
+const POINTER_DAMPING = 0.055;
+
+type Bounds = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
 
 const ditherVertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -48,7 +56,9 @@ export const initializeDitheredChefHat = async (
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
   if (!('IntersectionObserver' in window) || !('ResizeObserver' in window)) return undefined;
 
-  let renderer: THREE.WebGLRenderer;
+  const THREE: typeof THREEType = await import('three');
+
+  let renderer: THREEType.WebGLRenderer;
 
   try {
     renderer = new THREE.WebGLRenderer({
@@ -61,7 +71,7 @@ export const initializeDitheredChefHat = async (
     return undefined;
   }
 
-  let texture: THREE.Texture;
+  let texture: THREEType.Texture;
 
   try {
     texture = await new THREE.TextureLoader().loadAsync(chefHatUrl);
@@ -73,7 +83,12 @@ export const initializeDitheredChefHat = async (
   let disposed = false;
   let visible = false;
   let frameId: number | undefined;
-  let renderTarget: THREE.WebGLRenderTarget | undefined;
+  let renderTarget: THREEType.WebGLRenderTarget | undefined;
+  let lastFrameTime = performance.now();
+  let elapsed = 0;
+  let bounds: Bounds = { left: 0, top: 0, width: 0, height: 0 };
+  const pointer = { x: 0, y: 0 };
+  const smooth = { x: 0, y: 0 };
 
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.minFilter = THREE.LinearFilter;
@@ -114,12 +129,74 @@ export const initializeDitheredChefHat = async (
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  const render = (elapsedSeconds: number) => {
+  const recordPointer = (event: PointerEvent) => {
+    if (event.pointerType === 'touch' || bounds.width <= 0 || bounds.height <= 0) return;
+    const inside =
+      event.clientX >= bounds.left &&
+      event.clientX <= bounds.left + bounds.width &&
+      event.clientY >= bounds.top &&
+      event.clientY <= bounds.top + bounds.height;
+    if (!inside) {
+      pointer.x = 0;
+      pointer.y = 0;
+      return;
+    }
+    pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+    pointer.y = ((event.clientY - bounds.top) / bounds.height) * 2 - 1;
+  };
+
+  const resetPointer = () => {
+    pointer.x = 0;
+    pointer.y = 0;
+  };
+
+  const resize = () => {
+    if (disposed) return;
+    const rect = container.getBoundingClientRect();
+    bounds = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
+    camera.aspect = rect.width / rect.height;
+    camera.position.z = CAMERA_DISTANCE;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(pixelRatio);
+    renderer.setSize(rect.width, rect.height, false);
+
+    renderTarget?.dispose();
+    renderTarget = new THREE.WebGLRenderTarget(
+      Math.max(1, Math.round(rect.width * pixelRatio)),
+      Math.max(1, Math.round(rect.height * pixelRatio)),
+      { depthBuffer: true },
+    );
+    outputMaterial.uniforms.tDiffuse.value = renderTarget.texture;
+    outputMaterial.uniforms.uPixelRatio.value = pixelRatio;
+  };
+
+  const render = (elapsedSeconds: number, deltaSeconds: number) => {
     if (!renderTarget || disposed) return;
 
-    floatingHat.position.y = Math.sin(elapsedSeconds * 0.72) * 0.07;
-    floatingHat.rotation.y = -0.12 + Math.sin(elapsedSeconds * 0.46) * 0.08;
-    floatingHat.rotation.z = 0.03 + Math.sin(elapsedSeconds * 0.38) * 0.025;
+    if (deltaSeconds > 0) {
+      const alpha = 1 - Math.pow(1 - POINTER_DAMPING, deltaSeconds * 60);
+      smooth.x += (pointer.x - smooth.x) * alpha;
+      smooth.y += (pointer.y - smooth.y) * alpha;
+    }
+
+    floatingHat.position.x = smooth.x * 0.16;
+    floatingHat.position.y = Math.sin(elapsedSeconds * 0.72) * 0.07 + smooth.y * 0.08;
+    floatingHat.rotation.x = -0.04 + Math.sin(elapsedSeconds * 0.38) * 0.025 + smooth.y * 0.42;
+    floatingHat.rotation.y = -0.12 + Math.sin(elapsedSeconds * 0.46) * 0.08 + smooth.x * 0.62;
+    floatingHat.rotation.z = 0.03 + Math.sin(elapsedSeconds * 0.38) * 0.025 + smooth.x * 0.035;
+
+    camera.position.x = smooth.x * 0.34;
+    camera.position.y = smooth.y * 0.22;
+    camera.position.z = CAMERA_DISTANCE;
+    camera.lookAt(camera.position.x * 0.45, camera.position.y * 0.45, 0);
 
     renderer.setRenderTarget(renderTarget);
     renderer.clear();
@@ -129,57 +206,67 @@ export const initializeDitheredChefHat = async (
     renderer.render(outputScene, outputCamera);
   };
 
-  const resize = () => {
-    const { height, width } = container.getBoundingClientRect();
-    if (width <= 0 || height <= 0 || disposed) return;
+  const renderFrame = (now: number) => {
+    if (disposed) return;
+    frameId = window.requestAnimationFrame(renderFrame);
+    const delta = Math.min((now - lastFrameTime) / 1000, 1 / 30);
+    lastFrameTime = now;
+    if (!visible || document.visibilityState !== 'visible') return;
 
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
-    camera.aspect = width / height;
-    camera.position.z = CAMERA_DISTANCE;
-    camera.updateProjectionMatrix();
-    renderer.setPixelRatio(pixelRatio);
-    renderer.setSize(width, height, false);
-
-    renderTarget?.dispose();
-    renderTarget = new THREE.WebGLRenderTarget(
-      Math.max(1, Math.round(width * pixelRatio)),
-      Math.max(1, Math.round(height * pixelRatio)),
-      { depthBuffer: true },
-    );
-    outputMaterial.uniforms.tDiffuse.value = renderTarget.texture;
-    outputMaterial.uniforms.uPixelRatio.value = pixelRatio;
+    elapsed += delta;
+    render(elapsed, delta);
   };
 
-  const startedAt = performance.now();
-  const renderFrame = () => {
+  const startRendering = () => {
+    if (frameId !== undefined || disposed) return;
+    lastFrameTime = performance.now();
     frameId = window.requestAnimationFrame(renderFrame);
-    if (!visible || document.visibilityState !== 'visible') return;
-    render((performance.now() - startedAt) / 1000);
+  };
+
+  const stopRendering = () => {
+    if (frameId === undefined) return;
+    window.cancelAnimationFrame(frameId);
+    frameId = undefined;
   };
 
   const resizeObserver = new ResizeObserver(resize);
-  resizeObserver.observe(container);
   const intersectionObserver = new IntersectionObserver(
     ([entry]) => {
       visible = entry?.isIntersecting ?? false;
-      if (visible) render((performance.now() - startedAt) / 1000);
+      if (visible) {
+        startRendering();
+        render(elapsed, 0);
+      } else {
+        stopRendering();
+      }
     },
     { threshold: 0.01 },
   );
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') startRendering();
+    else stopRendering();
+  };
+
+  resizeObserver.observe(container);
   intersectionObserver.observe(container);
+  window.addEventListener('pointermove', recordPointer, { passive: true });
+  window.addEventListener('blur', resetPointer);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 
   resize();
-  render(0);
+  render(0, 0);
   container.classList.add('is-enhanced');
-  frameId = window.requestAnimationFrame(renderFrame);
+  startRendering();
 
   return () => {
     if (disposed) return;
     disposed = true;
-
-    if (frameId !== undefined) window.cancelAnimationFrame(frameId);
+    stopRendering();
     resizeObserver.disconnect();
     intersectionObserver.disconnect();
+    window.removeEventListener('pointermove', recordPointer);
+    window.removeEventListener('blur', resetPointer);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
     container.classList.remove('is-enhanced');
 
     hat.geometry.dispose();

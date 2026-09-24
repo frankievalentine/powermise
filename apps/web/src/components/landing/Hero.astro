@@ -1,21 +1,27 @@
 ---
 import DitheredChefHat from './DitheredChefHat.astro';
 
-const installCommand = 'git clone https://github.com/frankievalentine/powermise.git && cd powermise && cargo install --path crates/powermise-cli';
+const installCommand = 'cargo install --path crates/powermise-cli';
 ---
 
-<section class="focus-hero" aria-labelledby="hero-heading">
-  <div class="focus-brand">
-    <h1 id="hero-heading">powermise</h1>
+<section class="hero hero--benefit" aria-labelledby="hero-heading">
+  <div class="hero-copy">
+    <h1 id="hero-heading">Your <span class="gradient-text">mise-en-place</span> for curated AI harnesses, tools, and integrations.</h1>
+    <p class="hero-description">Choose from a catalog with a point of view. Powermise brings the right tools, settings, and integrations together around the harnesses you actually want to use.</p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="/catalog/">Explore the catalog <span aria-hidden="true">→</span></a>
+      <a class="button button-secondary" href="/getting-started/">Build a selection</a>
+    </div>
+    <p class="hero-proof"><span aria-hidden="true">↳</span> 18 harnesses. One shared source of truth.</p>
   </div>
 
-  <div class="focus-hero-object">
-    <DitheredChefHat />
-  </div>
-
-  <div class="focus-hero-details">
-    <p>Your <em>mise-en-place</em> for curated AI harnesses, tools, and integrations.</p>
+  <div class="hero-art" data-reveal data-reveal-delay="2">
+    <div class="hero-art__halo" aria-hidden="true"></div>
+    <div class="hero-hat" aria-hidden="true">
+      <DitheredChefHat showCaption={false} />
+    </div>
     <div class="install-command">
+      <span class="install-command__label">install powermise</span>
       <code>{installCommand}</code>
       <button class="copy-command" type="button" data-copy-command data-command={installCommand} aria-label="Copy install command">
         <svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true">

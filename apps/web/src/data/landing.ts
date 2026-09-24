@@ -1,8 +1,10 @@
-export interface LandingProfile {
+export interface LandingHarness {
   id: string;
   title: string;
   description: string;
-  tags: string[];
+  category: string;
+  platforms: string[];
+  status: 'catalogued' | 'provider-gap';
 }
 
 export interface LandingFeature {
@@ -11,60 +13,179 @@ export interface LandingFeature {
   title: string;
   description: string;
   command?: string;
-  availability?: string;
 }
 
-export const profiles: LandingProfile[] = [
+export const harnesses: LandingHarness[] = [
+  {
+    id: 'antigravity',
+    title: 'Antigravity',
+    description: "Google's agent ecosystem for an IDE-first workflow.",
+    category: 'IDE',
+    platforms: ['darwin', 'linux'],
+    status: 'catalogued',
+  },
   {
     id: 'claude',
     title: 'Claude',
-    description: 'A curated harness profile resolved as explicit, reviewable desired state.',
-    tags: ['profile', 'selection']
+    description: "Anthropic's coding agent with an optional desktop companion.",
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'cline',
+    title: 'Cline',
+    description: 'An AI coding assistant that lives inside your editor.',
+    category: 'IDE',
+    platforms: ['darwin', 'win32'],
+    status: 'catalogued',
   },
   {
     id: 'codex',
     title: 'Codex',
-    description: 'A named harness profile with declared dependencies and provider validation.',
-    tags: ['profile', 'providers']
+    description: "OpenAI's terminal coding agent with a desktop companion.",
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'conductor',
+    title: 'Conductor',
+    description: 'A team of coding agents in isolated workspaces.',
+    category: 'GUI',
+    platforms: ['darwin'],
+    status: 'provider-gap',
+  },
+  {
+    id: 'cursor',
+    title: 'Cursor',
+    description: 'The AI-native code editor with agent capabilities built in.',
+    category: 'IDE',
+    platforms: ['darwin', 'win32'],
+    status: 'catalogued',
   },
   {
     id: 'gemini',
     title: 'Gemini',
-    description: 'A profile that contributes only the configuration and tools it declares.',
-    tags: ['profile', 'mise']
-  }
+    description: "Google's Gemini CLI agent for terminal-first work.",
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'github-copilot',
+    title: 'GitHub Copilot',
+    description: 'GitHub Copilot agent support in the editor you already use.',
+    category: 'IDE',
+    platforms: ['darwin', 'win32'],
+    status: 'catalogued',
+  },
+  {
+    id: 'goose',
+    title: 'Goose',
+    description: "Block's open-source, extensible AI agent.",
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'hermes',
+    title: 'Hermes Agent',
+    description: 'An autonomous agent CLI with browser and messaging support.',
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'provider-gap',
+  },
+  {
+    id: 'openclaw',
+    title: 'OpenClaw',
+    description: 'A personal AI assistant for everyday workflows.',
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'opencode',
+    title: 'OpenCode',
+    description: 'A provider-agnostic open source coding agent.',
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'paseo',
+    title: 'Paseo',
+    description: 'An orchestration layer for provider CLIs across your devices.',
+    category: 'GUI',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'pi',
+    title: 'Pi',
+    description: 'Terminal-driven AI assistance for focused coding work.',
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'superset',
+    title: 'Superset',
+    description: 'Parallel coding agents in isolated Git worktrees.',
+    category: 'GUI',
+    platforms: ['darwin'],
+    status: 'catalogued',
+  },
+  {
+    id: 't3code',
+    title: 'T3 Code',
+    description: 'A minimal GUI for AI code agents.',
+    category: 'GUI',
+    platforms: ['darwin'],
+    status: 'catalogued',
+  },
+  {
+    id: 'zed',
+    title: 'Zed',
+    description: 'A high-performance editor with assistant and MCP support.',
+    category: 'IDE',
+    platforms: ['darwin', 'win32'],
+    status: 'catalogued',
+  },
+  {
+    id: 'fx',
+    title: 'fx',
+    description: "Vercel's tiny, model-agnostic coding agent.",
+    category: 'Terminal',
+    platforms: ['darwin', 'linux', 'wsl'],
+    status: 'catalogued',
+  },
 ];
 
 export const features: LandingFeature[] = [
   {
     number: '01',
-    title: 'Validate the catalog',
-    description: 'Confirm that every selected harness dependency has a valid, target-aware provider.',
-    command: 'powermise registry validate'
+    title: 'See the whole picture',
+    description: 'Resolve the catalog against your machine before anything is installed.',
+    command: 'powermise plan --name my-agent --target darwin',
   },
   {
     number: '02',
-    title: 'Validate the selection',
-    description: 'Check the requested profiles, inherited dependencies, tools, and machine target.',
-    command: 'powermise selection validate --selection selections/engineering-agents.toml --target darwin'
-  },
-  {
-    number: '03',
-    title: 'Inspect the selection',
-    description: 'Review the resolved configuration before compiling any generated output.',
-    command: 'powermise selection show --selection selections/engineering-agents.toml --target darwin'
+    title: 'Change one thing',
+    description: 'Adjust a selection or machine role without rebuilding the rest by hand.',
+    command: 'powermise selection show --name my-agent --target darwin',
   },
   {
     id: 'selection-compile',
-    number: '04',
-    title: 'Compile configuration',
-    description: 'Generate deterministic mise tools and bootstrap package configuration without mutating state.',
-    command: 'powermise selection compile --selection selections/engineering-agents.toml --target darwin'
-  }
+    number: '03',
+    title: 'Keep the boundaries',
+    description: 'Use a separate Powermise environment while your global mise setup stays untouched.',
+    command: 'powermise doctor --name my-agent --target darwin',
+  },
 ];
 
 export const safeguards = [
-  ['Curated catalog', 'Versioned harness profiles with declared dependencies.'],
-  ['Separate mise environment', 'Your global mise configuration remains user-owned.'],
-  ['Explicit targets', 'Selections validate against macOS, Windows, or Linux.']
+  ['Curated by default', 'Every harness brings a considered set of tools and settings.'],
+  ['Mise stays yours', 'Your global configuration is never taken over.'],
+  ['Nothing hidden', 'Every change has an owner and a way to undo it.'],
 ] as const;
