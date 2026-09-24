@@ -2841,3 +2841,184 @@ html.js [data-reveal-delay='4'] {
     filter: none;
   }
 }
+
+/* Keep the committed desktop presentation untouched; only compact widths and touch tablets override it. */
+@media (max-width: 63.99rem), (min-width: 64.01rem) and (max-width: 75rem) and (pointer: coarse) {
+  .nav-wordmark {
+    display: inline;
+    font-size: 0.86rem;
+  }
+
+  .nav-docs,
+  .theme-switch {
+    min-width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .nav-docs {
+    padding-inline: 0.85rem 0.75rem;
+  }
+
+  .theme-switch {
+    width: 2.75rem;
+  }
+}
+
+/* iPad landscape is a touch-only tablet exception; fine-pointer desktop remains unchanged. */
+@media (min-width: 64.01rem) and (max-width: 75rem) and (pointer: coarse) {
+  .hero--benefit .hero-art {
+    width: min(100%, 30rem);
+    margin-block-start: 2rem;
+  }
+
+  .hero--benefit .hero-art .install-command {
+    width: min(100%, 26rem);
+    margin-block-start: 0;
+  }
+}
+
+@media (max-width: 52rem) {
+  .site-nav {
+    width: min(100% - 2rem, var(--pm-page-max));
+    min-height: 4.25rem;
+    padding-block: 0.75rem;
+  }
+
+  .nav-controls {
+    padding: 0.25rem;
+  }
+}
+
+@media (min-width: 44rem) and (max-width: 63.99rem) {
+  .hero--benefit {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-block: 3.5rem 4rem;
+  }
+
+  .hero--benefit .hero-copy {
+    max-width: 44rem;
+  }
+
+  .hero-art {
+    width: min(100%, 30rem);
+    justify-self: center;
+    justify-items: center;
+    margin-block-start: 2rem;
+  }
+
+  .hero-hat {
+    width: min(100%, 24rem);
+  }
+
+  .hero-art .install-command {
+    width: min(100%, 24rem);
+    margin-inline: auto;
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feature {
+    min-height: 15rem;
+  }
+
+  .curation-section {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 2.5rem;
+  }
+
+  .site-footer {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .footer-links {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 43.99rem) {
+  .nav-wordmark {
+    font-size: 0.78rem;
+  }
+
+  .nav-docs {
+    width: 2.75rem;
+    padding: 0;
+  }
+
+  .hero--benefit {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-block: 2.5rem 3rem;
+  }
+
+  .hero--benefit h1 {
+    max-width: 13ch;
+    font-size: clamp(2.5rem, 11vw, 3.6rem);
+    line-height: 1.1;
+  }
+
+  .hero-art {
+    width: 100%;
+    justify-self: stretch;
+    justify-items: stretch;
+    margin-block-start: 2rem;
+  }
+
+  .hero-hat {
+    width: min(100%, 20rem);
+    margin-inline: auto;
+  }
+
+  .hero-art .install-command {
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+    margin-inline: 0;
+    margin-block-start: -0.4rem;
+  }
+
+  .hero-art .install-command__label {
+    display: none;
+  }
+
+  .hero-art .install-command code {
+    font-size: 0.58rem;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .harness-marquee {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x;
+  }
+
+  .marquee-track {
+    width: max-content;
+    animation: none;
+  }
+
+  .marquee-group[aria-hidden='true'] {
+    display: none;
+  }
+}
+
+/* iPad 13" portrait is 1024 CSS px wide; hide the hat below that size. */
+@media (max-width: 63.99rem), (min-width: 64.01rem) and (max-width: 75rem) and (pointer: coarse) {
+  .hero--benefit .hero-art__halo,
+  .hero--benefit .hero-hat {
+    display: none;
+  }
+
+  .hero--benefit .hero-art {
+    margin-block-start: 2rem;
+  }
+
+  .hero--benefit .hero-art .install-command {
+    margin-block-start: 0;
+  }
+}

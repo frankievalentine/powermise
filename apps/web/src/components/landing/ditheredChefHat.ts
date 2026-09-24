@@ -54,6 +54,7 @@ export const initializeDitheredChefHat = async (
   canvas: HTMLCanvasElement,
 ): Promise<DitheredChefHatCleanup | undefined> => {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+  if (window.matchMedia('(pointer: coarse)').matches) return undefined;
   if (!('IntersectionObserver' in window) || !('ResizeObserver' in window)) return undefined;
 
   const THREE: typeof THREEType = await import('three');
