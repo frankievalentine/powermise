@@ -93,6 +93,16 @@
   outline-offset: var(--pm-space-1);
 }
 
+.right-sidebar-panel a[aria-current='true'] {
+  border-radius: var(--pm-radius-sm);
+  background: color-mix(in srgb, var(--sl-color-accent) 12%, transparent);
+  color: var(--sl-color-text-accent);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--sl-color-accent);
+  padding-inline: var(--pm-space-2);
+  margin-inline-start: calc(var(--pm-space-2) * -1);
+}
+
 .markdown-wrapper {
   padding-top: var(--pm-space-2);
 }

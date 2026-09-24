@@ -5,3 +5,62 @@ import { ClientRouter } from 'astro:transitions';
 
 <Default {...Astro.props}><slot /></Default>
 <ClientRouter />
+
+<script>
+  let tocController: AbortController | undefined;
+
+  const initializeTableOfContents = () => {
+    tocController?.abort();
+    tocController = new AbortController();
+    const { signal } = tocController;
+
+    const toc = document.querySelector<HTMLElement>('starlight-toc');
+    if (!toc) return;
+
+    const links = [...toc.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')];
+    const headings = links
+      .map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1))))
+      .filter((heading): heading is HTMLElement => heading !== null);
+    if (headings.length === 0) return;
+
+    let frameId: number | undefined;
+    const updateCurrentHeading = () => {
+      frameId = undefined;
+      const headerHeight = document.querySelector<HTMLElement>('header')?.getBoundingClientRect().height ?? 0;
+      const activationLine = headerHeight + 88;
+      let currentHeading = headings[0];
+
+      for (const heading of headings) {
+        if (heading.getBoundingClientRect().top <= activationLine) {
+          currentHeading = heading;
+        } else {
+          break;
+        }
+      }
+
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+        currentHeading = headings[headings.length - 1];
+      }
+
+      for (const link of links) {
+        const heading = document.getElementById(decodeURIComponent(link.hash.slice(1)));
+        if (heading === currentHeading) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      }
+    };
+
+    const scheduleUpdate = () => {
+      if (frameId !== undefined) return;
+      frameId = window.requestAnimationFrame(updateCurrentHeading);
+    };
+
+    window.addEventListener('scroll', scheduleUpdate, { passive: true, signal });
+    window.addEventListener('resize', scheduleUpdate, { passive: true, signal });
+    window.addEventListener('hashchange', scheduleUpdate, { signal });
+    updateCurrentHeading();
+  };
+
+  document.addEventListener('astro:page-load', initializeTableOfContents);
+  document.addEventListener('astro:before-swap', () => tocController?.abort());
+  initializeTableOfContents();
+</script>
