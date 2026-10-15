@@ -93,6 +93,16 @@ cd "$SANDBOX/untrusted"
 capture trust-show-untrusted.txt "$MISE" trust --show
 "$MISE" ls --json </dev/null 2>&1 >/dev/null | sanitize >"$OUT/untrusted-error.txt" || true
 
+# AI Setups: a conf.d fragment, as powermise writes one (mise 2026.10+).
+version="$("$MISE" version --json </dev/null 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"].split()[0])')"
+if [[ "$(printf '%s\n2026.10.0\n' "$version" | sort -V | head -n1)" == "2026.10.0" ]]; then
+  mkdir -p "$SANDBOX/config/conf.d"
+  printf '[tools]\njq = "1.7.1"\n\n[bootstrap.packages]\n"brew:hello" = "latest"\n' >"$SANDBOX/config/conf.d/powermise-demo.toml"
+  cd "$SANDBOX/home"
+  capture bootstrap-plan.json "$MISE" bootstrap plan --json
+  capture bootstrap-status.json "$MISE" bootstrap status --json
+fi
+
 # Fixtures must never carry the capturing machine's real paths.
 if grep -rqs "$SANDBOX\|/private/tmp\|/var/folders\|$REAL_HOME" "$OUT"; then
   echo "error: unsanitized paths left in $OUT" >&2

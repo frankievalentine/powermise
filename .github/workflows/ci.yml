@@ -67,6 +67,10 @@ jobs:
       - name: Test
         run: cargo test --workspace --locked
 
+      - name: Check an AI setup fragment against mise
+        if: runner.os != 'Windows'
+        run: scripts/verify-setup-fragment.sh
+
   web:
     name: web
     runs-on: ubuntu-latest

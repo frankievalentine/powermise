@@ -19,8 +19,8 @@ use serde::de::DeserializeOwned;
 use crate::{
     MiseAdapterError,
     models::{
-        ConfigFile, Doctor, OutdatedReport, RegistryEntry, RemoteVersion, Task, ToolInventory,
-        VersionInfo,
+        BootstrapPlan, BootstrapStatus, ConfigFile, Doctor, OutdatedReport, RegistryEntry,
+        RemoteVersion, Task, ToolInventory, VersionInfo,
     },
     project::{
         EnvReport, TaskDetails, TrustStatus, is_untrusted_error, parse_task_details,
@@ -181,6 +181,17 @@ impl MiseClient {
         let json: serde_json::Value =
             self.read_json(&["tasks", "info", "--json", task], Some(project))?;
         Ok(parse_task_details(&json))
+    }
+
+    /// `mise bootstrap plan --json`: everything applying the global config
+    /// would change — including parts that aren't from powermise.
+    pub fn bootstrap_plan(&self) -> Result<BootstrapPlan, MiseAdapterError> {
+        self.read_json(&["bootstrap", "plan", "--json"], None)
+    }
+
+    /// `mise bootstrap status --json`: the state of every declared package and tool.
+    pub fn bootstrap_status(&self) -> Result<BootstrapStatus, MiseAdapterError> {
+        self.read_json(&["bootstrap", "status", "--json"], None)
     }
 
     /// `mise doctor --json`.
@@ -465,6 +476,24 @@ impl MiseCommand {
         }
         arguments.push(key.into());
         Ok(Self::new(arguments).in_project(project))
+    }
+
+    /// `mise bootstrap --yes --only packages,tools`: installs what the config
+    /// declares. Limited to packages and tools — what an AI setup contains — so
+    /// applying one never touches dotfiles, services, or other bootstrap parts.
+    /// `--yes` because the person already reviewed the plan in the app.
+    pub fn bootstrap_packages_and_tools() -> Self {
+        Self::new(vec![
+            "bootstrap".into(),
+            "--yes".into(),
+            "--only".into(),
+            "packages,tools".into(),
+        ])
+    }
+
+    /// `mise prune --tools`: deletes tool versions no config uses anymore.
+    pub fn prune_tools() -> Self {
+        Self::new(vec!["prune".into(), "--tools".into()])
     }
 
     /// `mise self-update --yes`: update mise itself (the person already

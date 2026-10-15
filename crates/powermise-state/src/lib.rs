@@ -1,12 +1,10 @@
 //! Atomic persistence primitives for powermise-generated state.
 mod generated;
-mod ledger;
 
 pub use generated::{
-    GENERATED_MANIFEST_SCHEMA_VERSION, GeneratedConfigArtifact, GeneratedFileChange,
-    GeneratedFileChangeKind, GeneratedManifest, inspect_generated_file, validate_selection_name,
+    GeneratedFileChange, GeneratedFileChangeKind, SetupFragment, fragment_path,
+    inspect_generated_file, validate_selection_name,
 };
-pub use ledger::{LEDGER_SCHEMA_VERSION, Ledger, OwnershipRecord, load_ledger, write_ledger};
 
 use std::{
     fs::{self, File, OpenOptions},
@@ -52,24 +50,6 @@ pub enum StateError {
         "invalid selection name `{selection}`; expected lowercase letters, numbers, and hyphens"
     )]
     InvalidSelectionName { selection: String },
-    /// JSON state could not be serialized or parsed.
-    #[error("could not {operation} JSON state `{path}`: {source}")]
-    Json {
-        operation: &'static str,
-        path: PathBuf,
-        #[source]
-        source: serde_json::Error,
-    },
-    /// An ownership record was requested for an operation not owned by powermise.
-    #[error("operation `{operation_id}` is owned by `{owner}`, not powermise")]
-    UnownedOperation { operation_id: String, owner: String },
-    /// A persisted state schema is newer or otherwise unsupported.
-    #[error("unsupported {kind} schema version {version}; expected {expected}")]
-    UnsupportedSchema {
-        kind: &'static str,
-        version: u32,
-        expected: u32,
-    },
 }
 
 /// Returns the lowercase SHA-256 hexadecimal digest for `contents`.

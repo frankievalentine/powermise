@@ -90,26 +90,12 @@ export default defineConfig({
           label: 'AI Setups',
           items: [
             'ai-setups',
-            'ai-setups/getting-started',
+            'ai-setups/terminal',
             'ai-setups/harness-selections',
             'ai-setups/selection-schema',
             'ai-setups/catalog',
             'ai-setups/harness-reference',
-            'ai-setups/targets',
-            'ai-setups/commands'
-          ]
-        },
-        {
-          label: 'AI Setups guides',
-          collapsed: true,
-          items: [
-            'ai-setups/mise-boundary',
-            'ai-setups/lifecycle',
-            'ai-setups/shell-integration',
-            'ai-setups/automation',
-            'ai-setups/safety',
-            'ai-setups/coexistence',
-            'ai-setups/chezmoi'
+            'ai-setups/targets'
           ]
         }
       ]

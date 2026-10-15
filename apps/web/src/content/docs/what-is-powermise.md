@@ -44,8 +44,7 @@ mise itself.
 
 ## Status
 
-powermise is pre-release. The mise screens above work today; per-project tools,
-environments, and tasks are next. The [roadmap](https://github.com/frankievalentine/powermise/blob/main/ROADMAP.md)
+powermise is pre-release. The mise screens, Projects, and AI Setups work today. The [roadmap](https://github.com/frankievalentine/powermise/blob/main/ROADMAP.md)
 has the full plan.
 
 [Get started →](/getting-started/)

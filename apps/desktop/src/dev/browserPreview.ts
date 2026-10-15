@@ -1,25 +1,30 @@
 // Browser-only stand-in for the Rust backend, used when the UI runs in a plain
 // browser (`bun run dev` without Tauri) for design work and the marketing-site
-// demo. AI Setups read the real catalog TOML files; mise is simulated by
-// `demoMise.ts`. Nothing here touches the machine. Never loaded inside Tauri.
+// demo. AI Setups read the real catalog TOML files and mirror the compiler's
+// rules; mise is simulated by `demoMise.ts`. Nothing here touches the machine.
+// Never loaded inside Tauri.
 import { parse } from "smol-toml";
 import harnessesToml from "../../../../catalog/profiles/harnesses.toml?raw";
 import toolsToml from "../../../../catalog/profiles/tools.toml?raw";
 import appsToml from "../../../../catalog/profiles/apps.toml?raw";
 import integrationsToml from "../../../../catalog/profiles/integrations.toml?raw";
 import mcpToml from "../../../../catalog/profiles/mcp.toml?raw";
-import { demoMise, NOT_HANDLED } from "./demoMise";
+import { demoMise, NOT_HANDLED, setBootstrapHook } from "./demoMise";
 export { browserEvents } from "./demoMise";
 import type {
-  ApplyResult,
+  BootstrapPlan,
   CatalogBundle,
   EnvironmentInfo,
-  Operation,
+  FileChange,
+  Install,
   Platform,
   Preview,
+  RemovedSetup,
   SavedSelection,
   SelectionDraft,
-  StatusResult,
+  SetupStatus,
+  ToolProviderKind,
+  WrittenSetup,
 } from "../api";
 
 function withDefaults<T>(entries: T[], defaults: Partial<T>): T[] {
@@ -44,24 +49,52 @@ const catalog: CatalogBundle = {
   mcp: parse(mcpToml) as unknown as CatalogBundle["mcp"],
 };
 
-const MISE_CONFIG_DIR = "/Users/demo/.config/mise";
+const HOME = "/Users/demo";
+const MISE_CONFIG_DIR = `${HOME}/.config/mise`;
+const fragmentPath = (name: string) => `${MISE_CONFIG_DIR}/conf.d/powermise-${name}.toml`;
+const APPLY_COMMAND = "mise bootstrap --yes --only packages,tools";
 
-let selections: SavedSelection[] = [
+interface DemoSetup {
+  name: string;
+  harnesses: string[];
+  includeDesktopApps: boolean;
+  /** The fragment mise currently reads, once applied. */
+  applied: string | null;
+  /** Keys the demo bootstrap has installed. */
+  installed: Set<string>;
+}
+
+const setups: DemoSetup[] = [
   {
     name: "engineering-agents",
-    path: "/Users/demo/.config/powermise/selections/engineering-agents.toml",
     harnesses: ["claude", "codex", "gemini"],
     includeDesktopApps: false,
-    applied: true,
-    lastRun: null,
+    applied: null,
+    installed: new Set(),
   },
 ];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function resolve(draft: SelectionDraft, target: Platform) {
+const PRIORITY: ToolProviderKind[] = [
+  "mise-tool",
+  "bootstrap-apt",
+  "bootstrap-brew",
+  "bootstrap-brew-cask",
+  "winget",
+  "scoop",
+];
+const MANAGER: Partial<Record<ToolProviderKind, string>> = {
+  "bootstrap-apt": "apt",
+  "bootstrap-brew": "brew",
+  "bootstrap-brew-cask": "brew-cask",
+  winget: "winget",
+  scoop: "scoop",
+};
+
+function compile(draft: SelectionDraft, target: Platform) {
   const byId = new Map(catalog.harnesses.harnesses.map((harness) => [harness.id, harness]));
-  const toolsById = new Map(catalog.tools.tools.map((tool) => [tool.id, tool]));
+  const toolsById = new Map([...catalog.tools.tools, ...catalog.apps.apps].map((tool) => [tool.id, tool]));
   const ids = ["base", ...draft.harnesses.filter((id) => id !== "base")];
   const tools = new Set<string>();
   const desktop = new Set<string>();
@@ -83,174 +116,194 @@ function resolve(draft: SelectionDraft, target: Platform) {
         if (available) {
           tools.add(tool);
           desktop.add(tool);
-        } else {
-          unavailable.add(tool);
-        }
+        } else unavailable.add(tool);
       }
     }
     harness.integration_ids.forEach((entry) => integrations.add(entry));
     harness.mcp_server_ids.forEach((entry) => mcp.add(entry));
   }
-  return { ids, tools, desktop, unavailable, integrations, mcp, toolsById };
+
+  const installs: Install[] = [];
+  for (const id of [...tools].sort()) {
+    const provider = [...(toolsById.get(id)?.providers ?? [])]
+      .filter((entry) => entry.supported_platforms.includes(target))
+      .sort((a, b) => PRIORITY.indexOf(a.kind) - PRIORITY.indexOf(b.kind))[0];
+    if (!provider) continue;
+    const manager = MANAGER[provider.kind];
+    const homebrew = provider.kind === "bootstrap-brew" || provider.kind === "bootstrap-brew-cask";
+    installs.push({
+      toolId: id,
+      kind: provider.kind,
+      key: manager ? `${manager}:${provider.package}` : provider.package,
+      version: homebrew ? "latest" : provider.version,
+    });
+  }
+  return { ids, tools, desktop, unavailable, integrations, mcp, installs };
+}
+
+function fragment(name: string, installs: Install[]): string {
+  const tools = installs.filter((install) => install.kind === "mise-tool");
+  const packages = installs.filter((install) => install.kind !== "mise-tool");
+  const quote = (key: string) => (/^[A-Za-z0-9_-]+$/.test(key) ? key : `"${key}"`);
+  return [
+    `# Generated by powermise for the AI setup "${name}". Do not edit:`,
+    "# powermise rewrites this file when the setup changes. Remove the setup in",
+    "# powermise (or delete this file) to remove it from mise.",
+    "",
+    ...(tools.length ? ["[tools]", ...tools.map((install) => `${quote(install.key)} = "${install.version}"`), ""] : []),
+    ...(packages.length
+      ? ["[bootstrap.packages]", ...packages.map((install) => `"${install.key}" = "${install.version}"`), ""]
+      : []),
+  ].join("\n");
+}
+
+function change(path: string, current: string | null, desired: string): FileChange {
+  if (current === desired) return { path, kind: "unchanged", diff: "" };
+  if (current === null) {
+    return { path, kind: "create", diff: [`--- /dev/null`, `+++ ${path}`, ...desired.split("\n").map((line) => `+${line}`)].join("\n") };
+  }
+  const before = current.split("\n");
+  const after = desired.split("\n");
+  const lines = [`--- ${path}`, `+++ ${path}`];
+  for (const line of before) if (!after.includes(line)) lines.push(`-${line}`);
+  for (const line of after) lines.push(before.includes(line) ? ` ${line}` : `+${line}`);
+  return { path, kind: "update", diff: lines.join("\n") };
 }
 
 function preview(draft: SelectionDraft, target: Platform): Preview {
   const name = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(draft.name) ? draft.name : "untitled";
-  const resolved = resolve(draft, target);
-  const operations: Operation[] = [];
-  const installs: Preview["installs"] = [];
-  const toolLines: string[] = [];
-  const packageLines: string[] = [];
-  for (const id of [...resolved.tools].sort()) {
-    const provider = resolved.toolsById
-      .get(id)
-      ?.providers.find((entry) => entry.supported_platforms.includes(target));
-    if (!provider) continue;
-    installs.push({ toolId: id, kind: provider.kind, package: provider.package, version: provider.version });
-    if (provider.kind === "mise-tool") {
-      toolLines.push(`"${provider.package}" = "${provider.version}"`);
-      operations.push(op(`mise-tool:${provider.package}`, "mise-tools", "tool", provider.package, provider.version));
-    } else if (provider.kind === "winget" || provider.kind === "scoop") {
-      operations.push(op(`native-${provider.kind}:${provider.package}`, provider.kind, "tool", provider.package, provider.version));
-    } else {
-      const source = provider.kind.replace("bootstrap-", "");
-      packageLines.push(`"${source}:${provider.package}" = "${provider.version}"`);
-      operations.push(op(`mise-bootstrap:${source}:${provider.package}`, "mise-bootstrap", "package", `${source}:${provider.package}`, provider.version));
-    }
-  }
-  for (const id of resolved.integrations) {
-    operations.push(op(`config-adapter:integration:${id}`, "config-adapter", "integration", id, "claude"));
-  }
-  for (const id of resolved.mcp) {
-    operations.push(op(`config-adapter:mcp-server:${id}`, "config-adapter", "mcp-server", id, "claude"));
-  }
-  const contents = [
-    `# Generated by powermise. Source selection: ${name}. Do not edit.`,
-    "",
-    "[tools]",
-    ...toolLines,
-    "",
-    "[bootstrap.packages]",
-    ...packageLines,
-    "",
-  ].join("\n");
-  const path = `${MISE_CONFIG_DIR}/config.powermise-${name}.toml`;
+  const compiled = compile(draft, target);
+  const contents = fragment(name, compiled.installs);
+  const existing = setups.find((setup) => setup.name === name)?.applied ?? null;
   return {
-    installs,
+    installs: compiled.installs,
     resolved: {
-      harnessIds: resolved.ids,
-      toolIds: [...resolved.tools].sort(),
-      desktopAppIds: [...resolved.desktop],
-      unavailableDesktopIds: [...resolved.unavailable],
+      harnessIds: compiled.ids,
+      toolIds: [...compiled.tools].sort(),
+      desktopAppIds: [...compiled.desktop],
+      unavailableDesktopIds: [...compiled.unavailable],
       appIds: [],
-      integrationIds: [...resolved.integrations],
-      mcpServerIds: [...resolved.mcp],
+      integrationIds: [...compiled.integrations],
+      mcpServerIds: [...compiled.mcp],
     },
-    operations,
-    configPath: path,
-    configContents: contents,
-    change: {
-      path,
-      kind: "create",
-      diff: `--- ${path}\n+++ ${path}\n${contents
-        .split("\n")
-        .map((line) => `+${line}`)
-        .join("\n")}`,
-    },
-    applyCommand: `powermise apply --name ${name} --target ${target} --yes`,
+    fragmentPath: fragmentPath(name),
+    fragmentContents: contents,
+    change: change(fragmentPath(name), existing, contents),
+    applyCommand: APPLY_COMMAND,
   };
 }
 
-function op(
-  id: string,
-  provider: Operation["provider"],
-  resource_kind: string,
-  resource_id: string,
-  requested_state: string,
-): Operation {
-  return { id, provider, resource_kind, resource_id, requested_state };
+function saved(setup: DemoSetup): SavedSelection {
+  return {
+    name: setup.name,
+    path: `${HOME}/.config/powermise/selections/${setup.name}.toml`,
+    harnesses: setup.harnesses,
+    includeDesktopApps: setup.includeDesktopApps,
+    fragmentPath: fragmentPath(setup.name),
+    applied: setup.applied !== null,
+  };
 }
 
-export async function browserPreview<T>(
-  command: string,
-  args: Record<string, unknown> = {},
-): Promise<T> {
-  await sleep(command === "apply_selection" ? 2200 : command === "selection_status" ? 700 : 60);
+/** What the demo `mise bootstrap` installs: everything applied setups declare. */
+function demoBootstrap(): string[] {
+  const lines: string[] = [];
+  for (const setup of setups.filter((entry) => entry.applied !== null)) {
+    for (const install of compile(setup, "darwin").installs) {
+      if (setup.installed.has(install.key)) continue;
+      setup.installed.add(install.key);
+      lines.push(
+        install.kind === "mise-tool"
+          ? `mise ${install.key}@${install.version}  ✓ installed`
+          : `==> Installing ${install.key.slice(install.key.indexOf(":") + 1)}  ✓`,
+      );
+    }
+  }
+  return lines.length ? lines : ["mise all packages and tools are installed"];
+}
+setBootstrapHook(demoBootstrap);
+
+export async function browserPreview<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
+  await sleep(command === "setup_status" || command === "bootstrap_plan" ? 500 : 60);
   const mise = demoMise(command, args);
   if (mise !== NOT_HANDLED) return mise as T;
   switch (command) {
     case "get_environment":
       return {
         hostTarget: "darwin",
-        powermiseDir: "/Users/demo/.config/powermise",
+        powermiseDir: `${HOME}/.config/powermise`,
         miseConfigDir: MISE_CONFIG_DIR,
-        misePath: "/Users/demo/.local/bin/mise",
-        miseVersion: "2026.7.18 macos-arm64 (browser preview)",
+        misePath: `${HOME}/.local/bin/mise`,
       } satisfies EnvironmentInfo as T;
     case "get_catalog":
       return catalog as T;
     case "list_selections":
-      return selections as T;
+      return [...setups].sort((a, b) => a.name.localeCompare(b.name)).map(saved) as T;
     case "save_selection": {
       const draft = args.draft as SelectionDraft;
-      const entry: SavedSelection = {
-        name: draft.name,
-        path: `/Users/demo/.config/powermise/selections/${draft.name}.toml`,
-        harnesses: draft.harnesses,
-        includeDesktopApps: draft.includeDesktopApps,
-        applied: false,
-        lastRun: null,
-      };
-      selections = [...selections.filter((saved) => saved.name !== draft.name), entry].sort(
-        (a, b) => a.name.localeCompare(b.name),
-      );
-      return entry.path as T;
+      const existing = setups.find((setup) => setup.name === draft.name);
+      if (existing) Object.assign(existing, { harnesses: draft.harnesses, includeDesktopApps: draft.includeDesktopApps });
+      else setups.push({ ...draft, applied: null, installed: new Set() });
+      return `${HOME}/.config/powermise/selections/${draft.name}.toml` as T;
     }
     case "preview_selection":
       return preview(args.draft as SelectionDraft, args.target as Platform) as T;
-    case "apply_selection": {
-      const name = args.name as string;
-      const saved = selections.find((entry) => entry.name === name);
-      const result = preview(
-        { name, harnesses: saved?.harnesses ?? [], includeDesktopApps: !!saved?.includeDesktopApps },
-        args.target as Platform,
-      );
-      const results = result.operations.map((operation) => ({
-        operation_id: operation.id,
-        outcome: operation.provider === "config-adapter" ? ("skipped" as const) : ("succeeded" as const),
-        message:
-          operation.provider === "config-adapter"
-            ? `${operation.resource_id} is not configured yet; set it up manually`
-            : "converged by real mise bootstrap",
-      }));
-      selections = selections.map((entry) =>
-        entry.name === name
-          ? { ...entry, applied: true, lastRun: { selection: name, platform: "darwin", operations: results } }
-          : entry,
-      );
-      return {
-        selection: name,
-        results,
-        bootstrap: { state: "converged" },
-        followUps: [],
-        recoveryGuidance: [],
-        command: result.applyCommand,
-      } satisfies ApplyResult as T;
+    case "write_setup": {
+      const setup = setups.find((entry) => entry.name === args.name);
+      if (!setup) throw new Error(`setup \`${args.name}\` does not exist`);
+      const next = preview(setup, args.target as Platform);
+      setup.applied = next.fragmentContents;
+      return { path: next.fragmentPath, change: next.change } satisfies WrittenSetup as T;
     }
-    case "selection_status":
+    case "bootstrap_plan": {
+      const pending = setups
+        .filter((setup) => setup.applied !== null)
+        .flatMap((setup) => compile(setup, "darwin").installs.filter((install) => !setup.installed.has(install.key)));
+      const resources = [
+        ...pending.map((install) => ({
+          id: { kind: install.kind === "mise-tool" ? "tool" : "package", name: install.key },
+          current: "missing",
+          desired: install.version,
+          action: "create",
+        })),
+        // Something from the person's own mise config, so the sheet shows it.
+        { id: { kind: "package", name: "brew:wget" }, current: "missing", desired: "latest", action: "create" },
+      ];
       return {
-        selection: args.name as string,
-        satisfied: true,
-        change: { path: "", kind: "unchanged", diff: "" },
-        drift: null,
-        ledgerOwned: true,
-        followUps: [],
-        native: [],
-        command: `powermise status --name ${args.name} --target ${args.target}`,
-      } satisfies StatusResult as T;
-    case "remove_selection":
-      selections = selections.filter((entry) => entry.name !== args.name);
-      return { removed: [], commands: [`powermise uninstall --name ${args.name} --yes`] } as T;
+        resources,
+        summary: { create: resources.length, update: 0, remove: 0, unchanged: 0, unknown: 0 },
+      } satisfies BootstrapPlan as T;
+    }
+    case "setup_status": {
+      const setup = setups.find((entry) => entry.name === args.name);
+      if (!setup) throw new Error(`setup \`${args.name}\` does not exist`);
+      const next = preview(setup, args.target as Platform);
+      return {
+        name: setup.name,
+        fragmentPath: next.fragmentPath,
+        change: next.change,
+        applyCommand: APPLY_COMMAND,
+        items: next.installs.map((install) => {
+          const installed = setup.installed.has(install.key);
+          return {
+            toolId: install.toolId,
+            key: install.key,
+            kind: install.kind,
+            state: installed ? `installed ${install.version}` : "not installed",
+            installed,
+            overriddenBy: install.key === "jq" ? `${MISE_CONFIG_DIR}/config.toml` : null,
+          };
+        }),
+      } satisfies SetupStatus as T;
+    }
+    case "remove_setup": {
+      const name = args.name as string;
+      const index = setups.findIndex((entry) => entry.name === name);
+      if (index >= 0) setups.splice(index, 1);
+      return {
+        removed: [fragmentPath(name), `${HOME}/.config/powermise/selections/${name}.toml`],
+        cleanupCommand: "mise prune --tools",
+      } satisfies RemovedSetup as T;
+    }
     case "reveal_path":
       return undefined as T;
     default:

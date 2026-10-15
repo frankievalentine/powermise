@@ -1,23 +1,5 @@
-mod mise;
-mod plan;
-mod providers;
-
-pub use mise::{
-    MiseBootstrapApplyOutput, MiseBootstrapPackage, MiseBootstrapStatus, MiseBootstrapTool,
-    MiseDryRunOutput, MiseDryRunRequest, MiseEnvironmentRequest, MiseRunner,
-};
-pub use plan::{
-    Operation, OperationAction, OperationGraph, OperationGraphError, OperationOutcome,
-    OperationOwnership, OperationProvider, OperationResult, OperationReversibility,
-    OperationVerification, PLAN_SCHEMA_VERSION, Plan, RUN_REPORT_SCHEMA_VERSION, ResourceKind,
-    ReversibilityKind, RunReport, VerificationKind,
-};
-pub use providers::{
-    ConfigAdapterApplyOutput, ConfigAdapterCheckOutput, ConfigAdapterRequest, ConfigAdapterState,
-    ConfigMutator, ManagedBlock, NativeApplyOutput, NativeCheckOutput, NativeInstallRequest,
-    NativeInstaller,
-};
-
+//! The AI Setups data model: the curated harness catalog (harnesses, tools,
+//! apps, integrations, MCP servers) and a person's selection from it.
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]

@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "desktop-ui",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "--cwd",
+        "apps/desktop",
+        "dev"
+      ],
+      "port": 1420
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "--cwd",
+        "apps/web",
+        "dev"
+      ],
+      "port": 4321
+    }
+  ]
+}

@@ -2284,7 +2284,6 @@ name = "powermise-compiler"
 version = "0.1.0"
 dependencies = [
  "powermise-domain",
- "powermise-providers",
  "powermise-registry",
  "serde",
  "thiserror 2.0.21",
@@ -2297,9 +2296,9 @@ version = "0.1.0"
 dependencies = [
  "powermise-compiler",
  "powermise-domain",
- "powermise-lifecycle",
  "powermise-mise",
  "powermise-registry",
+ "powermise-setups",
  "powermise-state",
  "serde",
  "serde_json",
@@ -2319,41 +2318,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "powermise-lifecycle"
-version = "0.1.0"
-dependencies = [
- "powermise-compiler",
- "powermise-domain",
- "powermise-mise",
- "powermise-providers",
- "powermise-registry",
- "powermise-state",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "toml 0.9.12+spec-1.1.0",
-]
-
-[[package]]
 name = "powermise-mise"
 version = "0.1.0"
 dependencies = [
- "powermise-domain",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
  "toml 0.9.12+spec-1.1.0",
-]
-
-[[package]]
-name = "powermise-providers"
-version = "0.1.0"
-dependencies = [
- "powermise-domain",
- "powermise-state",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -2367,12 +2338,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "powermise-setups"
+version = "0.1.0"
+dependencies = [
+ "powermise-compiler",
+ "powermise-domain",
+ "powermise-registry",
+ "powermise-state",
+ "thiserror 2.0.21",
+ "toml 0.9.12+spec-1.1.0",
+]
+
+[[package]]
 name = "powermise-state"
 version = "0.1.0"
 dependencies = [
- "powermise-domain",
  "serde",
- "serde_json",
  "sha2",
  "thiserror 2.0.21",
 ]

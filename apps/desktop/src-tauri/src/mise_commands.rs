@@ -191,6 +191,9 @@ pub enum MiseAction {
         /// The config file that defines it.
         file: Option<PathBuf>,
     },
+    // AI Setups: install what the config declares, and clean up afterwards.
+    BootstrapPackagesAndTools,
+    PruneTools,
 }
 
 impl MiseAction {
@@ -222,6 +225,8 @@ impl MiseAction {
             Self::UnsetEnv { project, key, file } => {
                 MiseCommand::unset_env(key, file.as_deref(), project)
             }
+            Self::BootstrapPackagesAndTools => Ok(MiseCommand::bootstrap_packages_and_tools()),
+            Self::PruneTools => Ok(MiseCommand::prune_tools()),
         }
         .map_err(message)
     }

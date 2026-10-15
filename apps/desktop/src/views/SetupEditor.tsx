@@ -23,7 +23,7 @@ export function SetupEditor({
   name?: string;
   seed?: string[];
 }) {
-  const { catalog, env, selections, navigate, refreshSelections } = context;
+  const { catalog, env, selections, navigate, refreshSelections, run, mise } = context;
   // Once a new setup is saved, the editor edits that saved setup.
   const [savedAs, setSavedAs] = useState<string | undefined>(existingName);
   const existing = selections.find((selection) => selection.name === savedAs);
@@ -74,7 +74,9 @@ export function SetupEditor({
           ? "A setup with this name already exists."
           : null;
   const canSave = isValidSetupName(name) && !nameTaken && harnesses.length > 0 && !!preview;
-  const canApply = canSave && target === env.hostTarget && !!env.misePath;
+  // Setups rely on conf.d and `mise bootstrap --only`, both new in 2026.10.
+  const miseTooOld = !!mise.info && !mise.info.recommendedMet;
+  const canApply = canSave && target === env.hostTarget && !!env.misePath && !miseTooOld;
 
   const toggle = (id: string) =>
     setHarnesses((current) =>
@@ -303,8 +305,8 @@ export function SetupEditor({
                 <>
                   <div className="side-heading">Writes</div>
                   <div className="side-item">
-                    <span className="name mono selectable" title={preview.configPath}>
-                      {preview.configPath.split(/[\\/]/).pop()}
+                    <span className="name mono selectable" title={preview.fragmentPath}>
+                      {preview.fragmentPath.split(/[\\/]/).slice(-2).join("/")}
                     </span>
                     <span className="badge">
                       {preview.change.kind === "create"
@@ -333,6 +335,9 @@ export function SetupEditor({
             </div>
           )}
           {!env.misePath && <div className="field-hint error">Install mise to apply setups.</div>}
+          {env.misePath && miseTooOld && (
+            <div className="field-hint error">AI Setups need mise {mise.info?.recommended} or newer. Update mise to apply.</div>
+          )}
           <div className="actions">
             <button className="button large" disabled={!canSave || saving} onClick={() => save(false)}>
               Save
@@ -358,7 +363,16 @@ export function SetupEditor({
           setApplyOpen(false);
           navigate({ kind: "setup", name });
         }}
-        onApplied={refreshSelections}
+        onApply={() => {
+          void refreshSelections();
+          run({
+            action: { kind: "bootstrapPackagesAndTools" },
+            title: `Applying ${name}`,
+            description: "",
+            verb: "Apply",
+            autoStart: true,
+          });
+        }}
       />
     </div>
   );

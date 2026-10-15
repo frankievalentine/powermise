@@ -1,0 +1,66 @@
+{
+  "secrets": [],
+  "packages": {
+    "brew": {
+      "available": true,
+      "packages": [
+        {
+          "package": "hello",
+          "requested_version": "latest",
+          "desired_state": "present",
+          "state": "missing",
+          "installed_version": ""
+        }
+      ]
+    }
+  },
+  "accounts": [],
+  "files": [],
+  "services": [],
+  "user_services": [],
+  "firewall": [],
+  "compose": [],
+  "repos": [],
+  "dotfiles": {
+    "files": [],
+    "edits": []
+  },
+  "mise_shell_activate": [],
+  "macos_login_items": {
+    "entries": []
+  },
+  "macos_defaults": {
+    "entries": []
+  },
+  "launchd": {
+    "agents": []
+  },
+  "systemd": {
+    "units": []
+  },
+  "login_shell": null,
+  "tools": [
+    {
+      "tool": "jq",
+      "requested_version": "1.7.1",
+      "resolved_version": "1.7.1",
+      "state": "installed",
+      "installed": true
+    },
+    {
+      "tool": "shellcheck",
+      "requested_version": "0.10.0",
+      "resolved_version": "0.10.0",
+      "state": "installed",
+      "installed": true
+    },
+    {
+      "tool": "hadolint",
+      "requested_version": "2.12.0",
+      "resolved_version": "2.12.0",
+      "state": "missing",
+      "installed": false
+    }
+  ],
+  "plugin_deps": []
+}

@@ -35,19 +35,23 @@ original AI-harness-first design.
 apps/desktop (Tauri v2)
   ├─ React UI ──────────── runs in Tauri, or in a browser against a stub backend
   └─ src-tauri ─┬─ powermise-mise       typed mise adapter (the core)
-                └─ AI Setups modules    lifecycle, compiler, registry, providers, domain, state
+                └─ powermise-setups     AI Setups: catalog → one mise conf.d file
+                     (registry, compiler, domain, state)
 apps/web (Astro)          marketing site + docs; hosts the interactive app demo
-crates/powermise-cli      `powermise` CLI, scoped to AI Setups
 ```
 
 - **`powermise-mise`** wraps mise's JSON commands (`ls`, `outdated`, `registry`,
   `ls-remote`, `env`, `tasks ls`, `config ls`, `settings ls`, `doctor`,
-  `bootstrap status`) in typed models, and runs mutating commands with streamed
+  `bootstrap plan/status`) in typed models, and runs mutating commands with streamed
   output and cancellation. Parsing is tested against fixtures captured from real mise.
 - **The browser stub** (`apps/desktop/src/dev`) keeps the UI runnable without Tauri.
   It powers design work and the live demo on the marketing site.
-- **The CLI** stays for AI Setups (`powermise apply`, `status`, …). powermise does
-  not grow a second general-purpose CLI — that's mise's job.
+- **There is no powermise CLI.** mise is the CLI. An AI setup compiles to
+  `conf.d/powermise-<name>.toml` in the mise config folder; applying it is
+  `mise bootstrap --yes --only packages,tools`, checking it is
+  `mise bootstrap status`, removing it is deleting the file (then optionally
+  `mise prune --tools`). The docs page "From the terminal: it's just mise"
+  covers it.
 
 ## Milestones
 
@@ -147,7 +151,7 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
       browser stub), with a GSAP scroll tour that steers it screen by screen.
 - [x] Rewrite docs: what powermise is, getting started with the app, an app tour,
       and how powermise uses mise. AI Setups docs moved under `/ai-setups/`.
-- [x] Keep the CLI reference for AI Setups.
+- [x] Replace the AI Setups CLI reference with "From the terminal: it's just mise".
 - [x] The dithered chef's hat moves to the closing call-to-action.
 - [ ] Screenshots / short screen recordings for docs pages once installers ship.
 - [ ] Download page with per-platform installers (with M6).
@@ -198,14 +202,14 @@ What the GUI does with each area of mise. "Planned" items are in the milestones 
 |---|---|---|
 | Tools | `ls`, `use`, `unuse`, `install`, `uninstall`, `upgrade`, `outdated`, `ls-remote`, `latest`, `which`, `where` | ✅ Installed, Discover, tool pages, Updates |
 | Registry & backends | `registry`, `search`, `tool`, `backends`, `tool-alias` | ✅ registry · planned: tool details, any-backend installs, aliases |
-| Cleanup | `prune`, `cache` | planned (M2, M4) |
-| Projects & config | `config ls/get/set`, `fmt`, `edit`, `trust`, `untrust`, `lock` | planned (M3) |
-| Environment | `env`, `set`, `unset`, `vars`, `secrets`, environments (`MISE_ENV`) | planned (M3) |
-| Tasks | `tasks ls/info/deps`, `run`, `watch` | planned (M3) |
+| Cleanup | `prune`, `cache` | ✅ `prune --tools` after removing a setup · planned: cleanup screen (M4) |
+| Projects & config | `config ls/get/set`, `fmt`, `edit`, `trust`, `untrust`, `lock` | ✅ `config ls`, `trust` with a config review · planned: `untrust`, `lock`, `fmt` |
+| Environment | `env`, `set`, `unset`, `vars`, `secrets`, environments (`MISE_ENV`) | ✅ `env`, `set`/`unset --file` · planned: `vars`, `secrets`, environments |
+| Tasks | `tasks ls/info/deps`, `run`, `watch` | ✅ `tasks ls/info`, `run` with arguments · planned: `deps`, `watch` |
 | Shell | `activate`, `doctor`, `reshim`, `en`, `exec` | ✅ activation guidance · planned: open terminal, reshim |
 | Settings | `settings ls/get/set/unset` | planned (M4) |
 | Updating mise | `version`, `self-update` | ✅ |
-| Machine setup | `bootstrap`, `dotfiles` | planned (M7) |
+| Machine setup | `bootstrap`, `dotfiles` | ✅ AI Setups (`bootstrap plan/status`, `bootstrap --only packages,tools`) · planned: machine view (M7) |
 | Migration | `sync`, `link` | planned (M4 onboarding) |
 | Generators | `generate github-action/git-pre-commit/devcontainer/bootstrap` | planned (M3) |
 | Auth | `token` | planned (M4) |
@@ -219,14 +223,24 @@ and `patrons`/`sponsors`.
 
 ## AI Setups (secondary feature)
 
-Continues as one section of the app and the `powermise` CLI.
+One section of the app. A setup is a selection file
+(`~/.config/powermise/selections/<name>.toml`) compiled into one mise file,
+`conf.d/powermise-<name>.toml`, that `mise bootstrap` installs. Needs mise 2026.10.
 
+- [x] Retire the powermise CLI, lifecycle ledger, and native winget/Scoop runner:
+      mise 2026.10 covers all of it (`conf.d`, `bootstrap --only`, `bootstrap
+      status`, winget/Scoop packages, `prune --tools`).
+- [x] Version-gate Apply on mise 2026.10 and point at Health to update.
+- [x] `scripts/verify-setup-fragment.sh` checks a compiled setup against real mise
+      in CI; `scripts/harness-matrix.sh` regenerates the harness reference table.
 - [ ] Configure MCP servers and integrations for real. Needs catalog data per entry
       (launch command, args, credentials) and each agent's settings location and format.
       Until then they're reported as "Manual setup".
-- [ ] `uninstall` also removes run reports.
-- [ ] Record the mise config directory in the ledger so `uninstall` targets the
-      directory a setup was applied to.
+- [ ] Drop the selection fields the app ignores (`machine_roles`,
+      `preferences.auto_prune`, `preferences.update_system_packages`) in a
+      schema v2, with a migration.
+- [ ] Fill catalog gaps: WSL providers for several harnesses, `hermes`, desktop
+      apps on Linux and Windows (see the harness reference).
 - [ ] Linux, Windows, and WSL verification of the apply path.
 - [ ] Offer mise's own MCP server (`mise mcp`) to agents, so they can see and install
       the tools a project uses.
@@ -237,11 +251,12 @@ Continues as one section of the app and the `powermise` CLI.
 |---|---|
 | Desktop framework | Tauri v2 |
 | Audience | People less comfortable in a terminal |
-| Writing mise config | Only through mise's commands, with the command shown |
+| Writing mise config | Only through mise's commands, with the command shown — except AI Setups, which write only their own `conf.d/powermise-<name>.toml` |
+| powermise CLI | None. mise is the CLI; the app shows the mise command for everything |
 | Project discovery | Manual add + recents |
 | mise versions | 2026.7.18 minimum; 2026.10 recommended; newer features gated by version |
 | Name | powermise ("mise-en-place", chef's hat) |
 
 ## Open questions
 
-- Whether "Setups" (app) and "selections" (CLI) should share one name.
+- Whether "selections" (the file format) should be renamed "setups" to match the app.

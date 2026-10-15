@@ -43,11 +43,11 @@ export function PlatformChips({ supported }: { supported: Platform[] }) {
 export function ProviderBadge({
   provider,
 }: {
-  provider: Pick<ToolProvider, "kind" | "package" | "version"> | undefined;
+  provider: (Pick<ToolProvider, "kind" | "version"> & { package?: string; key?: string }) | undefined;
 }) {
   if (!provider) return <span className="badge red">Not available</span>;
   return (
-    <span className="badge" title={`${provider.package} ${provider.version}`}>
+    <span className="badge" title={`${provider.key ?? provider.package ?? ""} ${provider.version}`.trim()}>
       {PROVIDER_LABEL[provider.kind]}
     </span>
   );

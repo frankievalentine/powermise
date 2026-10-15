@@ -50,6 +50,7 @@ terminals will use them. powermise does add the usual install locations —
   feature is available.
 - **2026.7.18 is the minimum.** Older-but-supported versions work; features that
   need newer mise are switched off with a note saying why.
+  AI Setups are one of them: they need 2026.10.
 
 Health shows your version and offers `mise self-update`.
 
@@ -59,3 +60,8 @@ Installing from Discover or a tool page sets your **global** default
 (`mise use -g`). Projects that ask for a specific version keep it. On a project's
 page, **Add Tool** and environment changes run inside that folder and edit its
 own config (`mise use`, `mise set --file …`).
+
+Applying an AI setup is the one time powermise writes a mise config file
+itself: `conf.d/powermise-<name>.toml` in your mise config folder, and only
+that file. It then runs `mise bootstrap --yes --only packages,tools`. See
+[From the terminal](/ai-setups/terminal/).

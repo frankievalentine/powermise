@@ -6,7 +6,6 @@ license.workspace = true
 
 [dependencies]
 powermise-domain = { path = "../powermise-domain" }
-powermise-providers = { path = "../powermise-providers" }
 powermise-registry = { path = "../powermise-registry" }
 serde.workspace = true
 thiserror.workspace = true

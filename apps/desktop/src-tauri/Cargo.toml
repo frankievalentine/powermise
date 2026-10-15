@@ -25,7 +25,7 @@ powermise-registry = { path = "../../../crates/powermise-registry" }
 powermise-compiler = { path = "../../../crates/powermise-compiler" }
 powermise-state = { path = "../../../crates/powermise-state" }
 powermise-mise = { path = "../../../crates/powermise-mise" }
-powermise-lifecycle = { path = "../../../crates/powermise-lifecycle" }
+powermise-setups = { path = "../../../crates/powermise-setups" }
 
 [profile.release]
 opt-level = 3

@@ -14,7 +14,7 @@
     "web:check": "bun run --cwd apps/web check",
     "web:build": "bun run --cwd apps/web build",
     "clean": "cargo clean && rm -rf apps/web/dist apps/web/.astro",
-    "test:mise-spike": "scripts/verify-mise-spike.sh",
+    "test:setup-fragment": "scripts/verify-setup-fragment.sh",
     "desktop:dev": "bun run --cwd apps/desktop app:dev",
     "desktop:build": "bun run --cwd apps/desktop app:build",
     "desktop:check": "bun run --cwd apps/desktop check && cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --locked"

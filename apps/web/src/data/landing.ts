@@ -7,14 +7,6 @@ export interface LandingHarness {
   status: 'catalogued' | 'provider-gap';
 }
 
-export interface LandingFeature {
-  id?: string;
-  number: string;
-  title: string;
-  description: string;
-  command?: string;
-}
-
 export const harnesses: LandingHarness[] = [
   {
     id: 'antigravity',
@@ -161,31 +153,3 @@ export const harnesses: LandingHarness[] = [
     status: 'catalogued',
   },
 ];
-
-export const features: LandingFeature[] = [
-  {
-    number: '01',
-    title: 'See the whole picture',
-    description: 'Resolve the catalog against your machine before anything is installed.',
-    command: 'powermise plan --name my-agent --target darwin',
-  },
-  {
-    number: '02',
-    title: 'Change one thing',
-    description: 'Adjust a selection or machine role without rebuilding the rest by hand.',
-    command: 'powermise selection show --name my-agent --target darwin',
-  },
-  {
-    id: 'selection-compile',
-    number: '03',
-    title: 'Keep the boundaries',
-    description: 'Use a separate powermise environment while your global mise setup stays untouched.',
-    command: 'powermise doctor --name my-agent --target darwin',
-  },
-];
-
-export const safeguards = [
-  ['Curated by default', 'Every harness brings a considered set of tools and settings.'],
-  ['Mise stays yours', 'Your global configuration is never taken over.'],
-  ['Nothing hidden', 'Every change has an owner and a way to undo it.'],
-] as const;

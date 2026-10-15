@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{CatalogPaths, LifecycleError, PowermiseLayout};
+use crate::{CatalogPaths, PowermiseLayout, SetupsError};
 
 /// The catalog files compiled into this build, by file name.
 const EMBEDDED_CATALOG: [(&str, &str); 5] = [
@@ -52,7 +52,7 @@ impl CatalogPaths {
     /// `POWERMISE_CATALOG_DIR`, then `./catalog/profiles` when the working
     /// directory is a repository checkout, and finally the embedded catalog,
     /// materialized under `<powermise root>/state/catalog`.
-    pub fn resolve(explicit: Option<PathBuf>) -> Result<Self, LifecycleError> {
+    pub fn resolve(explicit: Option<PathBuf>) -> Result<Self, SetupsError> {
         if let Some(directory) =
             explicit.or_else(|| env::var_os("POWERMISE_CATALOG_DIR").map(PathBuf::from))
         {
@@ -68,7 +68,7 @@ impl CatalogPaths {
 
     /// Writes the embedded catalog under the layout's state directory (only
     /// when its contents changed) and returns its paths.
-    pub fn embedded(layout: &PowermiseLayout) -> Result<Self, LifecycleError> {
+    pub fn embedded(layout: &PowermiseLayout) -> Result<Self, SetupsError> {
         let directory = layout.state.join("catalog");
         for (file_name, contents) in EMBEDDED_CATALOG {
             powermise_state::write_atomically(&directory.join(file_name), contents.as_bytes())?;

@@ -142,6 +142,93 @@ pub struct VersionInfo {
     pub latest: Option<String>,
 }
 
+/// `mise bootstrap plan --json`: what applying the config would change.
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+pub struct BootstrapPlan {
+    #[serde(default)]
+    pub resources: Vec<PlanResource>,
+    #[serde(default)]
+    pub summary: PlanSummary,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct PlanResource {
+    pub id: PlanResourceId,
+    #[serde(default)]
+    pub current: String,
+    #[serde(default)]
+    pub desired: String,
+    /// `create`, `update`, `remove`, `unchanged`, or `unknown`.
+    #[serde(default)]
+    pub action: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct PlanResourceId {
+    /// For example `package`, `tool`, `dotfile`, `service`.
+    pub kind: String,
+    /// For packages, `manager:package` (`brew:jq`).
+    pub name: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+pub struct PlanSummary {
+    #[serde(default)]
+    pub create: u32,
+    #[serde(default)]
+    pub update: u32,
+    #[serde(default)]
+    pub remove: u32,
+    #[serde(default)]
+    pub unchanged: u32,
+    #[serde(default)]
+    pub unknown: u32,
+}
+
+/// The parts of `mise bootstrap status --json` an AI setup needs: packages by
+/// manager, and tools.
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+pub struct BootstrapStatus {
+    #[serde(default)]
+    pub packages: BTreeMap<String, PackageManagerStatus>,
+    #[serde(default)]
+    pub tools: Vec<ToolStatus>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+pub struct PackageManagerStatus {
+    /// Whether the manager (Homebrew, apt, WinGet, …) is on this machine.
+    #[serde(default)]
+    pub available: bool,
+    #[serde(default)]
+    pub packages: Vec<PackageStatus>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct PackageStatus {
+    pub package: String,
+    #[serde(default)]
+    pub requested_version: String,
+    /// `installed`, `missing`, `outdated`, …
+    #[serde(default)]
+    pub state: String,
+    #[serde(default)]
+    pub installed_version: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct ToolStatus {
+    pub tool: String,
+    #[serde(default)]
+    pub requested_version: String,
+    #[serde(default)]
+    pub resolved_version: String,
+    #[serde(default)]
+    pub state: String,
+    #[serde(default)]
+    pub installed: bool,
+}
+
 /// A calendar version `YYYY.M.P` as mise numbers its releases.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct MiseVersion {

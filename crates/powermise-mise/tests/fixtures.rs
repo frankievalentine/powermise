@@ -169,3 +169,32 @@ fn mise_versions_compare_against_the_minimum() {
     assert!(MiseVersion::RECOMMENDED > MiseVersion::MINIMUM);
     assert!(installed < MiseVersion::RECOMMENDED);
 }
+
+#[test]
+fn bootstrap_plan_and_status_parse() {
+    use powermise_mise::{BootstrapPlan, BootstrapStatus};
+    // Captured from 2026.10.10, the release AI Setups requires.
+    let plan: BootstrapPlan = fixture("2026.10.10", "bootstrap-plan.json");
+    let hello = plan
+        .resources
+        .iter()
+        .find(|resource| resource.id.name == "brew:hello")
+        .unwrap();
+    assert_eq!(hello.id.kind, "package");
+    assert_eq!(hello.action, "create");
+    assert!(plan.summary.create >= 1);
+
+    let status: BootstrapStatus = fixture("2026.10.10", "bootstrap-status.json");
+    let brew = &status.packages["brew"];
+    assert!(
+        brew.packages
+            .iter()
+            .any(|package| package.package == "hello" && package.state == "missing")
+    );
+    assert!(
+        status
+            .tools
+            .iter()
+            .any(|tool| tool.tool == "jq" && tool.installed)
+    );
+}

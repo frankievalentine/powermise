@@ -5,9 +5,7 @@ members = [
   "crates/powermise-compiler",
   "crates/powermise-state",
   "crates/powermise-mise",
-  "crates/powermise-providers",
-  "crates/powermise-lifecycle",
-  "crates/powermise-cli",
+  "crates/powermise-setups",
 ]
 # The desktop app builds on its own: Tauri's dependency tree (and WebKitGTK on
 # Linux) stays out of the CLI build, lint, and CI matrix.

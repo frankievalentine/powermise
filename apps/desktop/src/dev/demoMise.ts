@@ -149,6 +149,10 @@ function describe(action: MiseAction): string {
   const project = describeProjectAction(action);
   if (project) return project;
   switch (action.kind) {
+    case "bootstrapPackagesAndTools":
+      return "mise bootstrap --yes --only packages,tools";
+    case "pruneTools":
+      return "mise prune --tools";
     case "useGlobal":
       return `mise use -g ${action.tool}@${action.version}`;
     case "unuseGlobal":
@@ -180,6 +184,15 @@ function perform(action: MiseAction): string[] {
   const project = performProjectAction(action);
   if (project) return project;
   switch (action.kind) {
+    case "bootstrapPackagesAndTools":
+      return bootstrapHook();
+    case "pruneTools": {
+      const unused = [...machine.entries()].flatMap(([tool, versions]) =>
+        versions.filter((entry) => !entry.global).map((entry) => `${tool}@${entry.version}`),
+      );
+      for (const [tool, versions] of machine) machine.set(tool, versions.filter((entry) => entry.global));
+      return unused.length ? unused.map((spec) => `mise ${spec}  ✓ pruned`) : ["mise nothing to prune"];
+    }
     case "useGlobal": {
       const versions = (machine.get(action.tool) ?? []).map((entry) => ({ ...entry, global: false }));
       const existing = versions.find((entry) => entry.version === action.version);
@@ -292,3 +305,9 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
 }
 
 export const NOT_HANDLED = Symbol("not handled");
+
+/** Set by the browser stub so a demo bootstrap installs the applied setups. */
+let bootstrapHook: () => string[] = () => ["mise all tools are installed"];
+export function setBootstrapHook(hook: () => string[]) {
+  bootstrapHook = hook;
+}

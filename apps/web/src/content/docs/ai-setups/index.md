@@ -6,7 +6,8 @@ description: Install a curated AI coding environment — Claude, Codex, Gemini, 
 AI Setups is the part of powermise that sets up AI coding agents. Pick the
 harnesses you want — Claude, Codex, Gemini, Cursor, and others — and powermise
 installs everything they need through mise: the agent's CLI, the runtimes it
-depends on, and optional desktop apps.
+depends on, and optional desktop apps. AI Setups need mise 2026.10 or newer;
+**Health** updates mise in one click.
 
 ## In the app
 
@@ -16,22 +17,29 @@ Under **AI Setups** in the sidebar:
 - **Agent Tools**, **MCP Servers**, **Integrations** — everything the harnesses
   can bring along.
 - **My Setups** — the setups you've saved. Create one with **+**, pick
-  harnesses, and watch the side panel show exactly what will be installed.
-  **Save & Apply** previews every change before anything runs.
+  harnesses, and the side panel shows exactly what will be installed.
 
-## How it relates to the rest of powermise
+**Save & Apply** opens a review: what gets installed, the exact config file
+powermise will write, and the commands it runs. Click **Apply** and mise
+installs everything, with its output streaming in the app. Afterwards the
+setup's page shows what mise reports for each item — installed, missing, or
+using a version from your own config.
 
-A setup compiles to a dedicated mise configuration file
-(`config.powermise-<name>.toml`) that powermise owns, next to — never inside —
-your own mise config. Applying it runs `mise bootstrap`. Remove the setup and
-that file goes with it. [The mise boundary](/ai-setups/mise-boundary/) has the
-details.
+## What a setup is
 
-MCP servers and integrations are listed but not configured yet; applying a
-setup marks them **Manual setup** instead of pretending they're done.
+A setup compiles to one mise config file,
+`~/.config/mise/conf.d/powermise-<name>.toml`, next to — never inside — your
+own config. Applying it runs `mise bootstrap`; removing it deletes the file.
+That's the whole contract, so you can do all of it from a terminal too:
+[From the terminal: it's just mise](/ai-setups/terminal/).
 
-## From the terminal
+MCP servers and integrations are listed but not configured yet; a setup marks
+them **Manual setup** instead of pretending they're done.
 
-AI Setups also has a CLI, `powermise`, for scripts and CI:
-[getting started with the CLI](/ai-setups/getting-started/) and the
-[command reference](/ai-setups/commands/).
+## Reference
+
+- [Selections](/ai-setups/harness-selections/) and the
+  [selection file format](/ai-setups/selection-schema/)
+- [The catalog](/ai-setups/catalog/) and the
+  [harness reference](/ai-setups/harness-reference/)
+- [Platforms](/ai-setups/targets/)

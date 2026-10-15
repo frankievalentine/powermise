@@ -76,54 +76,27 @@ export interface EnvironmentInfo {
   powermiseDir: string;
   miseConfigDir: string;
   misePath: string | null;
-  miseVersion: string | null;
 }
 
-export type OperationOutcome = "succeeded" | "failed" | "skipped";
-
-export interface OperationResult {
-  operation_id: string;
-  outcome: OperationOutcome;
-  message?: string;
-}
-
-export interface RunReport {
-  selection: string;
-  platform: Platform;
-  operations: OperationResult[];
-}
+// ---------------------------------------------------------------------------
+// AI Setups (src-tauri/src/setups.rs)
+// ---------------------------------------------------------------------------
 
 export interface SavedSelection {
   name: string;
   path: string;
   harnesses: string[];
   includeDesktopApps: boolean;
+  /** The mise fragment this setup writes: conf.d/powermise-<name>.toml. */
+  fragmentPath: string;
+  /** Whether that fragment exists, i.e. mise currently includes the setup. */
   applied: boolean;
-  lastRun: RunReport | null;
 }
 
 export interface SelectionDraft {
   name: string;
   harnesses: string[];
   includeDesktopApps: boolean;
-}
-
-export type OperationProvider =
-  | "mise-tools"
-  | "mise-bootstrap"
-  | "winget"
-  | "scoop"
-  | "npm"
-  | "verified-script"
-  | "config-adapter"
-  | "generated";
-
-export interface Operation {
-  id: string;
-  provider: OperationProvider;
-  resource_kind: string;
-  resource_id: string;
-  requested_state: string;
 }
 
 export interface FileChange {
@@ -136,7 +109,8 @@ export interface FileChange {
 export interface Install {
   toolId: string;
   kind: ToolProviderKind;
-  package: string;
+  /** The [tools] or [bootstrap.packages] key, e.g. `node` or `brew:git`. */
+  key: string;
   version: string;
 }
 
@@ -151,41 +125,44 @@ export interface Preview {
     integrationIds: string[];
     mcpServerIds: string[];
   };
-  operations: Operation[];
-  configPath: string;
-  configContents: string;
+  fragmentPath: string;
+  fragmentContents: string;
   change: FileChange;
   applyCommand: string;
 }
 
-export type BootstrapView =
-  | { state: "converged" }
-  | { state: "failed"; message: string }
-  | { state: "skipped"; reason: string };
-
-export interface ApplyResult {
-  selection: string;
-  results: OperationResult[];
-  bootstrap: BootstrapView;
-  followUps: string[];
-  recoveryGuidance: string[];
-  command: string;
-}
-
-export interface StatusResult {
-  selection: string;
-  satisfied: boolean;
+export interface WrittenSetup {
+  path: string;
   change: FileChange;
-  drift: string | null;
-  ledgerOwned: boolean;
-  followUps: string[];
-  native: { operationId: string; package: string; present: boolean; detail: string }[];
-  command: string;
 }
 
-export interface RemoveResult {
+/** `mise bootstrap plan --json`. */
+export interface BootstrapPlan {
+  resources: { id: { kind: string; name: string }; current: string; desired: string; action: string }[];
+  summary: { create: number; update: number; remove: number; unchanged: number; unknown: number };
+}
+
+export interface SetupItemStatus {
+  toolId: string;
+  key: string;
+  kind: ToolProviderKind;
+  state: string;
+  installed: boolean;
+  /** Another config's version wins for this tool (usually your own). */
+  overriddenBy: string | null;
+}
+
+export interface SetupStatus {
+  name: string;
+  fragmentPath: string;
+  change: FileChange;
+  items: SetupItemStatus[];
+  applyCommand: string;
+}
+
+export interface RemovedSetup {
   removed: string[];
-  commands: string[];
+  cleanupCommand: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -266,7 +243,9 @@ export type MiseAction =
   | { kind: "runTask"; project: string; task: string; args: string[] }
   | { kind: "useInProject"; project: string; tool: string; version: string }
   | { kind: "setEnv"; project: string; key: string; value: string; file: string | null }
-  | { kind: "unsetEnv"; project: string; key: string; file: string | null };
+  | { kind: "unsetEnv"; project: string; key: string; file: string | null }
+  | { kind: "bootstrapPackagesAndTools" }
+  | { kind: "pruneTools" };
 
 // ---------------------------------------------------------------------------
 // Projects (src-tauri/src/projects.rs)
@@ -387,10 +366,11 @@ export const api = {
     call<string>("save_selection", { draft, replace }),
   preview: (draft: SelectionDraft, target: Platform) =>
     call<Preview>("preview_selection", { draft, target }),
-  apply: (name: string, target: Platform) => call<ApplyResult>("apply_selection", { name, target }),
-  status: (name: string, target: Platform) =>
-    call<StatusResult>("selection_status", { name, target }),
-  remove: (name: string) => call<RemoveResult>("remove_selection", { name }),
+  /** Writes the setup's fragment into mise's conf.d (installing is a separate run). */
+  writeSetup: (name: string, target: Platform) => call<WrittenSetup>("write_setup", { name, target }),
+  setupStatus: (name: string, target: Platform) => call<SetupStatus>("setup_status", { name, target }),
+  bootstrapPlan: () => call<BootstrapPlan>("bootstrap_plan"),
+  removeSetup: (name: string) => call<RemovedSetup>("remove_setup", { name }),
   reveal: (path: string) => call<void>("reveal_path", { path }),
 
   miseInfo: () => call<MiseInfo>("mise_info"),
@@ -428,12 +408,6 @@ export const onMiseOutput = (handler: (event: OutputEvent) => void) =>
 /** A mise job finished (successfully, with an error, or cancelled). */
 export const onMiseFinished = (handler: (entry: ActivityEntry) => void) =>
   subscribe<ActivityEntry>("mise-finished", handler);
-
-/** Subscribes to human-readable apply progress lines. */
-export async function onApplyProgress(handler: (step: string) => void): Promise<UnlistenFn> {
-  if (!inTauri) return () => {};
-  return listen<string>("apply-progress", (event) => handler(event.payload));
-}
 
 /** Matches the one naming rule powermise enforces for setups. */
 export function isValidSetupName(name: string): boolean {

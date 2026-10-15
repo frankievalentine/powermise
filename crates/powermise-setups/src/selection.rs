@@ -1,10 +1,10 @@
-//! Managed selection storage: create, list, export, import, and remove.
+//! Saved AI setups (selection files): create, list, export, import, and remove.
 use std::{fs, io, path::Path, path::PathBuf};
 
 use powermise_domain::Selection;
 use powermise_registry::load_selection;
 
-use crate::{LifecycleError, PowermiseLayout};
+use crate::{PowermiseLayout, SetupsError};
 
 /// Manages named selection files under a powermise layout.
 pub struct SelectionStore<'a> {
@@ -17,22 +17,24 @@ impl<'a> SelectionStore<'a> {
     }
 
     /// Writes a new managed selection, failing if it already exists.
-    pub fn create(&self, selection: &Selection) -> Result<PathBuf, LifecycleError> {
+    pub fn create(&self, selection: &Selection) -> Result<PathBuf, SetupsError> {
         crate::validate_selection_name(&selection.name)?;
-        self.layout.ensure_directories()?;
+        fs::create_dir_all(&self.layout.selections).map_err(|source| SetupsError::Io {
+            path: self.layout.selections.clone(),
+            source,
+        })?;
         let path = self.layout.selection_path(&selection.name);
         if path.exists() {
-            return Err(LifecycleError::AlreadyExists {
+            return Err(SetupsError::AlreadyExists {
                 name: selection.name.clone(),
                 path,
             });
         }
-        let contents =
-            toml::to_string(selection).map_err(|source| LifecycleError::TomlSerialize {
-                path: path.clone(),
-                source,
-            })?;
-        fs::write(&path, contents).map_err(|source| LifecycleError::Io {
+        let contents = toml::to_string(selection).map_err(|source| SetupsError::TomlSerialize {
+            path: path.clone(),
+            source,
+        })?;
+        fs::write(&path, contents).map_err(|source| SetupsError::Io {
             path: path.clone(),
             source,
         })?;
@@ -40,20 +42,20 @@ impl<'a> SelectionStore<'a> {
     }
 
     /// Lists managed selection names in deterministic order.
-    pub fn list(&self) -> Result<Vec<String>, LifecycleError> {
+    pub fn list(&self) -> Result<Vec<String>, SetupsError> {
         let mut names = Vec::new();
         let entries = match fs::read_dir(&self.layout.selections) {
             Ok(entries) => entries,
             Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(names),
             Err(source) => {
-                return Err(LifecycleError::Io {
+                return Err(SetupsError::Io {
                     path: self.layout.selections.clone(),
                     source,
                 });
             }
         };
         for entry in entries {
-            let entry = entry.map_err(|source| LifecycleError::Io {
+            let entry = entry.map_err(|source| SetupsError::Io {
                 path: self.layout.selections.clone(),
                 source,
             })?;
@@ -70,14 +72,29 @@ impl<'a> SelectionStore<'a> {
     }
 
     /// Reads a managed selection by name.
-    pub fn read(&self, name: &str) -> Result<Selection, LifecycleError> {
-        crate::load_managed_selection(self.layout, name)
+    pub fn read(&self, name: &str) -> Result<Selection, SetupsError> {
+        crate::validate_selection_name(name)?;
+        let path = self.layout.selection_path(name);
+        if !path.exists() {
+            return Err(SetupsError::NotFound { name: name.into() });
+        }
+        let selection = load_selection(&path)?;
+        if selection.name != name {
+            return Err(SetupsError::Other {
+                message: format!(
+                    "setup file `{}` declares name `{}`; the file name and `name` must match",
+                    path.display(),
+                    selection.name
+                ),
+            });
+        }
+        Ok(selection)
     }
 
     /// Renders a managed selection as TOML for export.
-    pub fn export(&self, name: &str) -> Result<String, LifecycleError> {
+    pub fn export(&self, name: &str) -> Result<String, SetupsError> {
         let selection = self.read(name)?;
-        toml::to_string(&selection).map_err(|source| LifecycleError::TomlSerialize {
+        toml::to_string(&selection).map_err(|source| SetupsError::TomlSerialize {
             path: self.layout.selection_path(name),
             source,
         })
@@ -91,7 +108,7 @@ impl<'a> SelectionStore<'a> {
         &self,
         source_path: &Path,
         name_override: Option<&str>,
-    ) -> Result<PathBuf, LifecycleError> {
+    ) -> Result<PathBuf, SetupsError> {
         let selection = load_selection(source_path)?;
         let mut imported = selection;
         if let Some(name) = name_override {
@@ -101,13 +118,13 @@ impl<'a> SelectionStore<'a> {
     }
 
     /// Removes a managed selection file, returning the removed path.
-    pub fn remove(&self, name: &str) -> Result<PathBuf, LifecycleError> {
+    pub fn remove(&self, name: &str) -> Result<PathBuf, SetupsError> {
         crate::validate_selection_name(name)?;
         let path = self.layout.selection_path(name);
         if !path.exists() {
-            return Err(LifecycleError::NotFound { name: name.into() });
+            return Err(SetupsError::NotFound { name: name.into() });
         }
-        fs::remove_file(&path).map_err(|source| LifecycleError::Io {
+        fs::remove_file(&path).map_err(|source| SetupsError::Io {
             path: path.clone(),
             source,
         })?;

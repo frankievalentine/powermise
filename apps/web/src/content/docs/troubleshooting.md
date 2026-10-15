@@ -6,8 +6,7 @@ description: Common powermise errors and how to resolve them.
 A reference for the failures you are most likely to hit, and the exact fix for
 each. powermise is unofficial: if something only goes wrong in powermise, report
 it on the [powermise issue tracker](https://github.com/frankievalentine/powermise/issues)
-rather than to mise. The first section covers the desktop app; the rest covers the AI Setups
-CLI.
+rather than to mise.
 
 ## The app says "mise not found"
 
@@ -48,127 +47,54 @@ Click **Update** on the Health screen, or run `mise self-update`. powermise
 needs mise 2026.7.18 or newer and recommends 2026.10 or newer; on versions in
 between it works, with a few newer features switched off.
 
-## AI Setups CLI
+## AI Setups
 
-The sections below apply to the `powermise` command-line tool.
+### Apply is greyed out
 
-## Apply refuses to run without --yes
+AI Setups need mise 2026.10 or newer, because they rely on mise's `conf.d`
+folder and `mise bootstrap --only`. The setup's page says which version you
+have; update mise from **Health**.
 
-```text
-error: refusing to apply without --yes because the terminal is not interactive; re-run with --yes to proceed
-```
+### The setup page says "your config wins"
 
-**Cause:** you ran `apply` from a non-interactive terminal (script, CI, piped
-input) without `--yes`. powermise refuses real installs by default in that
-context.
+Your own mise config pins the same tool, and mise uses your version — the
+setup never overrides it. That's expected. To use the setup's version instead,
+remove the tool from your config (`mise unuse -g <tool>`, or edit
+`~/.config/mise/config.toml`).
 
-**Fix:** add `--yes`. On an interactive terminal the same command prompts
-instead.
+### Apply also installs things that aren't in the setup
 
-```sh
-powermise apply --name my-agent --target darwin --yes
-```
+`mise bootstrap` installs everything your mise config asks for, including
+`[bootstrap.packages]` in your own config. The review sheet lists those before
+you apply. If you don't want them, remove them from your config first.
 
-## Mise is not found on PATH
+### A package fails to install
 
-```text
-error: could not find mise
-```
+The output names the package manager that failed. Common causes:
 
-**Cause:** powermise shells out to `mise` and it is not resolvable.
-
-**Fix:** install mise and ensure it is on `PATH`, or pass an explicit path:
-
-```sh
-powermise apply --name my-agent --target darwin --mise /usr/local/bin/mise --yes
-```
-
-## Mise bootstrap failed during apply
-
-```text
-mise bootstrap: <reason>
-```
-
-**Cause:** a tool, package, or native operation failed (network, permissions,
-unavailable provider).
-
-**Fix:** `apply` does **not** roll back. The run report records the failure
-boundary, independent operations still ran, and `status` lists follow-up
-actions. Address the underlying cause, then re-run `apply` — it is idempotent
-and resumes from the recorded state.
+- **Homebrew isn't installed** (macOS, Linux): install it from
+  [brew.sh](https://brew.sh), then apply again.
+- **winget or Scoop isn't available** (Windows): install one, then apply again.
+- **apt needs your password** (Linux): run the apply command from a terminal,
+  where `sudo` can ask for it:
 
 ```sh
-powermise status --name my-agent --target darwin
-powermise apply  --name my-agent --target darwin --yes
+mise bootstrap --yes --only packages,tools
 ```
 
-If you only wanted the configuration written (no install), use
-`--skip-bootstrap` and run the install separately.
+### A harness can't be picked for this platform
 
-## Validation error: harness or provider unsupported
+Some harnesses don't support every platform, or need a tool with no provider
+there. The [harness reference](/ai-setups/harness-reference/) lists where each
+one works.
 
-**Cause:** a harness ID is not in the catalog, or no compatible provider exists
-for the requested `--target`.
+### I removed a setup, but its tools are still installed
 
-**Fix:** confirm the harness exists and choose a supported target. Windows
-native installs (`win32`) and WSL (`wsl`) are distinct — pick the one matching
-where tools run. See [Targets](/ai-setups/targets/).
+Removing a setup deletes its mise config file; what it installed stays. Click
+**Clean Up Unused Tools** after removing, or run `mise prune --tools`. Remove
+packages with their package manager (`brew uninstall`, for example).
 
-```sh
-powermise registry validate
-powermise selection validate --selection my-agent.toml --target darwin
-```
+### I edited the generated file and my changes disappeared
 
-## Plan or compile reports no selection
-
-```text
-error: no selection named "<name>"; import it first with `selection import`
-```
-
-**Cause:** `plan`, `compile`, and `validate` read a **file** with
-`--selection <path>`, while `show`, `activate`, `apply`, `status`, `doctor`,
-and `exec` act on a **stored** selection via `--name`. A selection must be
-`import`ed (or `create`d / built with `interactive`) before `--name` works.
-
-**Fix:** import first, then use `--name`.
-
-```sh
-powermise selection import --selection my-agent.toml
-powermise apply --name my-agent --target darwin --yes
-```
-
-## Drift reported by status or diff
-
-```text
-status: pending
-drift: <config> differs from recorded manifest
-```
-
-**Cause:** the applied configuration no longer matches what powermise last
-wrote (manual edit, external change).
-
-**Fix:** review with `diff`, then re-run `apply` to converge.
-
-```sh
-powermise diff   --name my-agent --target darwin
-powermise apply  --name my-agent --target darwin --yes
-```
-
-## Script output is hard to parse
-
-**Cause:** default `table` output is human-facing and may include color.
-
-**Fix:** request the stable JSON envelope and disable color.
-
-```sh
-powermise status --name my-agent --target darwin --output json --color never
-```
-
-## Landing-page animation does not appear
-
-**Cause:** the site's chef-hat animation needs WebGL and animations enabled.
-Under `prefers-reduced-motion` a static hat is shown instead. In a local dev
-server, a stale Vite dependency cache can also block the `three.js` module.
-
-**Fix:** ensure motion is enabled; if running `bun run dev`, restart the dev
-server so Vite re-optimizes dependencies.
+`conf.d/powermise-<name>.toml` is rewritten whenever the setup is applied. Put
+your changes in your own `~/.config/mise/config.toml` — it takes precedence.

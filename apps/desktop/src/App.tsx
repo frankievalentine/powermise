@@ -518,7 +518,6 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
           </div>
           {selections.length === 0 && <div className="sidebar-empty">No setups yet</div>}
           {selections.map((selection) => {
-            const failed = selection.lastRun?.operations.some((op) => op.outcome === "failed");
             const active =
               (route.kind === "setup" && route.name === selection.name) ||
               (route.kind === "editor" && route.name === selection.name);
@@ -532,8 +531,8 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
                 <Blocks size={16} />
                 <span className="label">{selection.name}</span>
                 <span
-                  className={`status-dot${failed ? " attention" : selection.applied ? " applied" : ""}`}
-                  title={failed ? "Last apply had failures" : selection.applied ? "Applied" : "Not applied yet"}
+                  className={`status-dot${selection.applied ? " applied" : ""}`}
+                  title={selection.applied ? "In your mise config" : "Not applied yet"}
                 />
               </button>
             );

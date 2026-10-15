@@ -1,14 +1,16 @@
 [package]
-name = "powermise-providers"
+name = "powermise-setups"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
+powermise-compiler = { path = "../powermise-compiler" }
 powermise-domain = { path = "../powermise-domain" }
+powermise-registry = { path = "../powermise-registry" }
 powermise-state = { path = "../powermise-state" }
-serde.workspace = true
-serde_json.workspace = true
 thiserror.workspace = true
+toml.workspace = true
+
 [lints]
 workspace = true

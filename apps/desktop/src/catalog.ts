@@ -19,9 +19,6 @@ export interface CatalogIndex {
   integrations: ConfigEntry[];
   mcpServers: ConfigEntry[];
   configById: Map<string, ConfigEntry>;
-  /** Tool by provider package key, e.g. `mise-tool:claude-code` or
-   *  `bootstrap-brew-cask:claude`. */
-  toolByPackage: Map<string, Tool>;
 }
 
 export function indexCatalog(bundle: CatalogBundle): CatalogIndex {
@@ -39,40 +36,7 @@ export function indexCatalog(bundle: CatalogBundle): CatalogIndex {
     integrations,
     mcpServers,
     configById: new Map([...integrations, ...mcpServers].map((entry) => [entry.id, entry])),
-    toolByPackage: new Map(
-      tools.flatMap((tool) =>
-        tool.providers.map((provider) => [`${provider.kind}:${provider.package}`, tool] as const),
-      ),
-    ),
   };
-}
-
-const BOOTSTRAP_SOURCES: Record<string, ToolProviderKind> = {
-  brew: "bootstrap-brew",
-  "brew-cask": "bootstrap-brew-cask",
-  apt: "bootstrap-apt",
-};
-
-/** A readable name for a plan operation ID such as `mise-tool:npm:@openai/codex`,
- *  `mise-bootstrap:brew-cask:claude`, `native-winget:Git.Git`, or
- *  `config-adapter:mcp-server:claude-context7`. */
-export function operationTitle(index: CatalogIndex, operationId: string): string {
-  const [kind, ...rest] = operationId.split(":");
-  const resource = rest.join(":");
-  let tool: Tool | undefined;
-  if (kind === "mise-tool") {
-    tool = index.toolByPackage.get(`mise-tool:${resource}`);
-  } else if (kind === "mise-bootstrap") {
-    const [source, ...packageParts] = resource.split(":");
-    const providerKind = BOOTSTRAP_SOURCES[source];
-    tool = providerKind && index.toolByPackage.get(`${providerKind}:${packageParts.join(":")}`);
-  } else if (kind.startsWith("native-")) {
-    tool = index.toolByPackage.get(`${kind.slice("native-".length)}:${resource}`);
-  } else if (kind === "config-adapter") {
-    const id = rest.slice(1).join(":");
-    return index.configById.get(id)?.title ?? id;
-  }
-  return tool?.title ?? resource;
 }
 
 /** Mirrors the compiler's `chosen_provider` for browsing the catalog without

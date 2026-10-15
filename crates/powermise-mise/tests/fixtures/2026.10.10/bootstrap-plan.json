@@ -1,0 +1,20 @@
+{
+  "resources": [
+    {
+      "id": {
+        "kind": "package",
+        "name": "brew:hello"
+      },
+      "current": "missing",
+      "desired": "installed (any version)",
+      "action": "create"
+    }
+  ],
+  "summary": {
+    "create": 1,
+    "update": 0,
+    "remove": 0,
+    "unchanged": 0,
+    "unknown": 0
+  }
+}

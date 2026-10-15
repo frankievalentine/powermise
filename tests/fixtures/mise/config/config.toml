@@ -1,4 +1,0 @@
-# User-owned global mise baseline fixture.
-# The verifier snapshots this file and must leave it byte-for-byte unchanged.
-[tools]
-node = "22"

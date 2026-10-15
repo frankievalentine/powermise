@@ -1443,6 +1443,21 @@ button {
   background: none;
 }
 
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--accent-hover);
+}
+
 .run-log {
   margin-top: 10px;
   max-height: 260px;

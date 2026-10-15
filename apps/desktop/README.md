@@ -17,15 +17,17 @@ bun run desktop:dev      # from the repo root
 fakes everything that touches the machine (`src/dev/browserPreview.ts`), which
 is handy for design work.
 
-## How it fits with the CLI
+## How it works
 
-- `src-tauri/src/lib.rs` calls the same `powermise-lifecycle` functions the CLI
-  runs, against the same selection files, ledger, and mise config directory.
-  A "setup" in the app is a selection in `~/.config/powermise/selections/`.
-- Every action shows the equivalent `powermise …` command, so anything done
-  here can be repeated or undone from a terminal.
+- There's no powermise CLI: mise is the CLI. The backend reads mise's JSON
+  output (`powermise-mise`) and changes things only by running mise commands,
+  streamed and cancellable, each shown before it runs.
+- AI Setups (`src-tauri/src/setups.rs`) compile the catalog with
+  `powermise-setups` into one mise file, `conf.d/powermise-<name>.toml`, then
+  run `mise bootstrap --yes --only packages,tools`. A setup is a selection in
+  `~/.config/powermise/selections/`.
 - The crate is excluded from the Cargo workspace so Tauri's dependency tree
-  stays out of CLI builds and CI.
+  stays out of the library crates' builds and CI.
 - Apps launched from Finder don't inherit the shell `PATH`; the backend adds
   the usual mise/Homebrew locations before looking for `mise`.
 

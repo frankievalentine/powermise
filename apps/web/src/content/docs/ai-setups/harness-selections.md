@@ -1,11 +1,12 @@
 ---
-title: Harness selections
-description: Selections reference curated powermise harness profiles, not generic profiles.
+title: Selections
+description: A setup is a small file naming the curated harnesses you want; powermise resolves everything else from the catalog.
 ---
 
-A powermise selection is a portable declaration for a focused AI harness set.
-The selected profile IDs resolve their declared tools for a target platform; a
-selection does not duplicate those definitions.
+Every AI setup you save is a **selection**: a small, portable file that names
+the harnesses you want. It doesn't list tools or versions — the
+[catalog](/ai-setups/catalog/) decides what each harness needs on each
+platform, so the same selection works on macOS, Linux, and Windows.
 
 ```toml
 schema_version = 1
@@ -13,62 +14,32 @@ name = "engineering-agents"
 catalog = "powermise-profiles"
 harnesses = ["claude", "codex", "gemini"]
 
-[machine_roles.macbook]
-include_apps = ["cursor"]
-exclude_harnesses = []
-exclude_tools = []
-
 [preferences]
-auto_prune = false
-update_system_packages = false
+include_desktop_apps = false
 ```
 
-## Fields
+The app writes this for you when you save a setup. Selections live in
+`~/.config/powermise/selections/<name>.toml` (or under `POWERMISE_HOME` or
+`XDG_CONFIG_HOME/powermise` if you set them).
 
-- `schema_version` — `1`.
-- `name` — the selection's identifier, used by `apply`, `status`, `doctor`,
-  and friends after the selection is imported into your store.
-- `catalog` — the catalog label this selection resolves against
-  (`powermise-profiles` by default).
-- `harnesses` — the curated harness IDs you want (for example `claude`,
-  `codex`, `gemini`).
-- `machine_roles.<role>` — optional, at most one. Adds or excludes curated
-  assets for a role (apps to include, harnesses or tools to exclude).
-- `preferences` — convergence options such as `auto_prune` and
-  `update_system_packages`.
+## How a selection resolves
 
-## Resolution rules
+1. Every setup starts with the **base** harness: Git, curl, jq, ripgrep, and fd.
+2. Each harness adds the tools it requires.
+3. With **Include desktop apps** on, harnesses add their desktop companions —
+   the Claude or Codex app, for example — where the platform has a provider.
+   A few desktop-first harnesses always include theirs.
+4. Each tool gets exactly one provider for the platform (see
+   [Platforms](/ai-setups/targets/)), and the result compiles to one mise
+   config file.
 
-1. Every requested harness ID must exist in the catalog.
-2. Harness tool references must exist in the tool catalog.
-3. Exactly one optional machine role can add or exclude curated assets.
-4. Unsupported target-platform providers are reported as validation errors.
-5. Compilation emits a deterministic mise configuration only after validation
-   succeeds.
+If a harness doesn't support the platform, or a tool has no provider there,
+the setup editor says so before anything is saved or applied.
 
-## Storing and reusing a selection
+## Moving a setup between computers
 
-`selection validate`, `selection compile`, and `plan` read a selection file
-directly with `--selection <path>`. The lifecycle commands — `show`,
-`activate`, `diff`, `apply`, `status`, `doctor`, `exec`, and `uninstall` —
-operate on a selection you have placed in your store with `import` or
-`create`:
-
-```sh
-powermise selection import --selection engineering-agents.toml
-powermise selection list
-powermise selection show --name engineering-agents --target darwin
-```
-
-Selections export and reimport identically, so a selection moves between
-machines unchanged:
-
-```sh
-powermise selection export --name engineering-agents > transfer.toml
-# on the new machine:
-powermise selection import --selection transfer.toml
-```
-
-The selection file is user-editable and reviewable. Ownership, drift, and
-lifecycle are real features of the current CLI: `apply` writes the generated
-config and a ledger, and `status`/`doctor` report drift against them.
+Copy the selection file into the other computer's
+`~/.config/powermise/selections/` folder; it appears under **My Setups** and
+compiles for that computer's platform when you apply it. To skip powermise on
+the other end entirely, copy the compiled mise file instead — see
+[From the terminal](/ai-setups/terminal/#other-machines-dotfiles-and-ci).
