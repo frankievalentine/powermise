@@ -44,8 +44,17 @@ plugin Claude Code and Codex offer, and Gemini CLI extensions by link.
 
 Skills are folders of instructions an agent loads when they're relevant. The
 **Skills** tab installs them with the [skills CLI](https://skills.sh) from
-skills.sh, which mise runs (`mise x npm:skills@1.7.2 -- skills …`), into each
-agent you pick:
+skills.sh, which mise runs (`mise x npm:skills@1.7.2 -- skills …`):
+
+- **Install for** — the agents new skills go to. Agents set up on this
+  computer are checked to start.
+- **Suggested** — popular skills from Anthropic, Vercel, and the community,
+  one click each.
+- **Add from GitHub** — any repository (`owner/repo`) or a skills.sh link.
+  Name the skills you want, or leave that empty for all of them.
+- **Installed** — what's there now, with **Update All** and **Remove…**.
+
+Installing runs, for example:
 
 ```sh
 mise x npm:skills@1.7.2 -- skills add anthropics/skills -g -y -a claude-code -a codex --skill frontend-design

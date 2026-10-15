@@ -152,6 +152,18 @@ source = "powermise-work.files/claude-code.json"
 merge = true
 ```
 
+Most of these files are in the same place on every platform. The ones in an
+app's own folder move:
+
+| Agent | macOS | Windows | Linux and WSL |
+| --- | --- | --- | --- |
+| Claude desktop app | `~/Library/Application Support/Claude/claude_desktop_config.json` | `~/AppData/Roaming/Claude/claude_desktop_config.json` | — (no Linux app) |
+| VS Code | `~/Library/Application Support/Code/User/mcp.json` | `~/AppData/Roaming/Code/User/mcp.json` | `~/.config/Code/User/mcp.json` |
+| Cline | `cline_mcp_settings.json` under VS Code's folder above | same | same |
+
+Zed's settings file can hold comments, which mise won't merge into, so add
+servers there in Zed's Agent Panel settings.
+
 Applying the setup runs `mise dotfiles apply` for just those files after
 `mise bootstrap`. Servers mise installs run as
 `<path to mise> x npm:@upstash/context7-mcp@4.4.2 -- context7-mcp`, so desktop

@@ -209,6 +209,81 @@ h1#_top + p {
   border-top: 0;
 }
 
+/* The link to a heading: a small, quiet icon right after the text, centred
+   on it, shown when you hover the heading or tab to it. */
+.sl-markdown-content .sl-heading-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Starlight pads the heading to make room for its icon; spacing lives on the
+   wrapper instead, so the icon centres on the text. */
+.sl-markdown-content .sl-heading-wrapper > :is(h2, h3, h4, h5, h6) {
+  margin: 0;
+  padding: 0;
+}
+
+.sl-markdown-content .sl-heading-wrapper.level-h3 {
+  margin-top: 2rem;
+}
+
+.sl-markdown-content .sl-anchor-link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  border-radius: var(--pm-radius-sm);
+  color: var(--sl-color-gray-3);
+  text-decoration: none;
+  opacity: 0;
+  transition:
+    opacity var(--pm-transition-fast),
+    color var(--pm-transition-fast),
+    background-color var(--pm-transition-fast);
+}
+
+/* Starlight's larger hit area would draw past the rounded box. */
+.sl-markdown-content .sl-anchor-link::after {
+  inset: 0;
+}
+
+.sl-markdown-content .sl-anchor-icon {
+  display: flex;
+}
+
+.sl-markdown-content .sl-anchor-icon > svg {
+  display: block;
+  width: 0.875rem;
+  height: 0.875rem;
+  transform: none;
+}
+
+.sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link,
+.sl-markdown-content .sl-anchor-link:focus-visible {
+  opacity: 1;
+}
+
+.sl-markdown-content .sl-anchor-link:hover {
+  color: var(--sl-color-white);
+  background: var(--pm-docs-line);
+}
+
+.sl-markdown-content .sl-anchor-link:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 1px;
+}
+
+@media (hover: none) {
+  .sl-markdown-content .sl-anchor-link {
+    opacity: 0.6;
+  }
+}
+
 .sl-markdown-content h2 {
   color: var(--sl-color-white);
   font-family: var(--sl-font);
@@ -219,7 +294,6 @@ h1#_top + p {
 }
 
 .sl-markdown-content h3 {
-  margin-top: 2rem;
   color: var(--sl-color-white);
   font-family: var(--sl-font);
   font-size: 1.15rem;

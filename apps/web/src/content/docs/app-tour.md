@@ -21,8 +21,10 @@ projects, setups, and settings at once.
 The first time powermise opens, it walks through four steps, each checked off
 when it's already true:
 
-1. **Install mise**, if it's missing — with Homebrew or mise's install script on
-   macOS and Linux, winget or Scoop on Windows. The sheet shows the exact command.
+1. **Install mise**, if it's missing — mise's install script (`curl
+   https://mise.run | sh`) first on macOS and Linux, since that build updates
+   itself without a password, or Homebrew; winget or Scoop on Windows. The
+   sheet shows the exact command.
 2. **Turn mise on in your terminal** — the line to add to your shell's startup file.
 3. **Bring over versions you already have** opens [Import](#import), so mise uses them without
    downloading them again: nvm, nodenv, pyenv, uv, and Homebrew with
@@ -152,7 +154,9 @@ What the project asks for, and what it inherits from your global config.
 `mise use <tool>@<version>` there, which adds it to the project's `mise.toml`.
 
 Version files from other tools — `.nvmrc`, `.python-version`, `.ruby-version`,
-and so on — are listed when mise isn't reading them. **Use .nvmrc** turns them on
+`rust-toolchain.toml`, .NET's `global.json`, `.sdkmanrc`, `.zig-version`, and
+the rest of the files mise's built-in tools read — are listed when mise isn't
+reading them. **Use .nvmrc** turns them on
 for that tool in every project (`mise settings add
 idiomatic_version_file_enable_tools node`).
 
@@ -260,7 +264,11 @@ and keeps the rest under **More details**:
   finds something.
 - **Shims** — when mise's shims are on your PATH, what they're for and
   **Rebuild Shims** (`mise reshim`).
-- **Plugins** — legacy asdf and vfox plugins, when any are installed (read-only).
+- **Plugins** — legacy asdf and vfox plugins, when any are installed. A plugin
+  named like one of mise's built-in tools (node, python, go, …) replaces mise's
+  own installer for it; Health flags it, and **Use Built-In** adds
+  `[tool_alias] <tool> = "core:<tool>"` to your global config so mise's
+  installer is used again. The plugin stays installed.
 - **Trusted folders** — every folder or file mise trusts, with **Revoke**
   (`mise untrust`), and configs it was told to ignore.
 - **Disk space** — installed tools and the download cache, with **Remove Old**
