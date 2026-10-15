@@ -88,23 +88,27 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
       and `self_update.auto` (2026.10.4+), set through `mise settings set`.
 - [ ] Persist the activity log across launches.
 
-### M3 — Projects
+### M3 — Projects (first pass ✅)
 
-- [ ] Add project folders (manual add + recent; no disk scanning).
-- [ ] Tools per project, including idiomatic version files (`.nvmrc`,
-      `.python-version`, `.tool-versions`) and `mise install` for anything missing.
-- [ ] Config files (`mise config ls`) and the layering between them: `mise.toml`,
-      `mise.local.toml`, global, and system. Edit values through `mise config set`.
+- [x] Add project folders (picker, drag and drop, recents; no disk scanning).
+- [x] Tools per project (project vs. inherited), **Install Missing** (`mise install`),
+      **Add Tool** (`mise use` in the folder).
+- [ ] Call out idiomatic version files (`.nvmrc`, `.python-version`) as sources.
+- [x] Config files (`mise config ls`) in precedence order with plain-language roles.
+- [ ] Edit config values through `mise config set`.
 - [ ] **Environments** (`MISE_ENV`, `mise.<env>.toml`): a switcher showing what changes
       in `development` vs. `staging` vs. `production`.
-- [ ] Environment variables from `mise env --json`, masking anything marked
-      sensitive/redacted; add and remove with `mise set` / `mise unset`.
-- [ ] **Tasks**: list (`mise tasks ls`), run with live output, and a form for task
-      arguments, flags, and choices generated from the usage spec in
-      `mise tasks info --json`. Show dependencies (`mise tasks deps`), and offer
-      "Run on change" (`mise watch`). Interactive tasks open in Terminal.
-- [ ] Trust flow for untrusted configs (`mise trust` / `mise untrust`), always
-      user-confirmed; show which hooks (`[hooks]`) a config would run before trusting.
+- [x] Environment variables from `mise env --json-extended` with their source file;
+      `redact = true` and secret-looking names masked until revealed; add to
+      `mise.toml` or `mise.local.toml` and remove from the defining file
+      (`mise set|unset --file`); values never shown in the activity log.
+- [x] **Tasks**: list, run with live output and Stop, and a form for arguments,
+      flags, and choices generated from `mise tasks info --json`; dependencies noted.
+- [ ] Dependency graph (`mise tasks deps`), "Run on change" (`mise watch`), and
+      opening interactive tasks in a terminal.
+- [x] Trust flow: untrusted folders show a read-only preview of hooks, loaded files,
+      variables, tools, and tasks before a user-confirmed `mise trust`.
+- [ ] Untrust (`mise untrust`) from the project page.
 - [ ] Lockfiles: show whether `mise.lock` is current and refresh it (`mise lock`,
       which supports `--dry-run` and `--json`).
 - [ ] "Open a terminal with this project's tools" (`mise en`).

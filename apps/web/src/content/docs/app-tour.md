@@ -52,6 +52,50 @@ in your config to the new version.
 
 Commands: `mise upgrade --bump <tool>`, or `mise upgrade --bump` for all.
 
+## Projects
+
+Add a folder with **+** next to **Projects** in the sidebar (or drop it on the
+window). powermise never scans your disk; it only shows folders you add.
+
+### Trust comes first
+
+mise won't load a project's config until you trust it, because a config can
+set environment variables, load files, and run commands automatically. For an
+untrusted folder, powermise reads the config files itself — without running
+anything — and shows what trusting would allow. Hooks that run on their own and
+files it would load are highlighted. **Trust Folder** runs `mise trust` only
+after you confirm.
+
+### Tools
+
+What the project asks for, and what it inherits from your global config.
+**Install Missing** runs `mise install` in the folder; **Add Tool** runs
+`mise use <tool>@<version>` there, which adds it to the project's `mise.toml`.
+
+### Tasks
+
+Every task the project defines. **Run** opens a form generated from the task's
+arguments, flags, and choices, and shows the exact command as you fill it in:
+
+```sh
+cd ~/code/web-app && mise run deploy -- staging --dry-run
+```
+
+Arguments go after `--`, so one like `--force` always reaches the task.
+
+### Environment
+
+The variables mise sets in the folder and the file each comes from. Values mise
+marks `redact = true` — and names that look like secrets — stay hidden until you
+reveal them. Add a variable to `mise.toml` (shared with the project) or
+`mise.local.toml` (this machine only; the default for secret-looking names).
+Values are never shown in the activity log: `mise set --file mise.local.toml API_TOKEN=•••`.
+
+### Config files
+
+The files mise reads in the folder, most specific first — when two ask for the
+same tool, the higher one wins.
+
 ## Activity
 
 Every command powermise ran since it opened, with how long it took and whether

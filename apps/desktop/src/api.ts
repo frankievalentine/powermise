@@ -260,7 +260,88 @@ export type MiseAction =
   | { kind: "unuseGlobal"; tool: string }
   | { kind: "uninstall"; tool: string; version: string }
   | { kind: "upgrade"; tool: string | null }
-  | { kind: "selfUpdate" };
+  | { kind: "selfUpdate" }
+  | { kind: "installProject"; project: string }
+  | { kind: "trustProject"; project: string }
+  | { kind: "runTask"; project: string; task: string; args: string[] }
+  | { kind: "useInProject"; project: string; tool: string; version: string }
+  | { kind: "setEnv"; project: string; key: string; value: string; file: string | null }
+  | { kind: "unsetEnv"; project: string; key: string; file: string | null };
+
+// ---------------------------------------------------------------------------
+// Projects (src-tauri/src/projects.rs)
+// ---------------------------------------------------------------------------
+
+export interface ProjectEntry {
+  path: string;
+  name: string;
+  exists: boolean;
+  lastOpenedAt: number;
+}
+
+export interface ConfigFile {
+  path: string;
+  tools: string[];
+}
+
+export interface Task {
+  name: string;
+  description: string;
+  aliases: string[];
+  source: string;
+  dir: string | null;
+  hide: boolean;
+  run: string[];
+}
+
+export interface EnvVarView {
+  name: string;
+  value: string;
+  source: string | null;
+  secret: boolean;
+}
+
+/** What an untrusted config would do once trusted, read without executing. */
+export interface ConfigPreview {
+  path: string;
+  tools: [string, string][];
+  envNames: string[];
+  envDirectives: string[];
+  hooks: [string, string][];
+  tasks: [string, string][];
+  parseError: string | null;
+}
+
+export interface ProjectOverview {
+  path: string;
+  name: string;
+  trust: { path: string; trusted: boolean };
+  previews: ConfigPreview[];
+  tools: ToolInventory | null;
+  configFiles: ConfigFile[] | null;
+  tasks: Task[] | null;
+  env: EnvVarView[] | null;
+  problems: string[];
+}
+
+export interface TaskInput {
+  name: string;
+  usage: string;
+  help: string | null;
+  required: boolean;
+  takesValue: boolean;
+  choices: string[];
+  default: string | null;
+}
+
+export interface TaskDetails {
+  name: string;
+  description: string;
+  run: string[];
+  depends: string[];
+  args: TaskInput[];
+  flags: TaskInput[];
+}
 
 export interface RunOutcome {
   success: boolean;
@@ -322,6 +403,13 @@ export const api = {
   run: (action: MiseAction) => call<number>("run_action", { action }),
   cancel: (jobId: number) => call<void>("cancel_job", { jobId }),
   activity: () => call<ActivityEntry[]>("activity"),
+
+  projects: () => call<ProjectEntry[]>("list_projects"),
+  /** Opens the system folder picker unless a path is given. `null` = cancelled. */
+  addProject: (path?: string) => call<ProjectEntry | null>("add_project", { path: path ?? null }),
+  forgetProject: (path: string) => call<void>("forget_project", { path }),
+  projectOverview: (path: string) => call<ProjectOverview>("project_overview", { path }),
+  taskDetails: (path: string, task: string) => call<TaskDetails>("task_details", { path, task }),
 };
 
 /** Subscribes to a backend event, in Tauri or from the browser stub. */

@@ -92,3 +92,53 @@ fn mise_versions_compare_against_the_minimum() {
     assert!(MiseVersion::RECOMMENDED > MiseVersion::MINIMUM);
     assert!(installed < MiseVersion::RECOMMENDED);
 }
+
+#[test]
+fn project_env_trust_and_task_details_parse() {
+    use powermise_mise::{EnvReport, parse_task_details, parse_trust_show};
+
+    let env: EnvReport = fixture("env-extended.json");
+    assert_eq!(env["APP_ENV"].value, "dev");
+    assert!(
+        env["SECRET_TOKEN"]
+            .source
+            .as_ref()
+            .unwrap()
+            .ends_with("code/app/mise.toml")
+    );
+
+    let redacted: std::collections::BTreeMap<String, String> = fixture("env-redacted.json");
+    assert!(redacted.contains_key("SECRET_TOKEN"));
+
+    let read = |name: &str| {
+        std::fs::read_to_string(format!(
+            "{}/tests/fixtures/{name}",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .unwrap()
+    };
+    assert!(
+        parse_trust_show(&read("trust-show-trusted.txt"))
+            .unwrap()
+            .trusted
+    );
+    assert!(
+        !parse_trust_show(&read("trust-show-untrusted.txt"))
+            .unwrap()
+            .trusted
+    );
+    assert!(powermise_mise::is_untrusted_error(&read(
+        "untrusted-error.txt"
+    )));
+
+    let task: serde_json::Value = fixture("task-info-deploy.json");
+    let details = parse_task_details(&task);
+    assert_eq!(details.name, "deploy");
+    assert_eq!(details.args.len(), 1);
+    assert_eq!(details.args[0].name, "env");
+    assert!(details.args[0].required);
+    assert_eq!(details.args[0].choices, ["staging", "prod"]);
+    assert_eq!(details.flags.len(), 1);
+    assert_eq!(details.flags[0].usage, "--dry-run");
+    assert!(!details.flags[0].takes_value);
+}

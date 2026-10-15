@@ -9,11 +9,17 @@ use std::{
 
 mod client;
 mod models;
+mod project;
 
 pub use client::{MiseClient, MiseCommand, OutputLine, RunOutcome, Stream};
 pub use models::{
     ConfigFile, ConfigSource, Doctor, MiseVersion, OutdatedReport, OutdatedTool, RegistryEntry,
     RemoteVersion, ShellInfo, Task, ToolInventory, ToolVersion, VersionInfo,
+};
+pub use project::{
+    ConfigPreview, EnvReport, EnvVar, PROJECT_CONFIG_FILES, TaskDetails, TaskInput, TrustStatus,
+    is_untrusted_error, looks_secret, parse_task_details, parse_trust_show, preview_config,
+    preview_project_configs,
 };
 
 use powermise_domain::{
@@ -287,6 +293,8 @@ pub enum MiseAdapterError {
     },
     #[error("`{value}` is not a valid tool name or version")]
     InvalidArgument { value: String },
+    #[error("mise won't read this project's config until it's trusted")]
+    Untrusted { stderr: String },
     #[error("could not parse `mise bootstrap status --json` from `{executable}`: {source}")]
     Status {
         executable: PathBuf,

@@ -3,6 +3,12 @@
 // removals change this in-memory state and stream believable output, so the
 // demo behaves like the real app without touching anyone's machine.
 import registryEntries from "./registry.json";
+import {
+  demoProjects,
+  describeProjectAction,
+  NOT_A_PROJECT_COMMAND,
+  performProjectAction,
+} from "./demoProjects";
 import type {
   ActivityEntry,
   Doctor,
@@ -140,6 +146,8 @@ function doctor(): Doctor {
 }
 
 function describe(action: MiseAction): string {
+  const project = describeProjectAction(action);
+  if (project) return project;
   switch (action.kind) {
     case "useGlobal":
       return `mise use -g ${action.tool}@${action.version}`;
@@ -151,6 +159,8 @@ function describe(action: MiseAction): string {
       return action.tool ? `mise upgrade --bump ${action.tool}` : "mise upgrade --bump";
     case "selfUpdate":
       return "mise self-update --yes";
+    default:
+      return "mise";
   }
 }
 
@@ -167,6 +177,8 @@ function installLines(tool: string, version: string): string[] {
 
 /** Applies an action to the demo machine and returns the output it "prints". */
 function perform(action: MiseAction): string[] {
+  const project = performProjectAction(action);
+  if (project) return project;
   switch (action.kind) {
     case "useGlobal": {
       const versions = (machine.get(action.tool) ?? []).map((entry) => ({ ...entry, global: false }));
@@ -210,6 +222,8 @@ function perform(action: MiseAction): string[] {
       selfUpdateAvailable = false;
       miseVersion = "2026.10.10";
       return ["Checking target-arch... mise-v2026.10.10-macos-arm64", "Downloading...", "Updated mise to 2026.10.10"];
+    default:
+      return [];
   }
 }
 
@@ -270,8 +284,10 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
       return undefined;
     case "activity":
       return [...activityLog].reverse();
-    default:
-      return NOT_HANDLED;
+    default: {
+      const result = demoProjects(command, args);
+      return result === NOT_A_PROJECT_COMMAND ? NOT_HANDLED : result;
+    }
   }
 }
 

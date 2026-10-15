@@ -1489,6 +1489,128 @@ button {
   background: var(--fill);
 }
 
+/* ---------- Projects ---------- */
+
+.trust-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--orange) 45%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.trust-panel h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.trust-panel p {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+}
+
+.trust-panel > div {
+  flex: 1;
+}
+
+.trust-panel .button {
+  flex: none;
+  align-self: center;
+}
+
+.preview-row {
+  gap: 10px;
+  min-height: 38px;
+}
+
+.preview-row code,
+.preview-row > .mono {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.preview-row.risky {
+  background: color-mix(in srgb, var(--orange-soft) 45%, transparent);
+}
+
+.env-value {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.env-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.env-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  gap: 8px;
+}
+
+.config-rank {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--fill-strong);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.task-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-field__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.task-field .select {
+  min-width: 0;
+  width: 100%;
+}
+
+.task-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+}
+
+.task-switch:hover {
+  background: var(--fill);
+}
+
 /* ---------- Window chrome per platform ---------- */
 
 /* Windows: our own title bar with caption buttons on the right. */

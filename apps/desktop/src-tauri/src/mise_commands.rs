@@ -30,7 +30,7 @@ pub struct MiseState {
     registry: Mutex<Option<Vec<RegistryEntry>>>,
 }
 
-fn client() -> CommandResult<MiseClient> {
+pub(crate) fn client() -> CommandResult<MiseClient> {
     let executable = find_mise().ok_or_else(|| {
         "mise is not installed. Install it from https://mise.jdx.dev, then try again.".to_owned()
     })?;
@@ -140,13 +140,57 @@ pub async fn doctor() -> CommandResult<Doctor> {
 
 /// A change the window can ask for. Each maps to exactly one mise command.
 #[derive(Clone, Debug, Deserialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum MiseAction {
-    UseGlobal { tool: String, version: String },
-    UnuseGlobal { tool: String },
-    Uninstall { tool: String, version: String },
-    Upgrade { tool: Option<String> },
+    UseGlobal {
+        tool: String,
+        version: String,
+    },
+    UnuseGlobal {
+        tool: String,
+    },
+    Uninstall {
+        tool: String,
+        version: String,
+    },
+    Upgrade {
+        tool: Option<String>,
+    },
     SelfUpdate,
+    // Project actions run inside the project folder.
+    InstallProject {
+        project: PathBuf,
+    },
+    TrustProject {
+        project: PathBuf,
+    },
+    RunTask {
+        project: PathBuf,
+        task: String,
+        args: Vec<String>,
+    },
+    UseInProject {
+        project: PathBuf,
+        tool: String,
+        version: String,
+    },
+    SetEnv {
+        project: PathBuf,
+        key: String,
+        value: String,
+        /// The config file to write; `None` means the project's `mise.toml`.
+        file: Option<PathBuf>,
+    },
+    UnsetEnv {
+        project: PathBuf,
+        key: String,
+        /// The config file that defines it.
+        file: Option<PathBuf>,
+    },
 }
 
 impl MiseAction {
@@ -157,6 +201,27 @@ impl MiseAction {
             Self::Uninstall { tool, version } => MiseCommand::uninstall(tool, version),
             Self::Upgrade { tool } => MiseCommand::upgrade(tool.as_deref()),
             Self::SelfUpdate => Ok(MiseCommand::self_update()),
+            Self::InstallProject { project } => Ok(MiseCommand::install_all().in_project(project)),
+            Self::TrustProject { project } => Ok(MiseCommand::trust(project)),
+            Self::RunTask {
+                project,
+                task,
+                args,
+            } => MiseCommand::run_task(task, args, project),
+            Self::UseInProject {
+                project,
+                tool,
+                version,
+            } => MiseCommand::use_in_project(tool, version, project),
+            Self::SetEnv {
+                project,
+                key,
+                value,
+                file,
+            } => MiseCommand::set_env(key, value, file.as_deref(), project),
+            Self::UnsetEnv { project, key, file } => {
+                MiseCommand::unset_env(key, file.as_deref(), project)
+            }
         }
         .map_err(message)
     }

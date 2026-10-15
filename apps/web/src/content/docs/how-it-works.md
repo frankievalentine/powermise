@@ -24,8 +24,10 @@ that ran.
 ## 3. Nothing is trusted for you
 
 mise refuses to load a project's config until you trust it, because configs can
-set environment variables and run hooks. powermise keeps that boundary: it will
-ask, show what the config would do, and never trust a file on its own.
+set environment variables and run hooks. powermise keeps that boundary: before
+asking, it reads the config itself — without running anything — and shows its
+hooks, the files it loads, the variables it sets, and its tasks. It never trusts
+a folder on its own.
 
 ## 4. Your terminal keeps working
 
@@ -54,5 +56,6 @@ Health shows your version and offers `mise self-update`.
 ### Which config powermise changes
 
 Installing from Discover or a tool page sets your **global** default
-(`mise use -g`). Projects that ask for a specific version keep it. Per-project
-editing is coming with the Projects screen.
+(`mise use -g`). Projects that ask for a specific version keep it. On a project's
+page, **Add Tool** and environment changes run inside that folder and edit its
+own config (`mise use`, `mise set --file …`).

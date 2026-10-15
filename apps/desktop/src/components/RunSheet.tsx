@@ -12,6 +12,9 @@ export interface RunRequest {
   /** The confirm button's label, e.g. "Install". */
   verb: string;
   destructive?: boolean;
+  /** Start without the confirm step — for flows that already showed the
+   *  exact command (like the task form). */
+  autoStart?: boolean;
 }
 
 type Phase =
@@ -75,15 +78,22 @@ export function RunSheet({
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [lines.length]);
 
-  if (!request) return <Sheet open={false} onDismiss={onClose} labelledBy="run-title">{null}</Sheet>;
-
   const start = async () => {
+    if (!request) return;
     try {
       setPhase({ kind: "running", jobId: await api.run(request.action) });
     } catch (error) {
       setPhase({ kind: "error", message: (error as Error).message });
     }
   };
+
+  // Flows that already showed the command start as soon as it's resolved.
+  useEffect(() => {
+    if (request?.autoStart && command && phase.kind === "confirm") void start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [request, command]);
+
+  if (!request) return <Sheet open={false} onDismiss={onClose} labelledBy="run-title">{null}</Sheet>;
 
   const running = phase.kind === "running";
   const result = phase.kind === "done" ? phase.entry : null;

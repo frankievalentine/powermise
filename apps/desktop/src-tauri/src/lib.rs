@@ -6,6 +6,7 @@
 //!   calls the same lifecycle code as the `powermise` CLI so anything done here
 //!   can be repeated, inspected, or undone from a terminal.
 mod mise_commands;
+mod projects;
 
 use std::{
     env, fs,
@@ -109,7 +110,7 @@ fn mise_runner() -> CommandResult<MiseExecutable> {
     })
 }
 
-fn layout() -> CommandResult<PowermiseLayout> {
+pub(crate) fn layout() -> CommandResult<PowermiseLayout> {
     PowermiseLayout::resolve(None).map_err(message)
 }
 
@@ -564,6 +565,7 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(mise_commands::MiseState::default())
         .invoke_handler(tauri::generate_handler![
             mise_commands::mise_info,
@@ -576,6 +578,11 @@ pub fn run() {
             mise_commands::run_action,
             mise_commands::cancel_job,
             mise_commands::activity,
+            projects::list_projects,
+            projects::add_project,
+            projects::forget_project,
+            projects::project_overview,
+            projects::task_details,
             get_environment,
             get_catalog,
             list_selections,

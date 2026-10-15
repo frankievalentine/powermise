@@ -22,6 +22,10 @@ use crate::{
         ConfigFile, Doctor, OutdatedReport, RegistryEntry, RemoteVersion, Task, ToolInventory,
         VersionInfo,
     },
+    project::{
+        EnvReport, TaskDetails, TrustStatus, is_untrusted_error, parse_task_details,
+        parse_trust_show,
+    },
 };
 
 /// The installed mise, run from a fixed working directory so project-local
@@ -69,11 +73,15 @@ impl MiseClient {
             }
         })?;
         if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+            if is_untrusted_error(&stderr) {
+                return Err(MiseAdapterError::Untrusted { stderr });
+            }
             return Err(MiseAdapterError::Failed {
                 executable: self.executable.clone(),
                 status: output.status.code(),
                 stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-                stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+                stderr,
             });
         }
         serde_json::from_slice(&output.stdout).map_err(|source| MiseAdapterError::Json {
@@ -127,6 +135,48 @@ impl MiseClient {
         project: &Path,
     ) -> Result<std::collections::BTreeMap<String, String>, MiseAdapterError> {
         self.read_json(&["env", "--json"], Some(project))
+    }
+
+    /// `mise trust --show` for a project: never fails on an untrusted config.
+    pub fn trust_status(&self, project: &Path) -> Result<TrustStatus, MiseAdapterError> {
+        let output = self
+            .base(Some(project))
+            .args(["trust", "--show"])
+            .output()
+            .map_err(|source| MiseAdapterError::Execute {
+                executable: self.executable.clone(),
+                source,
+            })?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        // No config in the folder at all reads as trusted: there's nothing to trust.
+        Ok(parse_trust_show(&stdout).unwrap_or(TrustStatus {
+            path: project.to_path_buf(),
+            trusted: true,
+        }))
+    }
+
+    /// `mise env --json-extended`: each variable with its value and source file.
+    pub fn env_extended(&self, project: &Path) -> Result<EnvReport, MiseAdapterError> {
+        self.read_json(&["env", "--json-extended"], Some(project))
+    }
+
+    /// Names of variables mise marks `redact = true` (`mise env --json --redacted`).
+    pub fn redacted_env_names(&self, project: &Path) -> Result<Vec<String>, MiseAdapterError> {
+        let redacted: std::collections::BTreeMap<String, serde_json::Value> =
+            self.read_json(&["env", "--json", "--redacted"], Some(project))?;
+        Ok(redacted.into_keys().collect())
+    }
+
+    /// `mise tasks info --json <task>`, reduced to what a run form needs.
+    pub fn task_details(
+        &self,
+        project: &Path,
+        task: &str,
+    ) -> Result<TaskDetails, MiseAdapterError> {
+        validate_argument(task)?;
+        let json: serde_json::Value =
+            self.read_json(&["tasks", "info", "--json", task], Some(project))?;
+        Ok(parse_task_details(&json))
     }
 
     /// `mise doctor --json`.
@@ -259,6 +309,9 @@ pub struct RunOutcome {
 pub struct MiseCommand {
     arguments: Vec<String>,
     cwd: Option<PathBuf>,
+    /// Arguments of the form `KEY=value` whose value is hidden when the
+    /// command is displayed (environment values can be secrets).
+    masked: Vec<usize>,
 }
 
 impl MiseCommand {
@@ -266,6 +319,7 @@ impl MiseCommand {
         Self {
             arguments,
             cwd: None,
+            masked: Vec::new(),
         }
     }
 
@@ -282,9 +336,14 @@ impl MiseCommand {
     /// The command line as a person would type it.
     pub fn display(&self) -> String {
         let mut line = String::from("mise");
-        for argument in &self.arguments {
+        for (index, argument) in self.arguments.iter().enumerate() {
             line.push(' ');
-            if argument.contains(char::is_whitespace) || argument.is_empty() {
+            if self.masked.contains(&index) {
+                let key = argument
+                    .split_once('=')
+                    .map_or(argument.as_str(), |(key, _)| key);
+                line.push_str(&format!("{key}=•••"));
+            } else if argument.contains(char::is_whitespace) || argument.is_empty() {
                 line.push_str(&format!("'{argument}'"));
             } else {
                 line.push_str(argument);
@@ -336,10 +395,116 @@ impl MiseCommand {
         Self::new(vec!["install".into()])
     }
 
+    /// `mise use <tool>@<version>` in a project: adds it to the project's config.
+    pub fn use_in_project(
+        tool: &str,
+        version: &str,
+        project: impl Into<PathBuf>,
+    ) -> Result<Self, MiseAdapterError> {
+        Ok(Self::new(vec!["use".into(), tool_spec(tool, version)?]).in_project(project))
+    }
+
+    /// `mise trust` in a project, after the person reviewed what it allows.
+    pub fn trust(project: impl Into<PathBuf>) -> Self {
+        Self::new(vec!["trust".into()]).in_project(project)
+    }
+
+    /// `mise run <task> -- <args…>` in a project. Arguments follow `--` so one
+    /// like `--force` always reaches the task, never `mise run` itself.
+    pub fn run_task(
+        task: &str,
+        args: &[String],
+        project: impl Into<PathBuf>,
+    ) -> Result<Self, MiseAdapterError> {
+        validate_argument(task)?;
+        let mut arguments = vec!["run".into(), task.into()];
+        if !args.is_empty() {
+            arguments.push("--".into());
+            arguments.extend(args.iter().cloned());
+        }
+        Ok(Self::new(arguments).in_project(project))
+    }
+
+    /// `mise set [--file <file>] KEY=value` in a project; the value is hidden
+    /// when displayed. Without `file`, mise writes to the project's `mise.toml`.
+    pub fn set_env(
+        key: &str,
+        value: &str,
+        file: Option<&Path>,
+        project: impl Into<PathBuf>,
+    ) -> Result<Self, MiseAdapterError> {
+        validate_env_key(key)?;
+        let project = project.into();
+        let mut arguments = vec!["set".into()];
+        if let Some(file) = file {
+            arguments.extend(["--file".into(), project_file(&project, file)?]);
+        }
+        arguments.push(format!("{key}={value}"));
+        let masked = arguments.len() - 1;
+        let mut command = Self::new(arguments).in_project(project);
+        command.masked.push(masked);
+        Ok(command)
+    }
+
+    /// `mise unset [--file <file>] KEY` in a project: removes it from the file
+    /// that defines it (default `mise.toml`).
+    pub fn unset_env(
+        key: &str,
+        file: Option<&Path>,
+        project: impl Into<PathBuf>,
+    ) -> Result<Self, MiseAdapterError> {
+        validate_env_key(key)?;
+        let project = project.into();
+        let mut arguments = vec!["unset".into()];
+        if let Some(file) = file {
+            arguments.extend(["--file".into(), project_file(&project, file)?]);
+        }
+        arguments.push(key.into());
+        Ok(Self::new(arguments).in_project(project))
+    }
+
     /// `mise self-update --yes`: update mise itself (the person already
     /// confirmed in the app).
     pub fn self_update() -> Self {
         Self::new(vec!["self-update".into(), "--yes".into()])
+    }
+}
+
+/// A config file powermise may edit through mise: a `.toml` file inside the
+/// project. Returned relative to the project, as mise resolves `--file`.
+fn project_file(project: &Path, file: &Path) -> Result<String, MiseAdapterError> {
+    let relative = file.strip_prefix(project).unwrap_or(file);
+    let inside = relative.is_relative()
+        && !relative
+            .components()
+            .any(|component| matches!(component, std::path::Component::ParentDir));
+    if inside
+        && relative
+            .extension()
+            .is_some_and(|extension| extension == "toml")
+    {
+        Ok(relative.to_string_lossy().into_owned())
+    } else {
+        Err(MiseAdapterError::InvalidArgument {
+            value: file.display().to_string(),
+        })
+    }
+}
+
+/// Environment variable names: letters, digits, and underscores, not
+/// starting with a digit.
+fn validate_env_key(key: &str) -> Result<(), MiseAdapterError> {
+    let valid = key
+        .chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_alphabetic() || first == '_')
+        && key
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || character == '_');
+    if valid {
+        Ok(())
+    } else {
+        Err(MiseAdapterError::InvalidArgument { value: key.into() })
     }
 }
 
@@ -405,6 +570,69 @@ mod tests {
                 .in_project("/Users/demo/My Project")
                 .display(),
             "cd '/Users/demo/My Project' && mise install"
+        );
+    }
+
+    #[test]
+    fn project_commands_render_and_hide_secrets() {
+        let project = PathBuf::from("/Users/demo/code/app");
+        assert_eq!(
+            MiseCommand::run_task("deploy", &["staging".into(), "--dry-run".into()], &project)
+                .unwrap()
+                .display(),
+            "cd /Users/demo/code/app && mise run deploy -- staging --dry-run"
+        );
+        assert_eq!(
+            MiseCommand::run_task("test", &[], &project)
+                .unwrap()
+                .arguments(),
+            ["run", "test"]
+        );
+        let set = MiseCommand::set_env("API_TOKEN", "s3cret", None, &project).unwrap();
+        assert_eq!(set.arguments(), ["set", "API_TOKEN=s3cret"]);
+        assert_eq!(
+            set.display(),
+            "cd /Users/demo/code/app && mise set API_TOKEN=•••"
+        );
+        let local_file = Path::new("/Users/demo/code/app/mise.local.toml");
+        let local =
+            MiseCommand::set_env("API_TOKEN", "s3cret", Some(local_file), &project).unwrap();
+        assert_eq!(
+            local.arguments(),
+            ["set", "--file", "mise.local.toml", "API_TOKEN=s3cret"]
+        );
+        assert_eq!(
+            local.display(),
+            "cd /Users/demo/code/app && mise set --file mise.local.toml API_TOKEN=•••"
+        );
+        assert_eq!(
+            MiseCommand::unset_env("DATABASE_URL", Some(local_file), &project)
+                .unwrap()
+                .arguments(),
+            ["unset", "--file", "mise.local.toml", "DATABASE_URL"]
+        );
+        // Only .toml files inside the project.
+        for outside in [
+            "/Users/demo/.config/mise/config.toml",
+            "../other/mise.toml",
+            "/Users/demo/code/app/.env",
+        ] {
+            assert!(
+                MiseCommand::unset_env("X", Some(Path::new(outside)), &project).is_err(),
+                "{outside}"
+            );
+        }
+        assert!(MiseCommand::set_env("BAD KEY", "x", None, &project).is_err());
+        assert!(MiseCommand::set_env("1ABC", "x", None, &project).is_err());
+        assert_eq!(
+            MiseCommand::trust(&project).display(),
+            "cd /Users/demo/code/app && mise trust"
+        );
+        assert_eq!(
+            MiseCommand::use_in_project("node", "22", &project)
+                .unwrap()
+                .display(),
+            "cd /Users/demo/code/app && mise use node@22"
         );
     }
 

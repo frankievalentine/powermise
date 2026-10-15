@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   Compass,
   Cpu,
+  Folder,
   HeartPulse,
   Layers,
   Package,
@@ -23,6 +24,7 @@ import {
   PLATFORM_LABEL,
   type EnvironmentInfo,
   type MiseInfo,
+  type ProjectEntry,
   type OutdatedReport,
   type RegistryEntry,
   type SavedSelection,
@@ -44,6 +46,7 @@ import { ToolPage } from "./views/mise/ToolPage";
 import { UpdatesView } from "./views/mise/UpdatesView";
 import { HealthView } from "./views/mise/HealthView";
 import { ActivityView } from "./views/mise/ActivityView";
+import { ProjectView } from "./views/mise/ProjectView";
 
 export type Route =
   // mise
@@ -53,6 +56,7 @@ export type Route =
   | { kind: "updates" }
   | { kind: "activity" }
   | { kind: "health" }
+  | { kind: "project"; path: string }
   // AI Setups
   | { kind: "harnesses" }
   | { kind: "harness"; id: string }
@@ -78,6 +82,10 @@ export interface AppContext {
   env: EnvironmentInfo;
   catalog: CatalogIndex;
   selections: SavedSelection[];
+  projects: ProjectEntry[];
+  refreshProjects: () => Promise<ProjectEntry[]>;
+  /** Opens the folder picker (or adds `path`) and shows the project. */
+  addProject: (path?: string) => Promise<void>;
   mise: MiseData;
   navigate: (route: Route) => void;
   refreshSelections: () => Promise<SavedSelection[]>;
@@ -94,6 +102,7 @@ const TOP_LEVEL: Route["kind"][] = [
   "updates",
   "activity",
   "health",
+  "project",
   "harnesses",
   "tools",
   "mcp",
@@ -108,6 +117,8 @@ const routeKey = (route: Route) =>
     ? `harness:${route.id}`
     : route.kind === "tool" || route.kind === "setup"
       ? `${route.kind}:${route.name}`
+      : route.kind === "project"
+        ? `project:${route.path}`
       : route.kind === "editor"
         ? `editor:${route.name ?? "new"}`
         : route.kind;
@@ -116,6 +127,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const [env, setEnv] = useState<EnvironmentInfo | null>(null);
   const [catalog, setCatalog] = useState<CatalogIndex | null>(null);
   const [selections, setSelections] = useState<SavedSelection[]>([]);
+  const [projects, setProjects] = useState<ProjectEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<Route[]>([initialRoute ?? { kind: "installed" }]);
   const [query, setQuery] = useState("");
@@ -152,7 +164,14 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
     return next;
   }, []);
 
+  const refreshProjects = useCallback(async () => {
+    const next = await api.projects();
+    setProjects(next);
+    return next;
+  }, []);
+
   useEffect(() => {
+    refreshProjects().catch(() => setProjects([]));
     Promise.all([api.environment(), api.catalog(), api.selections()])
       .then(([environment, bundle, saved]) => {
         setEnv(environment);
@@ -200,6 +219,32 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
     return () => window.removeEventListener("powermise:navigate", onNavigate);
   }, [navigate]);
 
+  const addProject = useCallback(
+    async (path?: string) => {
+      try {
+        const added = await api.addProject(path);
+        await refreshProjects();
+        if (added) navigate({ kind: "project", path: added.path });
+      } catch (reason) {
+        window.alert((reason as Error).message);
+      }
+    },
+    [navigate, refreshProjects],
+  );
+
+  // Drop a folder on the window to add it as a project.
+  useEffect(() => {
+    if (!inTauri) return;
+    let stop: (() => void) | undefined;
+    import("@tauri-apps/api/webview").then(async ({ getCurrentWebview }) => {
+      stop = await getCurrentWebview().onDragDropEvent((event) => {
+        if (event.payload.type !== "drop") return;
+        for (const path of event.payload.paths) void addProject(path);
+      });
+    });
+    return () => stop?.();
+  }, [addProject]);
+
   const goBack = () => setHistory((stack) => (stack.length > 1 ? stack.slice(0, -1) : stack));
 
   const mise = useMemo<MiseData>(
@@ -218,9 +263,20 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const context = useMemo<AppContext | null>(
     () =>
       env && catalog
-        ? { env, catalog, selections, mise, navigate, refreshSelections, run: setRunRequest }
+        ? {
+            env,
+            catalog,
+            selections,
+            projects,
+            refreshProjects,
+            addProject,
+            mise,
+            navigate,
+            refreshSelections,
+            run: setRunRequest,
+          }
         : null,
-    [env, catalog, selections, mise, navigate, refreshSelections],
+    [env, catalog, selections, projects, refreshProjects, addProject, mise, navigate, refreshSelections],
   );
 
   if (error) {
@@ -300,6 +356,8 @@ function toolbarTitle(route: Route, context: AppContext): string {
       return "Activity";
     case "health":
       return "Health";
+    case "project":
+      return route.path.split(/[\\/]/).filter(Boolean).pop() ?? route.path;
     case "harnesses":
       return "Harnesses";
     case "harness":
@@ -331,6 +389,8 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
       return <ActivityView context={context} />;
     case "health":
       return <HealthView context={context} />;
+    case "project":
+      return <ProjectView context={context} path={route.path} />;
     case "harnesses":
       return <HarnessesView context={context} query={query} />;
     case "harness":
@@ -349,7 +409,7 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
 }
 
 function Sidebar({ route, root, context }: { route: Route; root: Route; context: AppContext }) {
-  const { catalog, selections, env, mise, navigate } = context;
+  const { catalog, selections, projects, env, mise, navigate, addProject } = context;
   const platform = usePlatform();
   const installedCount = Object.keys(mise.inventory ?? {}).length;
   const updateCount = Object.keys(mise.outdated ?? {}).length;
@@ -401,6 +461,34 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
               <Icon size={16} />
               <span className="label">{label}</span>
               {typeof trailing === "number" ? <span className="count">{trailing}</span> : trailing}
+            </button>
+          ))}
+        </div>
+
+        <div className="sidebar-section">
+          <div className="sidebar-heading">
+            Projects
+            <button onClick={() => addProject()} aria-label="Add project folder" title="Add Project Folder">
+              <Plus size={14} />
+            </button>
+          </div>
+          {projects.length === 0 && (
+            <button className="sidebar-item" onClick={() => addProject()}>
+              <Plus size={16} />
+              <span className="label">Add a project folder</span>
+            </button>
+          )}
+          {projects.map((project) => (
+            <button
+              key={project.path}
+              className="sidebar-item"
+              aria-current={route.kind === "project" && route.path === project.path ? "page" : undefined}
+              onClick={() => navigate({ kind: "project", path: project.path })}
+              title={project.exists ? project.path : `${project.path} — not found`}
+            >
+              <Folder size={16} />
+              <span className="label">{project.name}</span>
+              {!project.exists && <span className="status-dot attention" />}
             </button>
           ))}
         </div>
