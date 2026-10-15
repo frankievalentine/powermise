@@ -95,6 +95,9 @@ export interface MiseData {
   /** `mise doctor`, for Health and its sidebar badge. */
   doctor: Doctor | null;
   doctorError: string | null;
+  /** Shell startup lines that turn on another version manager; Health
+   *  counts them, so its badge does too. */
+  shellConflicts: number;
   reloadDoctor: () => Promise<void>;
   /** Increments whenever a change finishes; screens reload on it. */
   revision: number;
@@ -172,6 +175,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const [miseError, setMiseError] = useState<string | null>(null);
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [doctorError, setDoctorError] = useState<string | null>(null);
+  const [shellConflicts, setShellConflicts] = useState(0);
 
   const route = history[history.length - 1];
   const platform = usePlatform();
@@ -222,6 +226,10 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   }, []);
 
   const reloadDoctor = useCallback(async () => {
+    api
+      .shellConflicts()
+      .then((conflicts) => setShellConflicts(conflicts.length))
+      .catch(() => setShellConflicts(0));
     try {
       setDoctor(await api.doctor());
       setDoctorError(null);
@@ -310,10 +318,11 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
       error: miseError,
       doctor,
       doctorError,
+      shellConflicts,
       reloadDoctor,
       revision,
     }),
-    [miseInfo, inventory, outdated, registry, miseError, doctor, doctorError, reloadDoctor, revision],
+    [miseInfo, inventory, outdated, registry, miseError, doctor, doctorError, shellConflicts, reloadDoctor, revision],
   );
 
   const context = useMemo<AppContext | null>(
@@ -541,7 +550,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
   const platform = usePlatform();
   const installedCount = Object.keys(mise.inventory ?? {}).length;
   const updateCount = Object.keys(mise.outdated ?? {}).length;
-  const health = healthSummary(mise.info, mise.doctor);
+  const health = healthSummary(mise.info, mise.doctor, mise.shellConflicts);
   // Detail pages keep the section they were opened from highlighted.
   const isActive = (...kinds: Route["kind"][]) => kinds.includes(root.kind);
 

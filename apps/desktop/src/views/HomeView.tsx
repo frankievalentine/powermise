@@ -37,7 +37,7 @@ export function HomeView({ context }: { context: AppContext }) {
 
   const installed = Object.keys(mise.inventory ?? {}).length;
   const updates = Object.keys(mise.outdated ?? {}).length;
-  const health = healthSummary(mise.info, mise.doctor);
+  const health = healthSummary(mise.info, mise.doctor, mise.shellConflicts);
 
   const steps: Step[] = [
     {
