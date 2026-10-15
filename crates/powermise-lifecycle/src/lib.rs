@@ -3,6 +3,7 @@
 //! resources, plus the convergent apply command.
 mod activate;
 mod apply;
+mod catalog;
 mod diff;
 mod doctor;
 mod exec;
@@ -51,12 +52,15 @@ use powermise_state::{
 };
 use thiserror::Error;
 
-/// Builds the mise bootstrap-status request for a compiled context.
-pub(crate) fn mise_request(context: &CompilationContext) -> powermise_domain::MiseDryRunRequest {
-    powermise_domain::MiseDryRunRequest {
+/// Builds the request that addresses a compiled selection's environment in the
+/// machine's real mise configuration directory.
+pub(crate) fn mise_request(
+    context: &CompilationContext,
+    mise_config_dir: &Path,
+) -> powermise_domain::MiseEnvironmentRequest {
+    powermise_domain::MiseEnvironmentRequest {
         environment: context.artifact.manifest().environment.clone(),
-        config_file_name: context.artifact.manifest().generated_config_file.clone(),
-        config_contents: context.artifact.contents().to_owned(),
+        config_dir: mise_config_dir.to_path_buf(),
     }
 }
 
@@ -141,6 +145,39 @@ impl PowermiseLayout {
     }
 }
 
+/// Resolves the machine's mise configuration directory from an explicit
+/// override, then `MISE_CONFIG_DIR`, `XDG_CONFIG_HOME/mise`, or
+/// `~/.config/mise` — the same order mise itself uses.
+pub fn resolve_mise_config_dir(override_dir: Option<PathBuf>) -> Result<PathBuf, LifecycleError> {
+    override_dir
+        .or_else(|| env::var_os("MISE_CONFIG_DIR").map(PathBuf::from))
+        .or_else(|| env::var_os("XDG_CONFIG_HOME").map(|path| PathBuf::from(path).join("mise")))
+        .or_else(|| {
+            env::var_os("HOME")
+                .or_else(|| env::var_os("USERPROFILE"))
+                .map(|path| PathBuf::from(path).join(".config/mise"))
+        })
+        .ok_or_else(|| LifecycleError::Other {
+            message: "could not determine the mise config directory; pass --mise-config-dir".into(),
+        })
+}
+
+/// The target platform of the machine Powermise is running on. WSL is a
+/// distinct target from native Linux, detected from the kernel release.
+pub fn host_platform() -> Platform {
+    if cfg!(target_os = "macos") {
+        Platform::Darwin
+    } else if cfg!(windows) {
+        Platform::Win32
+    } else if fs::read_to_string("/proc/sys/kernel/osrelease")
+        .is_ok_and(|release| release.to_ascii_lowercase().contains("microsoft"))
+    {
+        Platform::Wsl
+    } else {
+        Platform::Linux
+    }
+}
+
 /// Loads and validates all catalogs, then compiles the resolved selection and plan.
 pub fn compile_context(
     paths: &CatalogPaths,
@@ -209,11 +246,22 @@ pub fn load_managed_selection(
     layout: &PowermiseLayout,
     name: &str,
 ) -> Result<Selection, LifecycleError> {
+    validate_selection_name(name)?;
     let path = layout.selection_path(name);
     if !path.exists() {
         return Err(LifecycleError::NotFound { name: name.into() });
     }
-    load_selection(&path).map_err(Into::into)
+    let selection = load_selection(&path)?;
+    if selection.name != name {
+        return Err(LifecycleError::Other {
+            message: format!(
+                "managed selection file `{}` declares name `{}`; the file name and `name` must match",
+                path.display(),
+                selection.name
+            ),
+        });
+    }
+    Ok(selection)
 }
 
 fn read_file(path: &Path) -> Result<Vec<u8>, LifecycleError> {
@@ -223,23 +271,11 @@ fn read_file(path: &Path) -> Result<Vec<u8>, LifecycleError> {
     })
 }
 
-/// Validates a selection name for use in file names, environment names, and
-/// managed markers (letters, digits, `.`, `_`, `-`).
+/// Validates a selection name before it is used in a file path, environment
+/// name, or managed marker. Delegates to the one rule the generated artifact
+/// enforces, so a name accepted here can always be compiled.
 pub(crate) fn validate_selection_name(selection: &str) -> Result<(), LifecycleError> {
-    let valid = !selection.is_empty()
-        && selection
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || "._-".contains(character));
-    if valid {
-        Ok(())
-    } else {
-        Err(LifecycleError::Other {
-            message: format!(
-                "selection name `{selection}` is not valid; \
-                 use letters, digits, `.`, `_`, or `-`"
-            ),
-        })
-    }
+    Ok(powermise_state::validate_selection_name(selection)?)
 }
 
 /// Inspects the generated configuration change for a compiled context without
@@ -301,8 +337,10 @@ pub fn record_generated_ownership(
         &generated_config_operation(selection, artifact),
         observed_fingerprint,
     )?;
-    write_ledger(&layout.ledger_path, &ledger)?;
-    Ok(true)
+    Ok(
+        write_ledger(&layout.ledger_path, &ledger)?
+            != powermise_state::AtomicWriteResult::Unchanged,
+    )
 }
 
 /// Loads the persisted manifest for a selection, if present.

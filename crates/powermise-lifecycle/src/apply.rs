@@ -4,16 +4,15 @@
 use std::path::Path;
 
 use powermise_domain::{
-    ConfigAdapterRequest, ConfigMutator, ManagedBlock, MiseBootstrapApplyRequest, MiseRunner,
-    NativeInstallRequest, NativeInstaller, OperationOutcome, OperationProvider, OperationResult,
-    Platform, ResourceKind, RunReport,
+    MiseRunner, NativeInstallRequest, NativeInstaller, OperationOutcome, OperationProvider,
+    OperationResult, Platform, ResourceKind, RunReport,
 };
-use powermise_providers::{JsonManagedAdapter, NpmProvider, ScoopProvider, WingetProvider};
+use powermise_providers::{NpmProvider, ScoopProvider, WingetProvider};
 use powermise_state::GeneratedFileChange;
 
 use crate::{
-    CatalogPaths, CompilationContext, LifecycleError, PowermiseLayout, SelectionStore,
-    compile_context, inspect_config, mise_request, record_generated_ownership,
+    CatalogPaths, LifecycleError, PowermiseLayout, SelectionStore, compile_context, inspect_config,
+    mise_request, record_generated_ownership,
 };
 
 /// The outcome of an apply run.
@@ -74,7 +73,6 @@ where
     let target = options.target;
     let machine_role = options.machine_role;
     let mise_config_dir = options.mise_config_dir;
-    let adapters_config_dir = options.adapters_config_dir;
     let report_progress = |message: &str| {
         if let Some(reporter) = options.progress {
             reporter(message);
@@ -124,11 +122,7 @@ where
 
     if bootstrap_outcome.is_none() {
         report_progress("converging mise environment (installs tools and packages)");
-        let request = MiseBootstrapApplyRequest {
-            environment: context.artifact.manifest().environment.clone(),
-            config_dir: mise_config_dir.to_path_buf(),
-        };
-        match runner.bootstrap_apply(&request) {
+        match runner.bootstrap_apply(&mise_request(&context, mise_config_dir)) {
             Ok(_) => bootstrap_outcome = Some(BootstrapOutcome::Converged),
             Err(error) => {
                 recovery_guidance.push(format!(
@@ -141,54 +135,52 @@ where
         }
     }
 
+    // Probe what the machine actually has once, after convergence, rather than
+    // once per mise-owned operation.
+    let mise_status = has_mise_operations
+        .then(|| runner.bootstrap_status(&mise_request(&context, mise_config_dir)));
+    let mise_message = match &mise_status {
+        Some(Ok(status)) => {
+            mise_follow_ups.extend(status.follow_up_actions());
+            match (&bootstrap_outcome, status.follow_up_actions().is_empty()) {
+                (Some(BootstrapOutcome::Converged), true) => {
+                    "converged by real mise bootstrap".to_owned()
+                }
+                (Some(BootstrapOutcome::Converged), false) => {
+                    "mise bootstrap ran; follow-up work remains".to_owned()
+                }
+                _ => "declared in generated configuration".to_owned(),
+            }
+        }
+        Some(Err(error)) => {
+            mise_follow_ups.push("mise bootstrap status unavailable".into());
+            format!("declared; mise status unavailable: {error}")
+        }
+        None => String::new(),
+    };
+
     for operation in context.plan.operations.operations() {
         report_progress(&format!("applying {operation}", operation = operation.id));
         let result = match operation.provider {
             OperationProvider::MiseTools | OperationProvider::MiseBootstrap => {
-                let result = match runner.bootstrap_status(&mise_request(&context)) {
-                    Ok(status) => {
-                        mise_follow_ups.extend(status.follow_up_actions());
-                        let message =
-                            match (&bootstrap_outcome, status.follow_up_actions().is_empty()) {
-                                (Some(BootstrapOutcome::Converged), true) => {
-                                    "converged by real mise bootstrap"
-                                }
-                                (Some(BootstrapOutcome::Converged), false) => {
-                                    "mise bootstrap ran; follow-up work remains"
-                                }
-                                _ => "declared in generated configuration",
-                            };
-                        operation_result(
-                            operation.id.as_str(),
-                            OperationOutcome::Succeeded,
-                            message,
-                        )
-                    }
-                    Err(error) => {
-                        mise_follow_ups.push("mise bootstrap status unavailable".into());
-                        operation_result(
-                            operation.id.as_str(),
-                            OperationOutcome::Succeeded,
-                            &format!("declared; mise status unavailable: {error}"),
-                        )
-                    }
-                };
                 match &bootstrap_outcome {
                     Some(BootstrapOutcome::Failed { message }) => operation_result(
                         operation.id.as_str(),
                         OperationOutcome::Failed,
                         &format!("real mise bootstrap did not converge: {message}"),
                     ),
-                    _ => result,
+                    _ => operation_result(
+                        operation.id.as_str(),
+                        OperationOutcome::Succeeded,
+                        &mise_message,
+                    ),
                 }
             }
             OperationProvider::ConfigAdapter => apply_config_adapter(
-                &context,
                 operation.id.as_str(),
                 operation.resource_kind,
                 &operation.resource_id,
                 &operation.requested_state,
-                adapters_config_dir,
             ),
             provider @ (OperationProvider::Winget
             | OperationProvider::Scoop
@@ -249,57 +241,31 @@ fn operation_result(
     }
 }
 
-/// Applies a managed JSON block for a config-adapter operation. The block is
-/// written under `_powermise.<resource>` at `<config_dir>/<target>/settings.json`,
-/// so every config-adapter operation is idempotent and restorable.
+/// Reports a config-adapter operation as skipped. The catalog does not yet
+/// carry each integration's or MCP server's real definition (launch command,
+/// arguments, credentials) or where each agent keeps its settings, so there is
+/// nothing truthful to write into the agent's configuration. Reporting success
+/// for a placeholder file would claim the integration is configured when it
+/// is not.
 fn apply_config_adapter(
-    context: &CompilationContext,
     operation_id: &str,
     resource_kind: ResourceKind,
     resource_id: &str,
     config_target: &str,
-    adapters_config_dir: &Path,
 ) -> OperationResult {
     let kind_label = match resource_kind {
         ResourceKind::Integration => "integration",
-        ResourceKind::McpServer => "mcp server",
+        ResourceKind::McpServer => "MCP server",
         _ => "resource",
     };
-    let contents = serde_json::to_string_pretty(&serde_json::json!({
-        "resource": resource_id,
-        "config_target": config_target,
-        "selection": context.plan.selection,
-        "managed_by": "powermise",
-    }))
-    .unwrap_or_else(|_| "{}".into());
-    let request = ConfigAdapterRequest {
-        config_target: config_target.into(),
-        resource_id: resource_id.into(),
-        path: adapters_config_dir
-            .join(config_target)
-            .join("settings.json"),
-        managed_block: ManagedBlock {
-            marker: resource_id.into(),
-            contents,
-        },
-        applied_fingerprint: None,
-    };
-    match JsonManagedAdapter.apply(&request) {
-        Ok(output) => operation_result(
-            operation_id,
-            OperationOutcome::Succeeded,
-            &format!(
-                "managed {kind_label} `{resource_id}` block at `{}` (changed: {})",
-                request.path.display(),
-                output.changed
-            ),
+    operation_result(
+        operation_id,
+        OperationOutcome::Skipped,
+        &format!(
+            "{kind_label} `{resource_id}` is not configured yet: the catalog does not define \
+             its settings for `{config_target}`; set it up in {config_target} manually"
         ),
-        Err(error) => operation_result(
-            operation_id,
-            OperationOutcome::Failed,
-            &format!("could not apply managed {kind_label} `{resource_id}`: {error}"),
-        ),
-    }
+    )
 }
 
 /// Executes a native package-manager operation through the corresponding provider.

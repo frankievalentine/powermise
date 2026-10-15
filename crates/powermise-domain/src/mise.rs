@@ -15,12 +15,13 @@ pub struct MiseDryRunOutput {
     pub stderr: String,
 }
 
-/// A request to converge a selection environment with a real
-/// `mise bootstrap --yes` run against the machine's mise configuration
-/// directory. This installs tools and packages and must only be invoked from
-/// explicit apply flows.
+/// A selection environment on the real machine: the environment name plus the
+/// mise configuration directory holding its generated
+/// `config.powermise-<selection>.toml`. Used both for the real
+/// `mise bootstrap --yes` convergence and for read-only status probes of what
+/// is actually installed.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MiseBootstrapApplyRequest {
+pub struct MiseEnvironmentRequest {
     pub environment: String,
     /// The real mise configuration directory containing the generated
     /// `config.powermise-<selection>.toml` to converge.
@@ -166,9 +167,12 @@ pub trait MiseRunner {
         request: &MiseDryRunRequest,
     ) -> Result<MiseDryRunOutput, Self::Error>;
 
+    /// Reports what the machine actually has installed for the environment by
+    /// running `mise bootstrap status --json` against the real configuration
+    /// and data directories. Read-only.
     fn bootstrap_status(
         &self,
-        request: &MiseDryRunRequest,
+        request: &MiseEnvironmentRequest,
     ) -> Result<MiseBootstrapStatus, Self::Error>;
 
     /// Converges the environment by running a real `mise bootstrap --yes`
@@ -176,7 +180,7 @@ pub trait MiseRunner {
     /// run and status probes, this installs tools and packages for real.
     fn bootstrap_apply(
         &self,
-        request: &MiseBootstrapApplyRequest,
+        request: &MiseEnvironmentRequest,
     ) -> Result<MiseBootstrapApplyOutput, Self::Error>;
 
     /// Runs a command inside the selection environment, inheriting the terminal.

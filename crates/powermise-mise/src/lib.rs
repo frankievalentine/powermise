@@ -8,8 +8,8 @@ use std::{
 };
 
 use powermise_domain::{
-    MiseBootstrapApplyOutput, MiseBootstrapApplyRequest, MiseBootstrapStatus, MiseDryRunOutput,
-    MiseDryRunRequest, MiseRunner,
+    MiseBootstrapApplyOutput, MiseBootstrapStatus, MiseDryRunOutput, MiseDryRunRequest,
+    MiseEnvironmentRequest, MiseRunner,
 };
 use thiserror::Error;
 
@@ -74,22 +74,29 @@ impl MiseExecutable {
         self.base_command(request, sandbox, &["bootstrap", "--dry-run"])
     }
 
-    fn status_command(&self, request: &MiseDryRunRequest, sandbox: &Sandbox) -> Command {
-        self.base_command(request, sandbox, &["bootstrap", "status", "--json"])
+    /// Builds the real convergence command. Unlike the sandboxed dry run this
+    /// deliberately keeps the machine's own HOME and mise data directories:
+    /// `bootstrap --yes` must install into the real environment.
+    fn bootstrap_apply_command(&self, request: &MiseEnvironmentRequest) -> Command {
+        self.live_command(request, &["bootstrap", "--yes"])
     }
 
-    /// Builds the real convergence command. Unlike the sandboxed dry-run and
-    /// status probes this deliberately keeps the machine's own HOME and mise
-    /// data directories: `bootstrap --yes` must install into the real
-    /// environment. Only the config directory is pinned so the command sees
-    /// exactly the directory Powermise wrote the generated configuration to,
-    /// and the working directory is pinned to that same directory so an
-    /// unrelated project-local `mise.toml` can never join the run.
-    fn bootstrap_apply_command(&self, request: &MiseBootstrapApplyRequest) -> Command {
+    /// Builds the read-only status probe against the real environment, so it
+    /// reports what is actually installed rather than an empty sandbox.
+    fn live_status_command(&self, request: &MiseEnvironmentRequest) -> Command {
+        self.live_command(request, &["bootstrap", "status", "--json"])
+    }
+
+    /// Runs against the machine's real HOME and data directories. Only the
+    /// config directory is pinned so the command sees exactly the directory
+    /// Powermise wrote the generated configuration to, and the working
+    /// directory is pinned to that same directory so an unrelated
+    /// project-local `mise.toml` can never join the run.
+    fn live_command(&self, request: &MiseEnvironmentRequest, arguments: &[&str]) -> Command {
         let mut command = Command::new(&self.executable);
         command
             .args(["--env", &request.environment])
-            .args(["bootstrap", "--yes"])
+            .args(arguments)
             .current_dir(&request.config_dir)
             .env("MISE_CONFIG_DIR", &request.config_dir)
             .env_remove("MISE_CONFIG_FILE")
@@ -163,21 +170,11 @@ impl MiseRunner for MiseExecutable {
 
     fn bootstrap_status(
         &self,
-        request: &MiseDryRunRequest,
+        request: &MiseEnvironmentRequest,
     ) -> Result<MiseBootstrapStatus, Self::Error> {
-        validate_config_file_name(&request.config_file_name)?;
-        let sandbox = Sandbox::create()?;
-        let config_path = sandbox.config.join(&request.config_file_name);
-        fs::write(&config_path, request.config_contents.as_bytes()).map_err(|source| {
-            MiseAdapterError::Io {
-                operation: "write isolated generated configuration",
-                path: config_path,
-                source,
-            }
-        })?;
-
+        validate_environment_name(&request.environment)?;
         let output = self
-            .status_command(request, &sandbox)
+            .live_status_command(request)
             .output()
             .map_err(|source| MiseAdapterError::Execute {
                 executable: self.executable.clone(),
@@ -202,7 +199,7 @@ impl MiseRunner for MiseExecutable {
 
     fn bootstrap_apply(
         &self,
-        request: &MiseBootstrapApplyRequest,
+        request: &MiseEnvironmentRequest,
     ) -> Result<MiseBootstrapApplyOutput, Self::Error> {
         validate_environment_name(&request.environment)?;
         let output = self
@@ -256,7 +253,7 @@ pub enum MiseAdapterError {
         source: io::Error,
     },
     #[error(
-        "mise dry-run at `{executable}` failed with status {status:?}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+        "mise at `{executable}` failed with status {status:?}\nstdout:\n{stdout}\nstderr:\n{stderr}"
     )]
     Failed {
         executable: PathBuf,
@@ -436,7 +433,7 @@ mod tests {
     fn bootstrap_apply_targets_the_real_config_directory_without_sandboxing_home() {
         let runner = MiseExecutable::new("mise");
         let config_dir = std::env::temp_dir().join("powermise-bootstrap-apply-test");
-        let request = MiseBootstrapApplyRequest {
+        let request = MiseEnvironmentRequest {
             environment: "powermise-test".into(),
             config_dir: config_dir.clone(),
         };
@@ -460,9 +457,38 @@ mod tests {
     }
 
     #[test]
+    fn status_probes_the_real_environment_read_only() {
+        let runner = MiseExecutable::new("mise");
+        let config_dir = std::env::temp_dir().join("powermise-status-test");
+        let request = MiseEnvironmentRequest {
+            environment: "powermise-test".into(),
+            config_dir: config_dir.clone(),
+        };
+        let command = runner.live_status_command(&request);
+        let arguments = command
+            .get_args()
+            .map(|argument| argument.to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+        let environment = command
+            .get_envs()
+            .collect::<std::collections::BTreeMap<_, _>>();
+
+        assert_eq!(
+            arguments,
+            ["--env", "powermise-test", "bootstrap", "status", "--json"]
+        );
+        assert!(!environment.contains_key(OsStr::new("HOME")));
+        assert!(!environment.contains_key(OsStr::new("MISE_DATA_DIR")));
+        assert_eq!(
+            environment.get(OsStr::new("MISE_CONFIG_DIR")),
+            Some(&Some(config_dir.as_os_str()))
+        );
+    }
+
+    #[test]
     fn bootstrap_apply_rejects_unsafe_environment_names() {
         let runner = MiseExecutable::new("mise");
-        let request = MiseBootstrapApplyRequest {
+        let request = MiseEnvironmentRequest {
             environment: "powermise x;rm".into(),
             config_dir: std::env::temp_dir(),
         };

@@ -9,6 +9,9 @@ members = [
   "crates/powermise-lifecycle",
   "crates/powermise-cli",
 ]
+# The desktop app builds on its own: Tauri's dependency tree (and WebKitGTK on
+# Linux) stays out of the CLI build, lint, and CI matrix.
+exclude = ["apps/desktop/src-tauri"]
 resolver = "2"
 
 [workspace.package]

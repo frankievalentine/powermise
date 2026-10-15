@@ -18,6 +18,7 @@ impl<'a> SelectionStore<'a> {
 
     /// Writes a new managed selection, failing if it already exists.
     pub fn create(&self, selection: &Selection) -> Result<PathBuf, LifecycleError> {
+        crate::validate_selection_name(&selection.name)?;
         self.layout.ensure_directories()?;
         let path = self.layout.selection_path(&selection.name);
         if path.exists() {
@@ -101,6 +102,7 @@ impl<'a> SelectionStore<'a> {
 
     /// Removes a managed selection file, returning the removed path.
     pub fn remove(&self, name: &str) -> Result<PathBuf, LifecycleError> {
+        crate::validate_selection_name(name)?;
         let path = self.layout.selection_path(name);
         if !path.exists() {
             return Err(LifecycleError::NotFound { name: name.into() });

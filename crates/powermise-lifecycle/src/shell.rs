@@ -48,17 +48,17 @@ impl Shell {
     /// Resolves the startup file to manage. A provided `home` (used in tests)
     /// fully determines the path; when absent, `$HOME` (and `$ZDOTDIR` where
     /// defined) drive the resolution. PowerShell integrates with the pwsh
-    /// current-user all-hosts profile, which lives at
-    /// `~/.config/powershell/profile.ps1` on every operating system.
+    /// current-user all-hosts profile (see `powershell_profile`).
     pub fn rc_path(&self, home: Option<&Path>) -> Result<PathBuf, LifecycleError> {
         match home {
             Some(path) => Ok(match self {
                 Shell::Zsh => path.join(".zshrc"),
                 Shell::Bash => path.join(".bashrc"),
-                Shell::Powershell => path.join(".config/powershell/profile.ps1"),
+                Shell::Powershell => powershell_profile(path),
             }),
             None => {
                 let home = env::var_os("HOME")
+                    .or_else(|| env::var_os("USERPROFILE"))
                     .map(PathBuf::from)
                     .ok_or(LifecycleError::NoConfigDir)?;
                 Ok(match self {
@@ -67,7 +67,7 @@ impl Shell {
                         .unwrap_or(home)
                         .join(".zshrc"),
                     Shell::Bash => home.join(".bashrc"),
-                    Shell::Powershell => home.join(".config/powershell/profile.ps1"),
+                    Shell::Powershell => powershell_profile(&home),
                 })
             }
         }
@@ -100,6 +100,18 @@ pub struct ShellUninstallReport {
     pub removed: bool,
 }
 
+/// The pwsh current-user, all-hosts profile: `Documents\\PowerShell` on
+/// Windows and `~/.config/powershell` elsewhere.
+fn powershell_profile(home: &Path) -> PathBuf {
+    if cfg!(windows) {
+        home.join("Documents")
+            .join("PowerShell")
+            .join("profile.ps1")
+    } else {
+        home.join(".config/powershell/profile.ps1")
+    }
+}
+
 /// Validates a selection name for use in the environment name and markers.
 fn validate_name(selection: &str) -> Result<(), LifecycleError> {
     crate::validate_selection_name(selection)
@@ -111,6 +123,14 @@ fn start_marker(selection: &str) -> String {
 
 fn end_marker(selection: &str) -> String {
     format!("# <<< powermise:{selection} <<<")
+}
+
+/// The selection whose managed block is present in `contents`, if any.
+fn installed_selection(contents: &str) -> Option<&str> {
+    contents.lines().find_map(|line| {
+        line.strip_prefix("# >>> powermise:")
+            .and_then(|rest| rest.strip_suffix(" >>>"))
+    })
 }
 
 /// Builds the full managed block including markers.
@@ -161,6 +181,17 @@ pub fn install_shell_integration(
         return Ok(ShellInstallReport {
             rc_path,
             inserted: false,
+        });
+    }
+    // `MISE_ENV` holds one environment, so a second block would silently
+    // override the first. Only one selection may be active per shell.
+    if let Some(other) = installed_selection(&existing) {
+        return Err(LifecycleError::Other {
+            message: format!(
+                "`{}` already activates selection `{other}`; run \
+                 `powermise shell uninstall --name {other} --yes` first",
+                rc_path.display()
+            ),
         });
     }
     let mut updated = existing;
@@ -311,11 +342,35 @@ mod tests {
     }
 
     #[test]
+    fn install_refuses_a_second_active_selection() {
+        let home = home_dir();
+        install_shell_integration(&Shell::Zsh, "first", Some(&home)).expect("first install");
+        let error = install_shell_integration(&Shell::Zsh, "second", Some(&home))
+            .expect_err("a second selection must be refused");
+        assert!(
+            error
+                .to_string()
+                .contains("already activates selection `first`")
+        );
+    }
+
+    #[test]
     fn invalid_selection_names_are_rejected() {
         let home = home_dir();
         let error = install_shell_integration(&Shell::Zsh, "bad name", Some(&home))
             .expect_err("a space in the name must be rejected");
-        assert!(error.to_string().contains("not valid"));
+        assert!(error.to_string().contains("invalid selection name"));
+    }
+
+    #[test]
+    fn powershell_profile_matches_where_pwsh_reads_it() {
+        let home = Path::new("/home/user");
+        let expected = if cfg!(windows) {
+            home.join("Documents/PowerShell/profile.ps1")
+        } else {
+            home.join(".config/powershell/profile.ps1")
+        };
+        assert_eq!(powershell_profile(home), expected);
     }
 
     #[test]
@@ -327,7 +382,7 @@ mod tests {
         assert!(report.inserted);
         assert_eq!(
             report.rc_path,
-            home.join(".config/powershell/profile.ps1"),
+            powershell_profile(&home),
             "PowerShell integrates with the pwsh all-hosts profile"
         );
         let profile = fs::read_to_string(&report.rc_path).expect("profile should be readable");

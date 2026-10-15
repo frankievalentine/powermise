@@ -1,5 +1,4 @@
 use std::{
-    env,
     error::Error,
     io::{self, IsTerminal, Write},
     path::{Path, PathBuf},
@@ -149,27 +148,34 @@ enum Command {
 
 #[derive(Args)]
 struct CatalogArgs {
-    #[arg(long, default_value = "catalog/profiles/harnesses.toml")]
-    catalog: PathBuf,
-    #[arg(long, default_value = "catalog/profiles/tools.toml")]
-    tools: PathBuf,
-    #[arg(long, default_value = "catalog/profiles/apps.toml")]
-    apps: PathBuf,
-    #[arg(long, default_value = "catalog/profiles/integrations.toml")]
-    integrations: PathBuf,
-    #[arg(long, default_value = "catalog/profiles/mcp.toml")]
-    mcp: PathBuf,
+    #[arg(
+        long,
+        help = "directory holding the catalog TOML files (default: ./catalog/profiles in a checkout, else the catalog built into powermise)"
+    )]
+    catalog_dir: Option<PathBuf>,
+    #[arg(long)]
+    catalog: Option<PathBuf>,
+    #[arg(long)]
+    tools: Option<PathBuf>,
+    #[arg(long)]
+    apps: Option<PathBuf>,
+    #[arg(long)]
+    integrations: Option<PathBuf>,
+    #[arg(long)]
+    mcp: Option<PathBuf>,
 }
 
 impl CatalogArgs {
-    fn into_paths(self) -> CatalogPaths {
-        CatalogPaths {
-            harnesses: self.catalog,
-            tools: self.tools,
-            apps: self.apps,
-            integrations: self.integrations,
-            mcp: self.mcp,
-        }
+    /// Resolves the catalog directory, then applies any per-file overrides.
+    fn into_paths(self) -> Result<CatalogPaths, Box<dyn Error>> {
+        let defaults = CatalogPaths::resolve(self.catalog_dir)?;
+        Ok(CatalogPaths {
+            harnesses: self.catalog.unwrap_or(defaults.harnesses),
+            tools: self.tools.unwrap_or(defaults.tools),
+            apps: self.apps.unwrap_or(defaults.apps),
+            integrations: self.integrations.unwrap_or(defaults.integrations),
+            mcp: self.mcp.unwrap_or(defaults.mcp),
+        })
     }
 }
 
@@ -437,7 +443,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
         Command::Registry {
             command: RegistryCommand::Validate { catalog },
         } => {
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             validate_registry_files(&paths)?;
             Output::Valid
         }
@@ -490,7 +496,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
                 },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let context = compile_context(
                 &paths,
                 &layout.selection_path(&name),
@@ -508,7 +514,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
                     machine_role,
                 },
         } => {
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             validate_selection_files(&paths, &selection, target.into(), machine_role.as_deref())?;
             Output::Valid
         }
@@ -521,7 +527,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
                     machine_role,
                 },
         } => {
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let context =
                 compile_context(&paths, &selection, target.into(), machine_role.as_deref())?;
             Output::Compiled(context.artifact.contents().into())
@@ -537,7 +543,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
                 },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let mise_config_dir = resolve_mise_config_directory(environment.mise_config_dir)?;
             Output::Activated(activate(
                 &layout,
@@ -559,7 +565,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
                 },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let mise_config_dir = resolve_mise_config_directory(environment.mise_config_dir)?;
             Output::Diffed(diff(
                 &layout,
@@ -580,7 +586,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
                 },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let harnesses = load_catalog(&paths.harnesses)?;
             let apps = load_app_catalog(&paths.apps)?;
             let selection = interactive::run_interactive_selection(
@@ -643,7 +649,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
                 },
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let mise_config_dir = resolve_mise_config_directory(environment.mise_config_dir)?;
             Output::StubInstalled(powermise_lifecycle::install_stubs(
                 &layout,
@@ -673,7 +679,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             target,
             machine_role,
         } => {
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let target = target.into();
             let context = compile_context(&paths, &selection, target, machine_role.as_deref())?;
             let config_directory = resolve_mise_config_directory(environment.mise_config_dir)?;
@@ -702,7 +708,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             machine_role,
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let mise_config_dir = resolve_mise_config_directory(environment.mise_config_dir)?;
             let findings = doctor(
                 &layout,
@@ -723,7 +729,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             machine_role,
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let mise_config_dir = resolve_mise_config_directory(environment.mise_config_dir)?;
             let runner = MiseExecutable::new(environment.mise);
             Output::Statused(status(
@@ -745,7 +751,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
             command,
         } => {
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let runner = MiseExecutable::new(environment.mise);
             Output::Executed(exec(
                 &runner,
@@ -784,7 +790,7 @@ fn run(command: Command, presentation: &Presentation) -> Result<Output, Box<dyn 
                 confirm_apply(&name, presentation)?;
             }
             let layout = resolve_layout(environment.powermise_dir)?;
-            let paths = catalog.into_paths();
+            let paths = catalog.into_paths()?;
             let mise_config_dir = resolve_mise_config_directory(environment.mise_config_dir)?;
             let adapters_config_dir =
                 resolve_adapters_config_directory(environment.adapters_config_dir, &layout)?;
@@ -991,7 +997,14 @@ fn print_output(output: Output, presentation: &Presentation) -> ExitCode {
                         .code()
                         .map_or_else(|| "signal".into(), |code| code.to_string())
                 );
-                ExitCode::from(u8::MAX)
+                // Pass the child's own exit code through; a signal (no
+                // code) or an out-of-range code maps to the generic failure.
+                report
+                    .status
+                    .code()
+                    .and_then(|code| u8::try_from(code).ok())
+                    .filter(|code| *code != 0)
+                    .map_or(ExitCode::FAILURE, ExitCode::from)
             } else {
                 ExitCode::SUCCESS
             }
@@ -1261,24 +1274,7 @@ fn resolve_layout(override_dir: Option<PathBuf>) -> Result<PowermiseLayout, Box<
 fn resolve_mise_config_directory(
     override_path: Option<PathBuf>,
 ) -> Result<PathBuf, Box<dyn Error>> {
-    if let Some(path) = override_path {
-        return Ok(path);
-    }
-    if let Some(path) = env::var_os("MISE_CONFIG_DIR") {
-        return Ok(path.into());
-    }
-    if let Some(path) = env::var_os("XDG_CONFIG_HOME") {
-        return Ok(PathBuf::from(path).join("mise"));
-    }
-    if let Some(path) = env::var_os("HOME").or_else(|| env::var_os("USERPROFILE")) {
-        return Ok(PathBuf::from(path).join(".config/mise"));
-    }
-
-    Err(io::Error::new(
-        io::ErrorKind::NotFound,
-        "could not determine mise config directory; pass --mise-config-dir",
-    )
-    .into())
+    Ok(powermise_lifecycle::resolve_mise_config_dir(override_path)?)
 }
 
 fn resolve_adapters_config_directory(

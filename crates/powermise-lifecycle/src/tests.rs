@@ -7,8 +7,8 @@ use std::{
 };
 
 use powermise_domain::{
-    MiseBootstrapApplyOutput, MiseBootstrapApplyRequest, MiseBootstrapStatus, MiseBootstrapTool,
-    MiseDryRunOutput, MiseDryRunRequest, MiseRunner, Operation, OperationAction,
+    MiseBootstrapApplyOutput, MiseBootstrapStatus, MiseBootstrapTool, MiseDryRunOutput,
+    MiseDryRunRequest, MiseEnvironmentRequest, MiseRunner, Operation, OperationAction,
     OperationOwnership, OperationProvider, OperationReversibility, OperationVerification, Platform,
     ResourceKind, ReversibilityKind, VerificationKind,
 };
@@ -65,7 +65,7 @@ impl MiseRunner for FakeRunner {
 
     fn bootstrap_status(
         &self,
-        _request: &MiseDryRunRequest,
+        _request: &MiseEnvironmentRequest,
     ) -> Result<MiseBootstrapStatus, Self::Error> {
         self.events.lock().unwrap().push("status".into());
         let tools = match &self.pending_tool {
@@ -86,7 +86,7 @@ impl MiseRunner for FakeRunner {
 
     fn bootstrap_apply(
         &self,
-        request: &MiseBootstrapApplyRequest,
+        request: &MiseEnvironmentRequest,
     ) -> Result<MiseBootstrapApplyOutput, Self::Error> {
         self.events
             .lock()
@@ -500,23 +500,18 @@ fn apply_without_bootstrap_stays_declare_only_and_surfaces_follow_ups() {
         "declare-only mode must not fail operations"
     );
 
-    let claude_block = adapters_config_dir.join("claude/settings.json");
-    if claude_block.exists() {
-        let document: serde_json::Value =
-            serde_json::from_slice(&fs::read(&claude_block).unwrap()).unwrap();
-        let managed = document
-            .as_object()
-            .expect("settings.json should be an object")
-            .get("_powermise")
-            .expect("managed blocks should live under _powermise");
-        assert!(
-            managed
-                .as_object()
-                .map(|blocks| !blocks.is_empty())
-                .unwrap_or(false),
-            "claude config-adapter operations should write managed blocks even without a real bootstrap"
-        );
-    }
+    assert!(
+        report
+            .results
+            .iter()
+            .filter(|result| result.operation_id.starts_with("config-adapter"))
+            .all(|result| result.outcome == powermise_domain::OperationOutcome::Skipped),
+        "config adapters must report skipped rather than claim an unconfigured integration succeeded"
+    );
+    assert!(
+        !adapters_config_dir.join("claude/settings.json").exists(),
+        "no placeholder adapter file may be written"
+    );
 }
 
 #[test]
@@ -582,7 +577,7 @@ fn apply_reports_failure_when_the_real_mise_bootstrap_fails() {
         report
             .results
             .iter()
-            .any(|result| result.outcome == powermise_domain::OperationOutcome::Succeeded),
+            .any(|result| result.outcome == powermise_domain::OperationOutcome::Skipped),
         "independent config-adapter and native operations must still be attempted"
     );
     assert!(

@@ -65,7 +65,7 @@ where
         .any(|record| record.operation_id == format!("generated-config:{name}"));
 
     let mut mise_follow_ups = Vec::new();
-    match runner.bootstrap_status(&mise_request(&context)) {
+    match runner.bootstrap_status(&mise_request(&context, mise_config_dir)) {
         Ok(observed) => mise_follow_ups.extend(observed.follow_up_actions()),
         Err(error) => {
             mise_follow_ups.push(format!("mise bootstrap status unavailable: {error}"));

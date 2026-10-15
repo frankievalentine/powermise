@@ -232,12 +232,37 @@ fn stub_path_for(bin_dir: &Path, entry: &StubEntry, target: Platform) -> PathBuf
     }
 }
 
+/// The per-command recursion-guard variable. It is scoped to one command so a
+/// tool may still reach other lazy stubs (for example `claude` running `rg`);
+/// it only trips when PATH resolves a command back to its own stub because
+/// mise did not provide it.
+fn stub_guard_variable(command: &str) -> String {
+    let suffix = command
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() {
+                character.to_ascii_uppercase()
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+    format!("POWERMISE_STUB_{suffix}")
+}
+
 fn stub_contents(selection: &str, entry: &StubEntry, target: Platform) -> String {
     let environment = format!("powermise-{selection}");
+    let guard = stub_guard_variable(&entry.command);
     match target {
         Platform::Win32 => format!(
             "@echo off\r\n\
              rem Managed by Powermise for selection `{selection}`. Do not edit.\r\n\
+             setlocal\r\n\
+             if defined {guard} (\r\n\
+             echo powermise: `{command}` was not installed by mise; run `powermise apply` 1>&2\r\n\
+             exit /b 127\r\n\
+             )\r\n\
+             set {guard}=1\r\n\
              mise x --env {environment} {package} -- {command} %*\r\n",
             package = entry.package,
             command = entry.command,
@@ -245,7 +270,13 @@ fn stub_contents(selection: &str, entry: &StubEntry, target: Platform) -> String
         _ => format!(
             "#!/bin/sh\n\
              # Managed by Powermise for selection `{selection}`. Do not edit.\n\
-             exec mise x --env {environment} {package} -- {command} \"$@\"\n",
+             # If mise could not provide the tool, PATH resolves back to this stub;\n\
+             # the guard stops that from recursing forever.\n\
+             if [ -n \"${guard}\" ]; then\n\
+             \x20 echo \"powermise: \\`{command}\\` was not installed by mise; run \\`powermise apply\\`\" >&2\n\
+             \x20 exit 127\n\
+             fi\n\
+             {guard}=1 exec mise x --env {environment} {package} -- {command} \"$@\"\n",
             package = entry.package,
             command = entry.command,
         ),
@@ -333,8 +364,18 @@ mod tests {
         assert!(contents.starts_with("#!/bin/sh\n"));
         assert!(contents.contains("Managed by Powermise for selection `engineering-agents`"));
         assert!(contents.contains(
-            "exec mise x --env powermise-engineering-agents claude-code -- claude \"$@\""
+            "POWERMISE_STUB_CLAUDE=1 exec mise x --env powermise-engineering-agents claude-code -- claude \"$@\""
         ));
+        assert!(contents.contains("if [ -n \"$POWERMISE_STUB_CLAUDE\" ]; then"));
+    }
+
+    #[test]
+    fn stub_guards_are_scoped_to_one_command() {
+        assert_eq!(stub_guard_variable("rg"), "POWERMISE_STUB_RG");
+        assert_eq!(
+            stub_guard_variable("gh-copilot"),
+            "POWERMISE_STUB_GH_COPILOT"
+        );
     }
 
     #[test]

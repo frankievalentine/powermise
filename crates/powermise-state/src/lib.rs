@@ -4,7 +4,7 @@ mod ledger;
 
 pub use generated::{
     GENERATED_MANIFEST_SCHEMA_VERSION, GeneratedConfigArtifact, GeneratedFileChange,
-    GeneratedFileChangeKind, GeneratedManifest, inspect_generated_file,
+    GeneratedFileChangeKind, GeneratedManifest, inspect_generated_file, validate_selection_name,
 };
 pub use ledger::{LEDGER_SCHEMA_VERSION, Ledger, OwnershipRecord, load_ledger, write_ledger};
 
@@ -84,6 +84,8 @@ pub fn content_fingerprint(contents: &[u8]) -> String {
 /// the target.
 pub fn write_atomically(path: &Path, contents: &[u8]) -> Result<AtomicWriteResult, StateError> {
     validate_target_path(path)?;
+    let resolved = resolve_symlink(path)?;
+    let path = resolved.as_path();
 
     let existing_contents = match fs::read(path) {
         Ok(existing_contents) => Some(existing_contents),
@@ -111,7 +113,13 @@ pub fn write_atomically(path: &Path, contents: &[u8]) -> Result<AtomicWriteResul
     let (temporary_path, mut temporary_file) = create_temporary_file(parent)?;
     let write_result = temporary_file
         .write_all(contents)
-        .and_then(|()| temporary_file.sync_all());
+        .and_then(|()| temporary_file.sync_all())
+        .and_then(|()| match fs::metadata(path) {
+            // Keep the replaced file's permissions (an rc file's mode, an
+            // executable bit) instead of the temporary file's defaults.
+            Ok(metadata) => fs::set_permissions(&temporary_path, metadata.permissions()),
+            Err(_) => Ok(()),
+        });
     drop(temporary_file);
 
     if let Err(source) = write_result {
@@ -137,6 +145,24 @@ pub fn write_atomically(path: &Path, contents: &[u8]) -> Result<AtomicWriteResul
     } else {
         AtomicWriteResult::Created
     })
+}
+
+/// Follows a symlinked target to the file it points at, so the rename replaces
+/// that file and the link survives. Dotfile managers such as chezmoi and stow
+/// commonly symlink files like `~/.zshrc`; renaming over the link would
+/// silently detach it. A dangling link is an error rather than something to
+/// overwrite.
+fn resolve_symlink(path: &Path) -> Result<PathBuf, StateError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            fs::canonicalize(path).map_err(|source| StateError::Io {
+                operation: "resolve symlinked state file",
+                path: path.to_path_buf(),
+                source,
+            })
+        }
+        _ => Ok(path.to_path_buf()),
+    }
 }
 
 fn validate_target_path(path: &Path) -> Result<(), StateError> {
@@ -314,6 +340,37 @@ mod tests {
         assert_ne!(
             content_fingerprint(b"Powermise"),
             content_fingerprint(b"powermise"),
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_targets_keep_their_link_and_permissions() {
+        use std::os::unix::fs::{PermissionsExt, symlink};
+
+        let directory = TestDirectory::new();
+        let real = directory.file("dotfiles/zshrc");
+        fs::create_dir_all(real.parent().unwrap()).unwrap();
+        fs::write(&real, b"user content\n").unwrap();
+        fs::set_permissions(&real, fs::Permissions::from_mode(0o640)).unwrap();
+        let link = directory.file(".zshrc");
+        symlink(&real, &link).unwrap();
+
+        assert_eq!(
+            write_atomically(&link, b"user content\nmanaged\n").expect("write should succeed"),
+            AtomicWriteResult::Updated,
+        );
+        assert!(
+            fs::symlink_metadata(&link)
+                .unwrap()
+                .file_type()
+                .is_symlink(),
+            "the symlink must survive the write"
+        );
+        assert_eq!(fs::read(&real).unwrap(), b"user content\nmanaged\n");
+        assert_eq!(
+            fs::metadata(&real).unwrap().permissions().mode() & 0o777,
+            0o640
         );
     }
 

@@ -3,8 +3,8 @@ mod plan;
 mod providers;
 
 pub use mise::{
-    MiseBootstrapApplyOutput, MiseBootstrapApplyRequest, MiseBootstrapPackage, MiseBootstrapStatus,
-    MiseBootstrapTool, MiseDryRunOutput, MiseDryRunRequest, MiseRunner,
+    MiseBootstrapApplyOutput, MiseBootstrapPackage, MiseBootstrapStatus, MiseBootstrapTool,
+    MiseDryRunOutput, MiseDryRunRequest, MiseEnvironmentRequest, MiseRunner,
 };
 pub use plan::{
     Operation, OperationAction, OperationGraph, OperationGraphError, OperationOutcome,

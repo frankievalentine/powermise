@@ -484,6 +484,13 @@ fn compile_config_adapter_operations(
     Ok(operations)
 }
 
+/// The provider the compiler installs a tool with on `target`: a mise-managed
+/// provider when one exists, otherwise a native Windows package manager.
+pub fn chosen_provider(providers: &[ToolProvider], target: Platform) -> Option<&ToolProvider> {
+    select_provider(providers, target)
+        .or_else(|| select_native_provider(providers, target).map(|(provider, _)| provider))
+}
+
 fn select_provider(providers: &[ToolProvider], target: Platform) -> Option<&ToolProvider> {
     [
         ToolProviderKind::MiseTool,

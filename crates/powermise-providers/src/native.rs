@@ -46,6 +46,16 @@ pub enum NativeProviderError {
     },
 }
 
+/// The executable name for a package manager. On Windows, npm and Scoop are
+/// `.cmd` shims, which `Command::new` does not resolve from a bare name.
+fn shim_executable(name: &str) -> String {
+    if cfg!(windows) {
+        format!("{name}.cmd")
+    } else {
+        name.into()
+    }
+}
+
 fn run(executable: &str, arguments: &[String]) -> Result<Output, NativeProviderError> {
     let output = Command::new(executable)
         .args(arguments)
@@ -55,6 +65,16 @@ fn run(executable: &str, arguments: &[String]) -> Result<Output, NativeProviderE
             source,
         })?;
     Ok(output)
+}
+
+/// The converged result for a package that is already present. Installing it
+/// again is skipped: winget, for one, exits non-zero for an installed package,
+/// which would make a repeat apply fail.
+fn already_installed(package: &str, manager: &str) -> NativeApplyOutput {
+    NativeApplyOutput {
+        changed: false,
+        message: format!("`{package}` is already installed via {manager}"),
+    }
 }
 
 fn describe_output(output: &Output) -> String {
@@ -93,27 +113,47 @@ pub fn winget_check_args(package: &str) -> Vec<String> {
     ]
 }
 
-/// The exact argument array for a noninteractive winget install.
-pub fn winget_install_args(package: &str) -> Vec<String> {
-    vec![
+/// Whether a catalog version pins a specific release rather than tracking the
+/// channel.
+fn is_pinned(version: &str) -> bool {
+    !version.is_empty() && version != "latest"
+}
+
+/// The exact argument array for a noninteractive winget install of the pinned
+/// `version` (when one is pinned).
+pub fn winget_install_args(package: &str, version: &str) -> Vec<String> {
+    let mut arguments = vec![
         "install".into(),
         "--id".into(),
         package.into(),
         "--exact".into(),
+    ];
+    if is_pinned(version) {
+        arguments.extend(["--version".into(), version.into()]);
+    }
+    arguments.extend([
         "--silent".into(),
         "--accept-package-agreements".into(),
         "--accept-source-agreements".into(),
-    ]
+    ]);
+    arguments
 }
 
-/// The exact argument array for a Scoop presence check.
+/// The exact argument array for a Scoop presence check. `scoop prefix` exits
+/// non-zero when the app is not installed, unlike `scoop list`, which succeeds
+/// whether or not anything matched.
 pub fn scoop_check_args(package: &str) -> Vec<String> {
-    vec!["list".into(), package.into()]
+    vec!["prefix".into(), package.into()]
 }
 
-/// The exact argument array for a Scoop install.
-pub fn scoop_install_args(package: &str) -> Vec<String> {
-    vec!["install".into(), package.into()]
+/// The exact argument array for a Scoop install of the pinned `version`.
+pub fn scoop_install_args(package: &str, version: &str) -> Vec<String> {
+    let target = if is_pinned(version) {
+        format!("{package}@{version}")
+    } else {
+        package.into()
+    };
+    vec!["install".into(), target]
 }
 
 /// The exact argument array for a global npm presence check.
@@ -128,7 +168,7 @@ pub fn npm_check_args(package: &str) -> Vec<String> {
 
 /// The exact argument array for a global npm install.
 pub fn npm_install_args(package: &str, version: &str) -> Vec<String> {
-    if version.is_empty() || version == "latest" {
+    if !is_pinned(version) {
         vec!["install".into(), "--global".into(), package.into()]
     } else {
         vec![
@@ -147,8 +187,8 @@ pub fn native_plan_command(
 ) -> Result<String, NativeProviderError> {
     required(provider)?;
     let (executable, arguments) = match provider {
-        OperationProvider::Winget => ("winget", winget_install_args(package)),
-        OperationProvider::Scoop => ("scoop", scoop_install_args(package)),
+        OperationProvider::Winget => ("winget", winget_install_args(package, version)),
+        OperationProvider::Scoop => ("scoop", scoop_install_args(package, version)),
         OperationProvider::Npm => ("npm", npm_install_args(package, version)),
         OperationProvider::VerifiedScript => {
             return Ok(format!(
@@ -244,7 +284,13 @@ impl NativeInstaller for WingetProvider {
 
     fn apply(&self, request: &NativeInstallRequest) -> Result<NativeApplyOutput, Self::Error> {
         required(request.provider)?;
-        let output = run(&self.executable, &winget_install_args(&request.package))?;
+        if self.check(request)?.present {
+            return Ok(already_installed(&request.package, "winget"));
+        }
+        let output = run(
+            &self.executable,
+            &winget_install_args(&request.package, &request.version),
+        )?;
         if !output.status.success() {
             return Err(NativeProviderError::Failed {
                 executable: self.executable.clone(),
@@ -279,7 +325,7 @@ impl ScoopProvider {
 
 impl Default for ScoopProvider {
     fn default() -> Self {
-        Self::new("scoop")
+        Self::new(shim_executable("scoop"))
     }
 }
 
@@ -314,7 +360,13 @@ impl NativeInstaller for ScoopProvider {
 
     fn apply(&self, request: &NativeInstallRequest) -> Result<NativeApplyOutput, Self::Error> {
         required(request.provider)?;
-        let output = run(&self.executable, &scoop_install_args(&request.package))?;
+        if self.check(request)?.present {
+            return Ok(already_installed(&request.package, "Scoop"));
+        }
+        let output = run(
+            &self.executable,
+            &scoop_install_args(&request.package, &request.version),
+        )?;
         if !output.status.success() {
             return Err(NativeProviderError::Failed {
                 executable: self.executable.clone(),
@@ -349,7 +401,7 @@ impl NpmProvider {
 
 impl Default for NpmProvider {
     fn default() -> Self {
-        Self::new("npm")
+        Self::new(shim_executable("npm"))
     }
 }
 
@@ -383,6 +435,9 @@ impl NativeInstaller for NpmProvider {
 
     fn apply(&self, request: &NativeInstallRequest) -> Result<NativeApplyOutput, Self::Error> {
         required(request.provider)?;
+        if self.check(request)?.present {
+            return Ok(already_installed(&request.package, "npm"));
+        }
         let output = run(
             &self.executable,
             &npm_install_args(&request.package, &request.version),
@@ -618,7 +673,7 @@ mod tests {
     #[test]
     fn winget_command_arguments_are_exact_and_noninteractive() {
         assert_eq!(
-            winget_install_args("Git.Git"),
+            winget_install_args("Git.Git", "latest"),
             [
                 "install",
                 "--id",
@@ -633,6 +688,30 @@ mod tests {
             winget_check_args("Git.Git"),
             ["list", "--id", "Git.Git", "--exact"]
         );
+    }
+
+    #[test]
+    fn pinned_versions_reach_winget_and_scoop() {
+        assert_eq!(
+            winget_install_args("Git.Git", "2.51.0"),
+            [
+                "install",
+                "--id",
+                "Git.Git",
+                "--exact",
+                "--version",
+                "2.51.0",
+                "--silent",
+                "--accept-package-agreements",
+                "--accept-source-agreements",
+            ]
+        );
+        assert_eq!(
+            scoop_install_args("zed", "0.200.0"),
+            ["install", "zed@0.200.0"]
+        );
+        assert_eq!(scoop_install_args("zed", "latest"), ["install", "zed"]);
+        assert_eq!(scoop_check_args("zed"), ["prefix", "zed"]);
     }
 
     #[test]
