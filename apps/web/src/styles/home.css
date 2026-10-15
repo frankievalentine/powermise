@@ -131,7 +131,6 @@
     0 0 0 1px var(--pm-line-strong),
     0 40px 100px -20px rgba(0, 0, 0, 0.55),
     0 18px 40px -18px rgba(0, 0, 0, 0.45);
-  will-change: transform;
 }
 
 :root[data-theme='light'] .demo-window {
