@@ -20,7 +20,7 @@ use powermise_domain::Platform;
 use powermise_registry::{
     ResolvedSelection, load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog,
     load_selection, load_tool_catalog, resolve_selection, validate_catalog, validate_registry,
-    validate_selection, validate_selection_app_references,
+    validate_selection,
 };
 use powermise_state::{
     GeneratedFileChange, SetupFragment, StateError, fragment_path, inspect_generated_file,
@@ -133,18 +133,9 @@ pub fn compile_setup(
     let mcp = load_mcp_catalog(&paths.mcp)?;
     validate_registry(&catalog, &tools, &integrations, &mcp, &apps)?;
     let selection = load_selection(selection_path)?;
-    validate_selection(&selection, &catalog, target, None)?;
-    validate_selection_app_references(&selection, &apps)?;
-    let resolved = resolve_selection(
-        &selection,
-        &catalog,
-        &tools,
-        &integrations,
-        &mcp,
-        target,
-        None,
-    )?;
-    let compiled = compile(&resolved, &tools, &apps, target)?;
+    validate_selection(&selection, &catalog, target)?;
+    let resolved = resolve_selection(&selection, &catalog, &tools, &integrations, &mcp, target)?;
+    let compiled = compile(&resolved, &tools, target)?;
     let toml = compiled.config.to_toml()?;
     let read = |path: &Path| {
         fs::read(path).map_err(|source| SetupsError::Io {

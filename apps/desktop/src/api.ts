@@ -121,7 +121,6 @@ export interface Preview {
     toolIds: string[];
     desktopAppIds: string[];
     unavailableDesktopIds: string[];
-    appIds: string[];
     integrationIds: string[];
     mcpServerIds: string[];
   };

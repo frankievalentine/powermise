@@ -236,9 +236,12 @@ One section of the app. A setup is a selection file
 - [ ] Configure MCP servers and integrations for real. Needs catalog data per entry
       (launch command, args, credentials) and each agent's settings location and format.
       Until then they're reported as "Manual setup".
-- [ ] Drop the selection fields the app ignores (`machine_roles`,
-      `preferences.auto_prune`, `preferences.update_system_packages`) in a
-      schema v2, with a migration.
+- [x] Selection schema v2: drop `machine_roles`, `preferences.auto_prune`, and
+      `preferences.update_system_packages`. Version 1 files load and are upgraded
+      on the next save.
+- [ ] An "Extra apps" picker for setups. `catalog/profiles/apps.toml` (Slack,
+      Figma, 1Password, …) was only reachable through machine roles, so it has
+      no way in today.
 - [ ] Fill catalog gaps: WSL providers for several harnesses, `hermes`, desktop
       apps on Linux and Windows (see the harness reference).
 - [ ] Linux, Windows, and WSL verification of the apply path.

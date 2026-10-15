@@ -1,8 +1,8 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
 use powermise_domain::{
-    AppCatalog, Catalog, ConfigProvider, IntegrationCatalog, McpServerCatalog, Platform, Selection,
-    ToolCatalog, ToolProvider, ToolProviderKind,
+    AppCatalog, Catalog, ConfigProvider, IntegrationCatalog, McpServerCatalog, Platform,
+    SELECTION_SCHEMA_VERSION, Selection, ToolCatalog, ToolProvider, ToolProviderKind,
 };
 use thiserror::Error;
 
@@ -33,7 +33,6 @@ pub struct ResolvedSelection {
     /// Desktop companion tools the selection opted into that have no provider
     /// for the target. Reported, never fatal.
     pub unavailable_desktop_ids: Vec<String>,
-    pub app_ids: Vec<String>,
     pub integration_ids: Vec<String>,
     pub mcp_server_ids: Vec<String>,
 }
@@ -49,15 +48,25 @@ pub fn load_catalog(path: &Path) -> Result<Catalog, RegistryError> {
     })
 }
 
+/// Reads a selection file, upgrading older schema versions in memory.
 pub fn load_selection(path: &Path) -> Result<Selection, RegistryError> {
     let input = fs::read_to_string(path).map_err(|source| RegistryError::Read {
         path: path.display().to_string(),
         source,
     })?;
-    toml::from_str(&input).map_err(|source| RegistryError::Parse {
-        path: path.display().to_string(),
-        source,
-    })
+    let mut selection: Selection =
+        toml::from_str(&input).map_err(|source| RegistryError::Parse {
+            path: path.display().to_string(),
+            source,
+        })?;
+    if !selection.upgrade() {
+        return Err(RegistryError::Validation(format!(
+            "`{}` uses selection schema version {}; this powermise reads up to {SELECTION_SCHEMA_VERSION}",
+            path.display(),
+            selection.schema_version
+        )));
+    }
+    Ok(selection)
 }
 
 pub fn load_tool_catalog(path: &Path) -> Result<ToolCatalog, RegistryError> {
@@ -152,9 +161,8 @@ pub fn validate_selection(
     selection: &Selection,
     catalog: &Catalog,
     target: Platform,
-    role: Option<&str>,
 ) -> Result<(), RegistryError> {
-    if selection.schema_version != 1
+    if selection.schema_version != SELECTION_SCHEMA_VERSION
         || selection.name.trim().is_empty()
         || selection.catalog != catalog.catalog
         || selection.harnesses.is_empty()
@@ -162,14 +170,6 @@ pub fn validate_selection(
         return Err(RegistryError::Validation(
             "selection metadata is incomplete or references a different catalog".into(),
         ));
-    }
-    if let Some(role) = role
-        && !selection.machine_roles.contains_key(role)
-    {
-        return Err(RegistryError::Validation(format!(
-            "selection `{}` has no machine role `{role}`",
-            selection.name
-        )));
     }
     let mut requested = BTreeSet::new();
     for id in &selection.harnesses {
@@ -528,23 +528,6 @@ pub fn validate_harness_mcp_references(
     Ok(())
 }
 
-pub fn validate_selection_app_references(
-    selection: &Selection,
-    apps: &AppCatalog,
-) -> Result<(), RegistryError> {
-    let ids: BTreeSet<&str> = apps.apps.iter().map(|app| app.id.as_str()).collect();
-    for (role_name, role) in &selection.machine_roles {
-        for app_id in &role.include_apps {
-            if !ids.contains(app_id.as_str()) {
-                return Err(RegistryError::Validation(format!(
-                    "machine role `{role_name}` references unknown app `{app_id}`"
-                )));
-            }
-        }
-    }
-    Ok(())
-}
-
 pub fn validate_registry(
     catalog: &Catalog,
     tools: &ToolCatalog,
@@ -569,22 +552,12 @@ pub fn resolve_selection(
     integrations: &IntegrationCatalog,
     mcp: &McpServerCatalog,
     target: Platform,
-    role_name: Option<&str>,
 ) -> Result<ResolvedSelection, RegistryError> {
-    validate_selection(selection, catalog, target, role_name)?;
-    let role = role_name.and_then(|name| selection.machine_roles.get(name));
-    let excluded_harnesses: BTreeSet<&str> = role
-        .map(|role| role.exclude_harnesses.iter().map(String::as_str).collect())
-        .unwrap_or_default();
-    let excluded_tools: BTreeSet<&str> = role
-        .map(|role| role.exclude_tools.iter().map(String::as_str).collect())
-        .unwrap_or_default();
+    validate_selection(selection, catalog, target)?;
     let mut harness_ids = BTreeSet::new();
     let mut visiting = BTreeSet::new();
     for id in &selection.harnesses {
-        if !excluded_harnesses.contains(id.as_str()) {
-            resolve_harness(catalog, id, target, &mut visiting, &mut harness_ids)?;
-        }
+        resolve_harness(catalog, id, target, &mut visiting, &mut harness_ids)?;
     }
     let harnesses = harness_ids
         .iter()
@@ -592,8 +565,7 @@ pub fn resolve_selection(
         .collect::<Vec<_>>();
 
     // Desktop companion tools are included when the selection opts in or when
-    // the harness is desktop-first (`desktop_required`); a machine role's
-    // `exclude_tools` always wins. A companion joins the resolved tool set
+    // the harness is desktop-first (`desktop_required`). A companion joins the resolved tool set
     // only when some provider supports the target; opted-in companions
     // without one are reported as unavailable instead of failing the compile.
     let mut desktop_app_ids = BTreeSet::new();
@@ -605,10 +577,7 @@ pub fn resolve_selection(
         }
         let wants_companions = desktop_opt_in || harness.desktop_required;
         for tool_id in &harness.desktop_tool_ids {
-            if excluded_tools.contains(tool_id.as_str()) || desktop_app_ids.contains(tool_id) {
-                continue;
-            }
-            if !wants_companions {
+            if !wants_companions || desktop_app_ids.contains(tool_id) {
                 continue;
             }
             let supported = tools
@@ -622,7 +591,7 @@ pub fn resolve_selection(
                 });
             if supported {
                 desktop_app_ids.insert(tool_id.clone());
-            } else if wants_companions {
+            } else {
                 unavailable_desktop_ids.push(tool_id.clone());
             }
         }
@@ -631,14 +600,10 @@ pub fn resolve_selection(
     let mut tool_ids: BTreeSet<String> = harnesses
         .iter()
         .flat_map(|harness| harness.required_tool_ids.iter())
-        .filter(|tool| !excluded_tools.contains(tool.as_str()))
         .cloned()
         .collect();
     tool_ids.extend(desktop_app_ids.iter().cloned());
     let tool_ids = tool_ids.into_iter().collect();
-    let app_ids = role
-        .map(|role| role.include_apps.to_vec())
-        .unwrap_or_default();
     let integration_ids = resolve_config_ids(
         "integration",
         harnesses
@@ -681,7 +646,6 @@ pub fn resolve_selection(
         tool_ids,
         desktop_app_ids: desktop_app_ids.into_iter().collect(),
         unavailable_desktop_ids,
-        app_ids,
         integration_ids,
         mcp_server_ids,
     })
@@ -757,7 +721,6 @@ fn resolve_harness(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use powermise_domain::MachineRole;
 
     fn catalog() -> Catalog {
         toml::from_str(include_str!("../../../catalog/profiles/harnesses.toml")).unwrap()
@@ -784,12 +747,62 @@ mod tests {
     }
 
     #[test]
+    fn version_1_selections_load_as_version_2_and_unknown_versions_fail() {
+        let directory = std::env::temp_dir().join(format!(
+            "powermise-registry-selection-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&directory).unwrap();
+        // Written by the retired CLI: roles and convergence preferences that
+        // version 2 dropped.
+        let old = directory.join("old.toml");
+        fs::write(
+            &old,
+            r#"schema_version = 1
+name = "old"
+catalog = "powermise-profiles"
+harnesses = ["claude"]
+
+[machine_roles.macbook]
+include_apps = ["cursor"]
+
+[preferences]
+auto_prune = true
+update_system_packages = true
+include_desktop_apps = true
+"#,
+        )
+        .unwrap();
+        let selection = load_selection(&old).unwrap();
+        assert_eq!(selection.schema_version, SELECTION_SCHEMA_VERSION);
+        assert!(selection.preferences.include_desktop_apps);
+        assert!(validate_selection(&selection, &catalog(), Platform::Darwin).is_ok());
+        let saved = toml::to_string(&selection).unwrap();
+        assert!(saved.contains("schema_version = 2"), "{saved}");
+        assert!(!saved.contains("machine_roles") && !saved.contains("auto_prune"));
+
+        let future = directory.join("future.toml");
+        fs::write(
+            &future,
+            "schema_version = 9\nname = \"future\"\ncatalog = \"powermise-profiles\"\nharnesses = [\"claude\"]\n",
+        )
+        .unwrap();
+        let error = load_selection(&future).unwrap_err();
+        assert!(error.to_string().contains("schema version 9"), "{error}");
+        let _ = fs::remove_dir_all(directory);
+    }
+
+    #[test]
     fn selection_rejects_a_harness_on_an_unsupported_target() {
         let catalog = catalog();
         // `conductor` is darwin-only (its desktop channel is a Homebrew cask).
         let selection: Selection = toml::from_str(
             r#"
-schema_version = 1
+schema_version = 2
 name = "conductor-only"
 catalog = "powermise-profiles"
 harnesses = ["conductor"]
@@ -798,13 +811,13 @@ harnesses = ["conductor"]
         .unwrap();
 
         validate_catalog(&catalog).unwrap();
-        let error = validate_selection(&selection, &catalog, Platform::Win32, None).unwrap_err();
+        let error = validate_selection(&selection, &catalog, Platform::Win32).unwrap_err();
 
         assert!(error.to_string().contains("conductor"));
     }
 
     #[test]
-    fn resolution_includes_inherited_harness_tools_and_machine_apps() {
+    fn resolution_includes_inherited_harness_tools() {
         let catalog = catalog();
         let selection = selection();
         let integrations = integrations();
@@ -817,14 +830,12 @@ harnesses = ["conductor"]
             &integrations,
             &mcp,
             Platform::Darwin,
-            Some("macbook"),
         )
         .unwrap();
 
         assert_eq!(resolved.harness_ids, ["base", "claude", "codex", "gemini"]);
         assert!(resolved.tool_ids.contains(&"git".to_owned()));
         assert!(resolved.tool_ids.contains(&"codex".to_owned()));
-        assert_eq!(resolved.app_ids, ["cursor"]);
         assert_eq!(
             resolved.integration_ids,
             [
@@ -853,7 +864,7 @@ harnesses = ["conductor"]
         let tools = tools();
         let selection: Selection = toml::from_str(
             r#"
-schema_version = 1
+schema_version = 2
 name = "conductor-only"
 catalog = "powermise-profiles"
 harnesses = ["conductor"]
@@ -870,37 +881,11 @@ harnesses = ["conductor"]
             &integrations(),
             &mcp(),
             Platform::Darwin,
-            None,
         )
         .unwrap();
         assert_eq!(resolved.desktop_app_ids, ["conductor"]);
         assert!(resolved.tool_ids.contains(&"conductor".to_owned()));
         assert!(resolved.unavailable_desktop_ids.is_empty());
-
-        // A machine role's exclude_tools still wins over the default.
-        let mut selection = selection;
-        selection.machine_roles.insert(
-            "work".into(),
-            MachineRole {
-                include_apps: Vec::new(),
-                exclude_harnesses: Vec::new(),
-                exclude_tools: vec!["conductor".into()],
-            },
-        );
-        let resolved = resolve_selection(
-            &selection,
-            &catalog,
-            &tools,
-            &integrations(),
-            &mcp(),
-            Platform::Darwin,
-            Some("work"),
-        )
-        .unwrap();
-        assert!(
-            !resolved.tool_ids.contains(&"conductor".to_owned()),
-            "exclude_tools must be able to drop a desktop-first companion"
-        );
     }
 
     #[test]
@@ -935,7 +920,6 @@ harnesses = ["conductor"]
             &integrations(),
             &mcp(),
             Platform::Darwin,
-            None,
         )
         .unwrap();
         assert!(resolved.desktop_app_ids.is_empty());
@@ -950,7 +934,6 @@ harnesses = ["conductor"]
             &integrations(),
             &mcp(),
             Platform::Darwin,
-            None,
         )
         .unwrap();
         assert_eq!(darwin.desktop_app_ids, ["claude-app", "codex-app"]);
@@ -964,7 +947,6 @@ harnesses = ["conductor"]
             &integrations(),
             &mcp(),
             Platform::Linux,
-            None,
         )
         .unwrap();
         assert!(linux.desktop_app_ids.is_empty());
@@ -1074,17 +1056,6 @@ harnesses = ["conductor"]
     }
 
     #[test]
-    fn machine_role_references_an_unknown_app() {
-        let selection = selection();
-        let mut apps = apps();
-        apps.apps.retain(|app| app.id != "cursor");
-
-        let error = validate_selection_app_references(&selection, &apps).unwrap_err();
-
-        assert!(error.to_string().contains("unknown app `cursor`"));
-    }
-
-    #[test]
     fn resolution_rejects_an_integration_without_a_target_provider() {
         let catalog = catalog();
         let selection = selection();
@@ -1101,7 +1072,6 @@ harnesses = ["conductor"]
             &integrations,
             &mcp(),
             Platform::Darwin,
-            Some("macbook"),
         )
         .unwrap_err();
 

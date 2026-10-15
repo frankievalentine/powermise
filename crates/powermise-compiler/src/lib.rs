@@ -7,7 +7,7 @@
 //! removes it from the config.
 use std::collections::{BTreeMap, BTreeSet};
 
-use powermise_domain::{AppCatalog, Platform, ToolCatalog, ToolProvider, ToolProviderKind};
+use powermise_domain::{Platform, ToolCatalog, ToolProvider, ToolProviderKind};
 use powermise_registry::ResolvedSelection;
 use serde::Serialize;
 use thiserror::Error;
@@ -135,7 +135,6 @@ fn declared_version(kind: &ToolProviderKind, version: &str) -> String {
 pub fn compile(
     selection: &ResolvedSelection,
     tool_catalog: &ToolCatalog,
-    app_catalog: &AppCatalog,
     target: Platform,
 ) -> Result<Compiled, CompilerError> {
     let mut compiled = Compiled::default();
@@ -157,24 +156,6 @@ pub fn compile(
             target,
         )?;
     }
-    for app_id in selection.app_ids.iter().collect::<BTreeSet<_>>() {
-        let app = app_catalog
-            .apps
-            .iter()
-            .find(|app| &app.id == app_id)
-            .ok_or_else(|| CompilerError::MissingEntry {
-                kind: "app",
-                id: app_id.clone(),
-            })?;
-        add(
-            &mut compiled,
-            "app",
-            &app.id,
-            &app.providers,
-            app.unsupported_reason.as_ref(),
-            target,
-        )?;
-    }
     Ok(compiled)
 }
 
@@ -182,10 +163,9 @@ pub fn compile(
 pub fn compile_mise(
     selection: &ResolvedSelection,
     tool_catalog: &ToolCatalog,
-    app_catalog: &AppCatalog,
     target: Platform,
 ) -> Result<CompiledMiseConfig, CompilerError> {
-    compile(selection, tool_catalog, app_catalog, target).map(|compiled| compiled.config)
+    compile(selection, tool_catalog, target).map(|compiled| compiled.config)
 }
 
 fn add(
@@ -236,7 +216,7 @@ fn add(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use powermise_domain::{App, Tool};
+    use powermise_domain::Tool;
 
     fn provider(
         kind: ToolProviderKind,
@@ -272,22 +252,12 @@ mod tests {
         }
     }
 
-    fn apps(apps: Vec<App>) -> AppCatalog {
-        AppCatalog {
-            schema_version: 1,
-            catalog: "test".into(),
-            catalog_revision: "1".into(),
-            apps,
-        }
-    }
-
-    fn selection(tool_ids: &[&str], app_ids: &[&str]) -> ResolvedSelection {
+    fn selection(tool_ids: &[&str]) -> ResolvedSelection {
         ResolvedSelection {
             harness_ids: vec![],
             tool_ids: tool_ids.iter().map(|id| (*id).into()).collect(),
             desktop_app_ids: vec![],
             unavailable_desktop_ids: vec![],
-            app_ids: app_ids.iter().map(|id| (*id).into()).collect(),
             integration_ids: vec![],
             mcp_server_ids: vec![],
         }
@@ -315,15 +285,10 @@ mod tests {
                 vec![provider(MiseTool, "npm:@openai/codex", "0.51.0", &[Darwin])],
             ),
         ]);
-        let output = compile_mise(
-            &selection(&["z", "b", "a", "m"], &[]),
-            &catalog,
-            &apps(vec![]),
-            Darwin,
-        )
-        .unwrap()
-        .to_toml()
-        .unwrap();
+        let output = compile_mise(&selection(&["z", "b", "a", "m"]), &catalog, Darwin)
+            .unwrap()
+            .to_toml()
+            .unwrap();
         assert_eq!(
             output,
             "[tools]\n\"npm:@openai/codex\" = \"0.51.0\"\nzulu = \"22\"\n\n[bootstrap.packages]\n\"brew-cask:beta\" = \"latest\"\n\"brew:alpha\" = \"latest\"\n"
@@ -347,23 +312,11 @@ mod tests {
             ),
             tool("scoop", vec![provider(Scoop, "zed", "0.200.0", &[Win32])]),
         ]);
-        let darwin = compile(
-            &selection(&["brewed"], &[]),
-            &catalog,
-            &apps(vec![]),
-            Darwin,
-        )
-        .unwrap();
+        let darwin = compile(&selection(&["brewed"]), &catalog, Darwin).unwrap();
         assert_eq!(darwin.config.bootstrap.packages["brew:jq"], "latest");
-        let linux = compile(&selection(&["apted"], &[]), &catalog, &apps(vec![]), Linux).unwrap();
+        let linux = compile(&selection(&["apted"]), &catalog, Linux).unwrap();
         assert_eq!(linux.config.bootstrap.packages["apt:jq"], "1.7.1-3");
-        let windows = compile(
-            &selection(&["winget", "scoop"], &[]),
-            &catalog,
-            &apps(vec![]),
-            Win32,
-        )
-        .unwrap();
+        let windows = compile(&selection(&["winget", "scoop"]), &catalog, Win32).unwrap();
         assert_eq!(
             windows.config.bootstrap.packages["winget:jqlang.jq"],
             "1.8.1"
@@ -383,7 +336,7 @@ mod tests {
             ],
         )]);
         let pick = |target| {
-            compile(&selection(&["git"], &[]), &catalog, &apps(vec![]), target)
+            compile(&selection(&["git"]), &catalog, target)
                 .unwrap()
                 .installs[0]
                 .key
@@ -396,38 +349,31 @@ mod tests {
 
     #[test]
     fn installs_describe_every_item() {
-        let catalog = tools(vec![tool(
-            "rg",
-            vec![provider(MiseTool, "ripgrep", "15.1.0", &[Darwin])],
-        )]);
-        let app_catalog = apps(vec![App {
-            id: "cursor".into(),
-            title: "Cursor".into(),
-            description: "Editor".into(),
-            providers: vec![provider(BootstrapBrewCask, "cursor", "1.7", &[Darwin])],
-            unsupported_reason: None,
-        }]);
-        let compiled = compile(
-            &selection(&["rg"], &["cursor"]),
-            &catalog,
-            &app_catalog,
-            Darwin,
-        )
-        .unwrap();
+        let catalog = tools(vec![
+            tool(
+                "rg",
+                vec![provider(MiseTool, "ripgrep", "15.1.0", &[Darwin])],
+            ),
+            tool(
+                "cursor",
+                vec![provider(BootstrapBrewCask, "cursor", "1.7", &[Darwin])],
+            ),
+        ]);
+        let compiled = compile(&selection(&["rg", "cursor"]), &catalog, Darwin).unwrap();
         assert_eq!(
             compiled.installs,
             [
-                Install {
-                    id: "rg".into(),
-                    kind: MiseTool,
-                    key: "ripgrep".into(),
-                    version: "15.1.0".into()
-                },
                 Install {
                     id: "cursor".into(),
                     kind: BootstrapBrewCask,
                     key: "brew-cask:cursor".into(),
                     version: "latest".into()
+                },
+                Install {
+                    id: "rg".into(),
+                    kind: MiseTool,
+                    key: "ripgrep".into(),
+                    version: "15.1.0".into()
                 },
             ]
         );
@@ -439,21 +385,10 @@ mod tests {
             unsupported_reason: Some("vendor scripts only".into()),
             ..tool("hermes", vec![])
         }]);
-        let unsupported = compile(
-            &selection(&["hermes"], &[]),
-            &catalog,
-            &apps(vec![]),
-            Darwin,
-        )
-        .unwrap_err();
+        let unsupported = compile(&selection(&["hermes"]), &catalog, Darwin).unwrap_err();
         assert!(unsupported.to_string().contains("vendor scripts only"));
         assert!(matches!(
-            compile(
-                &selection(&["missing"], &[]),
-                &catalog,
-                &apps(vec![]),
-                Darwin
-            ),
+            compile(&selection(&["missing"]), &catalog, Darwin),
             Err(CompilerError::MissingEntry { kind: "tool", .. })
         ));
     }
@@ -465,12 +400,7 @@ mod tests {
             tool("two", vec![provider(MiseTool, "node", "24", &[Darwin])]),
         ]);
         assert!(matches!(
-            compile(
-                &selection(&["one", "two"], &[]),
-                &catalog,
-                &apps(vec![]),
-                Darwin
-            ),
+            compile(&selection(&["one", "two"]), &catalog, Darwin),
             Err(CompilerError::PackageConflict { .. })
         ));
     }

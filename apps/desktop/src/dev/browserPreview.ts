@@ -182,7 +182,6 @@ function preview(draft: SelectionDraft, target: Platform): Preview {
       toolIds: [...compiled.tools].sort(),
       desktopAppIds: [...compiled.desktop],
       unavailableDesktopIds: [...compiled.unavailable],
-      appIds: [],
       integrationIds: [...compiled.integrations],
       mcpServerIds: [...compiled.mcp],
     },

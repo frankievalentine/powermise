@@ -1,3 +1,4 @@
+/** `platforms`: where the harness compiles today (scripts/harness-matrix.sh). */
 export interface LandingHarness {
   id: string;
   title: string;
@@ -37,7 +38,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Codex',
     description: "OpenAI's terminal coding agent with a desktop companion.",
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    platforms: ['darwin', 'linux', 'win32'],
     status: 'catalogued',
   },
   {
@@ -46,14 +47,14 @@ export const harnesses: LandingHarness[] = [
     description: 'A team of coding agents in isolated workspaces.',
     category: 'GUI',
     platforms: ['darwin'],
-    status: 'provider-gap',
+    status: 'catalogued',
   },
   {
     id: 'cursor',
     title: 'Cursor',
     description: 'The AI-native code editor with agent capabilities built in.',
     category: 'IDE',
-    platforms: ['darwin', 'win32'],
+    platforms: ['darwin'],
     status: 'catalogued',
   },
   {
@@ -61,7 +62,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Gemini',
     description: "Google's Gemini CLI agent for terminal-first work.",
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    platforms: ['darwin', 'linux', 'win32'],
     status: 'catalogued',
   },
   {
@@ -77,7 +78,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Goose',
     description: "Block's open-source, extensible AI agent.",
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    platforms: ['darwin', 'linux', 'win32'],
     status: 'catalogued',
   },
   {
@@ -85,7 +86,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Hermes Agent',
     description: 'An autonomous agent CLI with browser and messaging support.',
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    platforms: [],
     status: 'provider-gap',
   },
   {
@@ -93,7 +94,7 @@ export const harnesses: LandingHarness[] = [
     title: 'OpenClaw',
     description: 'A personal AI assistant for everyday workflows.',
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    platforms: ['darwin', 'linux', 'win32'],
     status: 'catalogued',
   },
   {
@@ -101,7 +102,7 @@ export const harnesses: LandingHarness[] = [
     title: 'OpenCode',
     description: 'A provider-agnostic open source coding agent.',
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    platforms: ['darwin', 'linux', 'win32'],
     status: 'catalogued',
   },
   {
@@ -141,7 +142,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Zed',
     description: 'A high-performance editor with assistant and MCP support.',
     category: 'IDE',
-    platforms: ['darwin', 'win32'],
+    platforms: ['darwin'],
     status: 'catalogued',
   },
   {

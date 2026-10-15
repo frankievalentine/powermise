@@ -34,7 +34,7 @@ platforms = ["darwin", "linux", "win32", "wsl"]
 def compile(harness, target, desktop):
     selection = work / f"{harness}.toml"
     selection.write_text(
-        f'schema_version = 1\nname = "{harness}"\ncatalog = "powermise-profiles"\n'
+        f'schema_version = 2\nname = "{harness}"\ncatalog = "powermise-profiles"\n'
         f'harnesses = ["{harness}"]\n\n[preferences]\ninclude_desktop_apps = {str(desktop).lower()}\n'
     )
     run = subprocess.run([fragment, str(selection), target], capture_output=True, text=True)

@@ -9,8 +9,8 @@ use std::{env, fs, path::PathBuf};
 
 use powermise_compiler::Install;
 use powermise_domain::{
-    AppCatalog, Catalog, IntegrationCatalog, McpServerCatalog, Platform, Preferences, Selection,
-    ToolCatalog, ToolProviderKind,
+    AppCatalog, Catalog, IntegrationCatalog, McpServerCatalog, Platform, Preferences,
+    SELECTION_SCHEMA_VERSION, Selection, ToolCatalog, ToolProviderKind,
 };
 use powermise_mise::{BootstrapPlan, MiseCommand};
 use powermise_registry::{
@@ -78,14 +78,12 @@ pub struct SelectionDraft {
 impl SelectionDraft {
     fn into_selection(self, catalog: &str) -> Selection {
         Selection {
-            schema_version: 1,
+            schema_version: SELECTION_SCHEMA_VERSION,
             name: self.name,
             catalog: catalog.into(),
             harnesses: self.harnesses,
-            machine_roles: Default::default(),
             preferences: Preferences {
                 include_desktop_apps: self.include_desktop_apps,
-                ..Default::default()
             },
         }
     }
@@ -151,7 +149,6 @@ pub struct ResolvedView {
     tool_ids: Vec<String>,
     desktop_app_ids: Vec<String>,
     unavailable_desktop_ids: Vec<String>,
-    app_ids: Vec<String>,
     integration_ids: Vec<String>,
     mcp_server_ids: Vec<String>,
 }
@@ -215,7 +212,6 @@ pub fn preview_selection(draft: SelectionDraft, target: Platform) -> CommandResu
             tool_ids: resolved.tool_ids,
             desktop_app_ids: resolved.desktop_app_ids,
             unavailable_desktop_ids: resolved.unavailable_desktop_ids,
-            app_ids: resolved.app_ids,
             integration_ids: resolved.integration_ids,
             mcp_server_ids: resolved.mcp_server_ids,
         },

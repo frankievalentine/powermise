@@ -161,6 +161,15 @@ pub struct McpServer {
     pub unsupported_reason: Option<String>,
 }
 
+/// The selection file format powermise writes.
+///
+/// Version 1 (written by the retired CLI) also had `machine_roles`,
+/// `preferences.auto_prune`, and `preferences.update_system_packages`. A
+/// version 1 file still loads: those fields are ignored, and the selection
+/// is upgraded to this version (see [`Selection::upgrade`]) and rewritten as
+/// version 2 the next time it's saved.
+pub const SELECTION_SCHEMA_VERSION: u32 = 2;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Selection {
     pub schema_version: u32,
@@ -168,27 +177,25 @@ pub struct Selection {
     pub catalog: String,
     pub harnesses: Vec<String>,
     #[serde(default)]
-    pub machine_roles: std::collections::BTreeMap<String, MachineRole>,
-    #[serde(default)]
     pub preferences: Preferences,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
-pub struct MachineRole {
-    #[serde(default)]
-    pub include_apps: Vec<String>,
-    #[serde(default)]
-    pub exclude_harnesses: Vec<String>,
-    #[serde(default)]
-    pub exclude_tools: Vec<String>,
+impl Selection {
+    /// Brings a selection read from disk to [`SELECTION_SCHEMA_VERSION`].
+    /// Returns `false` for a version this build doesn't know.
+    pub fn upgrade(&mut self) -> bool {
+        match self.schema_version {
+            1 | SELECTION_SCHEMA_VERSION => {
+                self.schema_version = SELECTION_SCHEMA_VERSION;
+                true
+            }
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Preferences {
-    #[serde(default)]
-    pub auto_prune: bool,
-    #[serde(default)]
-    pub update_system_packages: bool,
     /// Opt in to installing the harnesses' desktop companion tools on
     /// platforms where a provider exists.
     #[serde(default)]

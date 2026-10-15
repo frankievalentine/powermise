@@ -9,7 +9,7 @@ the harnesses you want. It doesn't list tools or versions — the
 platform, so the same selection works on macOS, Linux, and Windows.
 
 ```toml
-schema_version = 1
+schema_version = 2
 name = "engineering-agents"
 catalog = "powermise-profiles"
 harnesses = ["claude", "codex", "gemini"]
