@@ -69,6 +69,108 @@ fn mcp_views(files: &[powermise_compiler::McpFile]) -> Vec<McpView> {
         .collect()
 }
 
+/// One plugin a setup installs with its agent's CLI.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PluginView {
+    id: String,
+    title: String,
+    agent: powermise_mise::AgentCli,
+    /// The command that installs it.
+    command: String,
+    /// Codex plugins sign in to a service as they install, so they install
+    /// in the terminal instead of with the rest of the setup.
+    in_terminal: bool,
+    /// Whether the agent reports it installed (status only; `None` when the
+    /// agent can't be asked yet).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    installed: Option<bool>,
+}
+
+fn agent_cli(agent: &str) -> Option<powermise_mise::AgentCli> {
+    match agent {
+        "claude" => Some(powermise_mise::AgentCli::Claude),
+        "codex" => Some(powermise_mise::AgentCli::Codex),
+        "gemini" => Some(powermise_mise::AgentCli::Gemini),
+        _ => None,
+    }
+}
+
+/// The plugins a resolved setup installs.
+fn plugin_views(ids: &[String]) -> CommandResult<Vec<PluginView>> {
+    let integrations = load_integration_catalog(&catalog_paths()?.integrations).map_err(message)?;
+    Ok(ids
+        .iter()
+        .filter_map(|id| {
+            integrations
+                .integrations
+                .iter()
+                .find(|entry| &entry.id == id)
+        })
+        .filter_map(|entry| {
+            let agent = agent_cli(&entry.agent)?;
+            Some(PluginView {
+                id: entry.id.clone(),
+                title: entry.title.clone(),
+                command: agent.install(&entry.plugin).ok()?.display(),
+                in_terminal: agent == powermise_mise::AgentCli::Codex,
+                installed: None,
+                agent,
+            })
+        })
+        .collect())
+}
+
+/// Whether each plugin is installed, asking each agent once.
+fn with_plugin_state(mut views: Vec<PluginView>) -> CommandResult<Vec<PluginView>> {
+    let integrations = load_integration_catalog(&catalog_paths()?.integrations).map_err(message)?;
+    let mut asked = std::collections::BTreeMap::new();
+    for view in &mut views {
+        let installed = asked
+            .entry(view.agent.program())
+            .or_insert_with(|| crate::plugins::installed_ids(view.agent))
+            .clone();
+        let entry = integrations
+            .integrations
+            .iter()
+            .find(|entry| entry.id == view.id);
+        let name = entry.map(|entry| {
+            entry
+                .installed_name
+                .clone()
+                .unwrap_or_else(|| entry.plugin.clone())
+        });
+        view.installed = installed.map(|ids| name.is_some_and(|name| ids.contains(&name)));
+    }
+    Ok(views)
+}
+
+/// The plugin installs that applying setup `name` runs after mise: ones not
+/// installed yet, leaving out Codex plugins (they install in the terminal).
+pub(crate) fn plugin_installs(name: &str) -> CommandResult<Vec<MiseCommand>> {
+    let layout = layout()?;
+    let setup = compile_setup(
+        &catalog_paths()?,
+        &layout.selection_path(name),
+        powermise_setups::host_platform(),
+        crate::find_mise().as_deref(),
+    )
+    .map_err(message)?;
+    let integrations = load_integration_catalog(&catalog_paths()?.integrations).map_err(message)?;
+    let views = with_plugin_state(plugin_views(&setup.resolved.integration_ids)?)?;
+    Ok(views
+        .into_iter()
+        .filter(|view| !view.in_terminal && view.installed != Some(true))
+        .filter_map(|view| {
+            let entry = integrations
+                .integrations
+                .iter()
+                .find(|entry| entry.id == view.id)?;
+            view.agent.install(&entry.plugin).ok()
+        })
+        .collect())
+}
+
 /// The agent config files (absolute) that applying setup `name` merges MCP
 /// servers into on this computer.
 pub(crate) fn mcp_targets(name: &str) -> CommandResult<Vec<PathBuf>> {
@@ -132,6 +234,9 @@ pub struct SelectionDraft {
     /// The MCP servers picked; `None` keeps the harnesses' recommendations.
     #[serde(default)]
     mcp_servers: Option<Vec<String>>,
+    /// The plugins picked; `None` keeps the harnesses' recommendations.
+    #[serde(default)]
+    integrations: Option<Vec<String>>,
     include_desktop_apps: bool,
 }
 
@@ -143,6 +248,7 @@ impl SelectionDraft {
             catalog: catalog.into(),
             harnesses: self.harnesses,
             mcp_servers: self.mcp_servers,
+            integrations: self.integrations,
             preferences: Preferences {
                 include_desktop_apps: self.include_desktop_apps,
             },
@@ -158,6 +264,8 @@ pub struct SavedSelection {
     harnesses: Vec<String>,
     /// The MCP servers picked, or `None` for the harnesses' recommendations.
     mcp_servers: Option<Vec<String>>,
+    /// The plugins picked, or `None` for the harnesses' recommendations.
+    integrations: Option<Vec<String>>,
     include_desktop_apps: bool,
     /// The mise fragment this setup writes.
     fragment_path: PathBuf,
@@ -183,6 +291,7 @@ pub fn list_selections() -> CommandResult<Vec<SavedSelection>> {
             fragment_path: fragment,
             harnesses: selection.harnesses,
             mcp_servers: selection.mcp_servers,
+            integrations: selection.integrations,
             include_desktop_apps: selection.preferences.include_desktop_apps,
             name,
         });
@@ -249,6 +358,8 @@ pub struct PreviewView {
     apply_command: String,
     /// The agents' config files the setup adds MCP servers to.
     mcp: Vec<McpView>,
+    /// Plugins the setup installs with the agents' CLIs.
+    plugins: Vec<PluginView>,
     /// Tools left out on this machine, with why (Homebrew formulas on an
     /// Intel Mac).
     skipped: Vec<powermise_compiler::Skipped>,
@@ -328,6 +439,7 @@ pub fn preview_selection(draft: SelectionDraft, target: Platform) -> CommandResu
     let change = inspect_fragment(&setup.fragment, &mise).map_err(message)?;
     let resolved = setup.resolved;
     let mcp = mcp_views(&setup.compiled.mcp_files);
+    let plugins = plugin_views(&resolved.integration_ids)?;
     Ok(PreviewView {
         resolved: ResolvedView {
             harness_ids: resolved.harness_ids,
@@ -349,6 +461,7 @@ pub fn preview_selection(draft: SelectionDraft, target: Platform) -> CommandResu
         fragment_contents: setup.fragment.contents().to_owned(),
         change,
         apply_command: apply_command(&mcp),
+        plugins,
         mcp,
     })
 }
@@ -430,6 +543,8 @@ pub struct SetupStatus {
     apply_command: String,
     /// Each agent config the setup adds MCP servers to, with mise's state.
     mcp: Vec<McpView>,
+    /// Plugins the setup installs, and whether each agent reports them.
+    plugins: Vec<PluginView>,
 }
 
 /// What mise reports for each thing a setup installs.
@@ -513,7 +628,9 @@ pub async fn setup_status(name: String, target: Platform) -> CommandResult<Setup
                     .map_or_else(|| "not applied".to_owned(), |(_, _, state)| state.clone()),
             );
         }
+        let plugins = with_plugin_state(plugin_views(&setup.resolved.integration_ids)?)?;
         Ok(SetupStatus {
+            plugins,
             name,
             fragment_path: fragment,
             change,

@@ -345,6 +345,27 @@ impl MiseClient {
             .unwrap_or_default())
     }
 
+    /// `mise x -- <cli> plugin list --json --available` for Claude Code or
+    /// Codex: `(installed, available)`.
+    pub fn agent_plugins(
+        &self,
+        cli: crate::AgentCli,
+    ) -> Result<(Vec<crate::AgentPlugin>, Vec<crate::AgentPlugin>), MiseAdapterError> {
+        let json: serde_json::Value = self.read_json(
+            &[
+                "x",
+                "--",
+                cli.program(),
+                "plugin",
+                "list",
+                "--json",
+                "--available",
+            ],
+            None,
+        )?;
+        Ok(crate::parse_plugin_list(&json))
+    }
+
     /// Each `[dotfiles]` edit entry and its state (`applied`, `differs`, …)
     /// from `mise dotfiles status --json`: `(target, edit, state)`, such as
     /// `("~/.claude.json", "merge:powermise-work", "applied")`.
@@ -1085,6 +1106,14 @@ impl MiseCommand {
             source.tool().into(),
             format!("--{}", source.flag()),
         ])
+    }
+
+    /// `mise x -- <program> <arguments>`: an agent's own CLI, with mise's
+    /// tools on `PATH`. Callers pass fixed program names and validated ids.
+    pub(crate) fn exec(program: &str, arguments: &[&str]) -> Self {
+        let mut all = vec!["x".into(), "--".into(), program.into()];
+        all.extend(arguments.iter().map(|argument| (*argument).to_owned()));
+        Self::new(all)
     }
 
     /// `mise dotfiles apply --yes <targets>`: apply only the `[dotfiles]`

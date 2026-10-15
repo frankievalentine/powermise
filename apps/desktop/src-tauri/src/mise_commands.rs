@@ -305,6 +305,12 @@ pub enum MiseAction {
     ApplySetup {
         name: String,
     },
+    /// Installs or removes a plugin with the agent's own CLI.
+    AgentPlugin {
+        agent: powermise_mise::AgentCli,
+        id: String,
+        remove: bool,
+    },
     PruneTools,
     // Machine-wide.
     SetSetting {
@@ -523,6 +529,13 @@ impl MiseAction {
                 version,
                 path,
             } => MiseCommand::link(tool, version, path),
+            Self::AgentPlugin { agent, id, remove } => {
+                return if *remove {
+                    agent.remove(id)
+                } else {
+                    agent.install(id)
+                };
+            }
             Self::InstallMise { .. }
             | Self::RelaunchApp { .. }
             | Self::UpdateMiseWithManager
@@ -562,7 +575,13 @@ impl MiseAction {
             )];
             let targets = crate::setups::mcp_targets(name)?;
             if !targets.is_empty() {
-                steps.push(Job::Mise(client, MiseCommand::dotfiles_apply(&targets)));
+                steps.push(Job::Mise(
+                    client.clone(),
+                    MiseCommand::dotfiles_apply(&targets),
+                ));
+            }
+            for command in crate::setups::plugin_installs(name)? {
+                steps.push(Job::Mise(client.clone(), command));
             }
             return Ok(Job::Steps(steps));
         }

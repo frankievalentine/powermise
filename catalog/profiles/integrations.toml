@@ -2,42 +2,91 @@ schema_version = 1
 catalog = "powermise-profiles"
 catalog_revision = "2"
 
+# Plugins and extensions an agent installs with its own CLI. `plugin` is what
+# that CLI installs: a plugin id for Claude Code and Codex
+# (`claude plugin install`, `codex plugin add`), or a source URL for Gemini
+# CLI (`gemini extensions install <url> --consent`, removed by
+# `installed_name`). The Agents › Plugins page browses each agent's whole
+# catalog; these are the ones setups can include.
+
 [[integrations]]
 id = "claude-github"
-title = "Claude GitHub"
-description = "GitHub integration for Claude, wiring repository and issue context into Claude Code sessions."
-
-[[integrations.providers]]
-kind = "config-adapter"
-config_target = "claude"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+title = "GitHub"
+description = "GitHub's official MCP server for Claude Code: issues, pull requests, and repositories."
+agent = "claude"
+plugin = "github@anthropic-plugin-directory"
+homepage = "https://github.com/anthropics/claude-plugins-official"
 
 [[integrations]]
-id = "claude-mem"
-title = "Claude Memory"
-description = "Persistent memory integration for Claude Code so agent context survives across sessions."
-
-[[integrations.providers]]
-kind = "config-adapter"
-config_target = "claude"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+id = "claude-commit-commands"
+title = "Commit Commands"
+description = "Commands for committing, pushing, and opening pull requests from Claude Code."
+agent = "claude"
+plugin = "commit-commands@anthropic-plugin-directory"
+homepage = "https://github.com/anthropics/claude-plugins-official"
 
 [[integrations]]
-id = "codex-gmail"
-title = "Codex Gmail"
-description = "Gmail integration for Codex, granting the agent access to inbox and mail context."
+id = "claude-pr-review-toolkit"
+title = "PR Review Toolkit"
+description = "Review agents for pull requests: comments, tests, error handling, and types."
+agent = "claude"
+plugin = "pr-review-toolkit@anthropic-plugin-directory"
+homepage = "https://github.com/anthropics/claude-plugins-official"
 
-[[integrations.providers]]
-kind = "config-adapter"
-config_target = "codex"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+[[integrations]]
+id = "claude-security-guidance"
+title = "Security Guidance"
+description = "Warns about risky patterns as Claude Code writes code."
+agent = "claude"
+plugin = "security-guidance@anthropic-plugin-directory"
+homepage = "https://github.com/anthropics/claude-plugins-official"
+
+[[integrations]]
+id = "claude-frontend-design"
+title = "Frontend Design"
+description = "A skill for building distinctive, production-grade interfaces."
+agent = "claude"
+plugin = "frontend-design@anthropic-plugin-directory"
+homepage = "https://github.com/anthropics/claude-plugins-official"
+
+[[integrations]]
+id = "claude-linear"
+title = "Linear"
+description = "Create and update Linear issues and projects from Claude Code."
+agent = "claude"
+plugin = "linear@anthropic-plugin-directory"
+homepage = "https://github.com/anthropics/claude-plugins-official"
+
+[[integrations]]
+id = "codex-github"
+title = "GitHub"
+description = "GitHub for Codex. Signs in to GitHub while it installs, so it installs in your terminal."
+agent = "codex"
+plugin = "github@openai-curated-remote"
 
 [[integrations]]
 id = "gemini-workspace"
-title = "Gemini Workspace"
-description = "Google Workspace integration for the Gemini CLI agent."
+title = "Google Workspace"
+description = "Gmail, Drive, Docs, and Calendar from the Gemini CLI."
+agent = "gemini"
+plugin = "https://github.com/gemini-cli-extensions/workspace"
+installed_name = "google-workspace"
+homepage = "https://github.com/gemini-cli-extensions/workspace"
 
-[[integrations.providers]]
-kind = "config-adapter"
-config_target = "gemini"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+[[integrations]]
+id = "gemini-security"
+title = "Security"
+description = "Google's security extension: finds vulnerabilities in your changes."
+agent = "gemini"
+plugin = "https://github.com/gemini-cli-extensions/security"
+installed_name = "gemini-cli-security"
+homepage = "https://github.com/gemini-cli-extensions/security"
+
+[[integrations]]
+id = "gemini-code-review"
+title = "Code Review"
+description = "Google's code review extension: reviews your code changes."
+agent = "gemini"
+plugin = "https://github.com/gemini-cli-extensions/code-review"
+installed_name = "code-review"
+homepage = "https://github.com/gemini-cli-extensions/code-review"

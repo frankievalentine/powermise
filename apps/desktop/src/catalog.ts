@@ -1,6 +1,7 @@
 import type {
   CatalogBundle,
-  ConfigEntry,
+  Integration,
+  AgentCli,
   Harness,
   McpClientId,
   McpServer,
@@ -18,10 +19,10 @@ export interface CatalogIndex {
   harnessById: Map<string, Harness>;
   tools: Tool[];
   toolById: Map<string, Tool>;
-  integrations: ConfigEntry[];
+  integrations: Integration[];
   mcpServers: McpServer[];
   mcpById: Map<string, McpServer>;
-  configById: Map<string, ConfigEntry>;
+  configById: Map<string, Integration>;
 }
 
 export function indexCatalog(bundle: CatalogBundle): CatalogIndex {
@@ -155,10 +156,11 @@ export function mcpRunsAs(server: McpServer): string {
   return `${kind} · mise installs and runs it`;
 }
 
-/** Agent names for config targets such as `claude` or `codex`. */
-export function targetTitle(index: CatalogIndex, configTarget: string): string {
-  return index.harnessById.get(configTarget)?.title ?? configTarget;
-}
+export const AGENT_CLI_TITLE: Record<AgentCli, string> = {
+  claude: "Claude Code",
+  codex: "Codex",
+  gemini: "Gemini CLI",
+};
 
 const MONOGRAM_PALETTE: [string, string][] = [
   ["#ff9f0a", "#ff6b00"],

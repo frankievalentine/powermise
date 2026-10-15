@@ -24,8 +24,9 @@ generated from it by compiling every harness for every platform.
 
 5. MCP servers the setup picks (each harness recommends a few) are added to
    every agent in the setup through mise: see
-   [MCP servers](/ai-setups/terminal/#mcp-servers). Integrations are listed but
-   not configured yet: they show as **Manual setup**.
+   [MCP servers](/ai-setups/terminal/#mcp-servers). Plugins it picks install
+   with each agent's own plugin command: see
+   [Plugins](/ai-setups/terminal/#plugins).
 
 ## What each harness installs
 

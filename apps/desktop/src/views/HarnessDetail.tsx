@@ -1,7 +1,7 @@
 import { CheckCircle2, Plus, XCircle } from "lucide-react";
 import { PLATFORMS, PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
-import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED, categoryLabel, isAvailable, targetTitle } from "../catalog";
+import { AGENT_CLI_TITLE, MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED, categoryLabel, isAvailable } from "../catalog";
 import { InstallTable } from "../components/InstallTable";
 import { Monogram, Section } from "../components/ui";
 
@@ -121,21 +121,19 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
 
         {configs.length > 0 && (
           <Section
-            title="Integrations"
-            note="powermise doesn’t configure these yet. They’re listed so you know what to set up in the agent."
+            title="Plugins"
+            note={`A setup with ${harness.title} installs these with its own plugin command. Browse more in Agents › Plugins.`}
           >
             <div className="list">
               {configs.map((entry) => (
                 <div className="list-row" key={entry.id}>
+                  <Monogram id={entry.id} title={entry.title} size={28} />
                   <div className="row-main">
                     <div className="row-title">{entry.title}</div>
                     <div className="row-subtitle">{entry.description}</div>
                   </div>
                   <div className="row-trailing">
-                    <span className="badge">
-                      {targetTitle(catalog, entry.providers[0]?.config_target ?? "")}
-                    </span>
-                    <span className="badge orange">Manual setup</span>
+                    <span className="badge">{AGENT_CLI_TITLE[entry.agent]}</span>
                   </div>
                 </div>
               ))}

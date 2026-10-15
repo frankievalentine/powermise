@@ -39,7 +39,7 @@ import { hasPrimaryModifier, shortcutLabel, usePlatform } from "./platform";
 import { HarnessesView } from "./views/HarnessesView";
 import { HarnessDetail } from "./views/HarnessDetail";
 import { ToolsView } from "./views/ToolsView";
-import { ConfigView } from "./views/ConfigView";
+import { PluginsView } from "./views/PluginsView";
 import { McpServersView } from "./views/McpServersView";
 import { SetupEditor } from "./views/SetupEditor";
 import { SetupView } from "./views/SetupView";
@@ -507,7 +507,7 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
     case "mcp":
       return <McpServersView context={context} query={query} />;
     case "integrations":
-      return <ConfigView context={context} query={query} kind="integrations" />;
+      return <PluginsView context={context} query={query} />;
     case "setup":
       return <SetupView context={context} name={route.name} />;
     case "editor":

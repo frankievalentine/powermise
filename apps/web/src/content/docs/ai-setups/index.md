@@ -15,7 +15,7 @@ Under **AI Agents** in the sidebar:
 
 - **Browse Agents** — the catalog of agents (harnesses), with what each installs
   on each platform, and tabs for the **Agent Tools**, **MCP Servers**, and
-  **Integrations** they can bring along.
+  **Plugins** they can bring along.
 - **Your setups** — listed below it. Create one with **+**, pick
   harnesses, and the side panel shows exactly what will be installed.
 
@@ -34,9 +34,9 @@ That's the whole contract, so you can do all of it from a terminal too:
 [From the terminal: it's just mise](/ai-setups/terminal/).
 
 A setup also adds the MCP servers you pick to each agent's own settings, with
-a mise dotfiles merge that owns only those servers. Integrations are listed but
-not configured yet; a setup marks them **Manual setup** instead of pretending
-they're done.
+a mise dotfiles merge that owns only those servers, and installs the plugins you
+pick with each agent's own plugin command. The **Plugins** tab browses every
+plugin Claude Code and Codex offer, and Gemini CLI extensions by link.
 
 ## Reference
 

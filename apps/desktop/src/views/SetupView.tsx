@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { AlertTriangle, Blocks, CheckCircle2, FolderOpen, Info, Loader2, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Blocks, CheckCircle2, FolderOpen, Info, Loader2, Pencil, SquareTerminal, Trash2 } from "lucide-react";
 import { api, type Preview, type RemovedSetup } from "../api";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
-import { PROVIDER_HINT, PROVIDER_LABEL, titleFor } from "../catalog";
+import { AGENT_CLI_TITLE, PROVIDER_HINT, PROVIDER_LABEL, titleFor } from "../catalog";
 import { ApplySheet } from "../components/ApplySheet";
 import { CommandBlock, Monogram, Section } from "../components/ui";
 import { Sheet } from "../components/Sheet";
@@ -39,6 +39,7 @@ export function SetupView({ context, name }: { context: AppContext; name: string
             name,
             harnesses: selection.harnesses,
             mcpServers: selection.mcpServers,
+            integrations: selection.integrations,
             includeDesktopApps: selection.includeDesktopApps,
           },
           target,
@@ -228,6 +229,45 @@ export function SetupView({ context, name }: { context: AppContext; name: string
                   </div>
                 );
               })}
+            </div>
+          </Section>
+        )}
+
+        {selection && status.data && status.data.plugins.length > 0 && (
+          <Section title="Plugins" note="Installed with each agent’s own plugin command.">
+            <div className="list">
+              {status.data.plugins.map((plugin) => (
+                <div className="list-row" key={plugin.id}>
+                  {plugin.installed ? (
+                    <CheckCircle2 size={16} className="outcome-icon succeeded" />
+                  ) : (
+                    <AlertTriangle size={16} color="var(--orange)" />
+                  )}
+                  <div className="row-main">
+                    <div className="row-title">
+                      {plugin.title} <span className="row-subtitle">· {AGENT_CLI_TITLE[plugin.agent]}</span>
+                    </div>
+                    <div className="row-subtitle mono">{plugin.command}</div>
+                  </div>
+                  <div className="row-trailing">
+                    {plugin.installed ? (
+                      <span className="badge green">Installed</span>
+                    ) : plugin.inTerminal ? (
+                      <button
+                        className="button"
+                        onClick={() => {
+                          const entry = catalog.configById.get(plugin.id);
+                          if (entry) void api.installPluginInTerminal(plugin.agent, entry.plugin);
+                        }}
+                      >
+                        <SquareTerminal size={13} /> Install in Terminal
+                      </button>
+                    ) : (
+                      <span className="badge">{plugin.installed === false ? "Not installed" : "Installs on apply"}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </Section>
         )}

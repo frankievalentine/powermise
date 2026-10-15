@@ -73,7 +73,6 @@ export function ApplySheet({
     );
   }, [plan, preview]);
 
-  const manual = preview ? preview.resolved.integrationIds : [];
   const pretty = (path: string) => prettyPath(path);
 
   // On Linux/WSL, the first Homebrew install needs `sudo` to create its
@@ -169,18 +168,19 @@ export function ApplySheet({
                     </div>
                   </div>
                 )}
-                {manual.length > 0 && (
+                {preview.plugins.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
                     <div className="side-heading" style={{ marginTop: 0 }}>
-                      Set up yourself
+                      Plugins, installed with each agent’s own command
                     </div>
                     <div className="list">
-                      {manual.map((id) => (
-                        <div className="list-row" key={id} style={{ minHeight: 36 }}>
+                      {preview.plugins.map((plugin) => (
+                        <div className="list-row" key={plugin.id} style={{ minHeight: 36 }}>
                           <div className="row-main">
-                            <div className="row-title">{titleFor(catalog, id)}</div>
+                            <div className="row-title">{plugin.title}</div>
+                            <div className="row-subtitle mono">{plugin.command}</div>
                           </div>
-                          <span className="badge orange">Manual setup</span>
+                          <span className="badge">{plugin.inTerminal ? "Finish in Terminal" : "Plugin"}</span>
                         </div>
                       ))}
                     </div>

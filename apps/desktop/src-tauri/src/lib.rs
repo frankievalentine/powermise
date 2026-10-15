@@ -11,6 +11,7 @@
 mod machine;
 mod macos;
 mod mise_commands;
+mod plugins;
 mod projects;
 mod setups;
 mod terminal;
@@ -196,6 +197,8 @@ pub fn run() {
             reveal_path,
             open_url,
             mise_commands::mise_info,
+            plugins::agent_plugins,
+            plugins::install_plugin_in_terminal,
             mise_commands::installed_tools,
             mise_commands::outdated_tools,
             mise_commands::tool_info,

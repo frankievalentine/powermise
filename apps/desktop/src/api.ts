@@ -26,7 +26,10 @@ export interface Harness {
   required_tool_ids: string[];
   desktop_tool_ids: string[];
   desktop_required: boolean;
+  /** Plugins a new setup with this agent starts with. */
   integration_ids: string[];
+  /** The CLI that installs this agent's plugins. */
+  plugin_agent: AgentCli | null;
   /** MCP servers a new setup with this agent starts with. */
   mcp_server_ids: string[];
   /** Where the agent reads MCP servers, when powermise can configure it. */
@@ -91,12 +94,50 @@ export interface Tool {
   unsupported_reason: string | null;
 }
 
-export interface ConfigEntry {
+export type AgentCli = "claude" | "codex" | "gemini";
+
+/** A plugin or extension a setup can include, installed with the agent's CLI. */
+export interface Integration {
   id: string;
   title: string;
   description: string;
-  providers: { kind: "config-adapter"; config_target: string; supported_platforms: Platform[] }[];
-  unsupported_reason: string | null;
+  agent: AgentCli;
+  /** A plugin id (`github@anthropic-plugin-directory`) or, for Gemini, a source URL. */
+  plugin: string;
+  /** Gemini: the extension's name once installed. */
+  installed_name: string | null;
+  homepage: string | null;
+}
+
+/** A plugin as an agent's CLI reports it. */
+export interface AgentPlugin {
+  id: string;
+  name: string;
+  description: string | null;
+  marketplace: string | null;
+  version: string | null;
+  installed: boolean;
+  enabled: boolean;
+  /** Signs in to a service as it installs (Codex), so it installs in the terminal. */
+  signsInOnInstall: boolean;
+}
+
+export interface PluginReport {
+  installed: AgentPlugin[];
+  available: AgentPlugin[];
+  error: string | null;
+}
+
+/** A plugin a setup installs. */
+export interface SetupPlugin {
+  id: string;
+  title: string;
+  agent: AgentCli;
+  command: string;
+  /** Codex plugins sign in while installing, so they install in the terminal. */
+  inTerminal: boolean;
+  /** Status only: whether the agent reports it installed (`undefined` when it can't be asked). */
+  installed?: boolean;
 }
 
 export interface CatalogBundle {
@@ -104,7 +145,7 @@ export interface CatalogBundle {
   harnesses: { harnesses: Harness[] };
   tools: { tools: Tool[] };
   apps: { apps: Tool[] };
-  integrations: { integrations: ConfigEntry[] };
+  integrations: { integrations: Integration[] };
   mcp: { mcp_servers: McpServer[] };
 }
 
@@ -127,6 +168,8 @@ export interface SavedSelection {
   harnesses: string[];
   /** The MCP servers picked, or `null` for the agents' recommendations. */
   mcpServers: string[] | null;
+  /** The plugins picked, or `null` for the agents' recommendations. */
+  integrations: string[] | null;
   includeDesktopApps: boolean;
   /** The mise fragment this setup writes: conf.d/powermise-<name>.toml. */
   fragmentPath: string;
@@ -139,6 +182,8 @@ export interface SelectionDraft {
   harnesses: string[];
   /** `null` keeps the agents' recommended MCP servers. */
   mcpServers: string[] | null;
+  /** `null` keeps the agents' recommended plugins. */
+  integrations: string[] | null;
   includeDesktopApps: boolean;
 }
 
@@ -194,6 +239,7 @@ export interface Preview {
   homebrewSetup: string | null;
   /** The agents' config files the setup adds MCP servers to. */
   mcp: McpTarget[];
+  plugins: SetupPlugin[];
 }
 
 export interface WrittenSetup {
@@ -226,6 +272,7 @@ export interface SetupStatus {
   items: SetupItemStatus[];
   applyCommand: string;
   mcp: McpTarget[];
+  plugins: SetupPlugin[];
 }
 
 export interface RemovedSetup {
@@ -332,6 +379,7 @@ export type MiseAction =
   | { kind: "bootstrapPackagesAndTools" }
   /** Packages and tools, then the setup's MCP servers into agents' configs. */
   | { kind: "applySetup"; name: string }
+  | { kind: "agentPlugin"; agent: AgentCli; id: string; remove: boolean }
   | { kind: "pruneTools" }
   | { kind: "setSetting"; key: string; value: string }
   | { kind: "unsetSetting"; key: string }
@@ -645,6 +693,8 @@ export const api = {
   bootstrapPlan: () => call<BootstrapPlan>("bootstrap_plan"),
   bootstrapInTerminal: () => call<void>("bootstrap_in_terminal"),
   removeSetup: (name: string) => call<RemovedSetup>("remove_setup", { name }),
+  agentPlugins: (agent: AgentCli) => call<PluginReport>("agent_plugins", { agent }),
+  installPluginInTerminal: (agent: AgentCli, id: string) => call<void>("install_plugin_in_terminal", { agent, id }),
   reveal: (path: string) => call<void>("reveal_path", { path }),
 
   miseInfo: () => call<MiseInfo>("mise_info"),

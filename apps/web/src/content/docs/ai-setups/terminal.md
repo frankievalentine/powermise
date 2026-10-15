@@ -120,8 +120,23 @@ setup editor's **Preview for** menu shows each one.
 - Its own folder, `~/.config/powermise/`: saved setups and app state.
 
 It never edits your own mise config files, and it never runs mise with
-`MISE_YES`, which would make mise trust configs on its own. Integrations a
-harness lists are shown as **Manual setup**.
+`MISE_YES`, which would make mise trust configs on its own.
+
+## Plugins
+
+Plugins install with the agent's own command, run through `mise x` so a
+mise-installed agent is found:
+
+```sh
+mise x -- claude plugin install github@anthropic-plugin-directory --scope user
+mise x -- codex plugin add github@openai-curated-remote
+mise x -- gemini extensions install https://github.com/gemini-cli-extensions/code-review --consent
+```
+
+Applying a setup runs these after `mise bootstrap` for plugins that aren't
+installed yet. Most Codex plugins sign in to a service while installing, so
+powermise opens those in your terminal instead. Removing a setup leaves its
+plugins installed, like its tools; remove them in **Agents › Plugins**.
 
 ## MCP servers
 

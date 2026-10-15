@@ -1,7 +1,7 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
 use powermise_domain::{
-    AppCatalog, Catalog, ConfigProvider, IntegrationCatalog, McpClient, McpServerCatalog, Platform,
+    AppCatalog, Catalog, IntegrationCatalog, McpClient, McpServerCatalog, PLUGIN_AGENTS, Platform,
     SELECTION_SCHEMA_VERSION, Selection, ToolCatalog, ToolProvider, ToolProviderKind,
 };
 use thiserror::Error;
@@ -381,15 +381,6 @@ fn validate_download(owner: &str, provider: &ToolProvider) -> Result<(), Registr
     Ok(())
 }
 
-fn validate_config_provider(owner: &str, provider: &ConfigProvider) -> Result<(), RegistryError> {
-    if provider.config_target.trim().is_empty() || provider.supported_platforms.is_empty() {
-        return Err(RegistryError::Validation(format!(
-            "{owner} has an incomplete config-adapter provider"
-        )));
-    }
-    Ok(())
-}
-
 fn validate_provided_or_rejected(
     owner: &str,
     has_providers: bool,
@@ -472,13 +463,17 @@ pub fn validate_integration_catalog(
                 integration.id
             )));
         }
-        validate_provided_or_rejected(
-            &format!("integration `{}`", integration.id),
-            !integration.providers.is_empty(),
-            integration.unsupported_reason.as_ref(),
-        )?;
-        for provider in &integration.providers {
-            validate_config_provider(&format!("integration `{}`", integration.id), provider)?;
+        if !PLUGIN_AGENTS.contains(&integration.agent.as_str())
+            || integration.plugin.trim().is_empty()
+            || (integration.agent == "gemini" && !integration.plugin.starts_with("https://"))
+            || (integration.agent == "gemini") != integration.installed_name.is_some()
+        {
+            return Err(RegistryError::Validation(format!(
+                "integration `{}` needs an agent ({}) and a plugin id (a https URL and \
+                 installed_name for gemini)",
+                integration.id,
+                PLUGIN_AGENTS.join(", ")
+            )));
         }
     }
     Ok(())
@@ -661,25 +656,34 @@ pub fn resolve_selection(
         .collect();
     tool_ids.extend(desktop_app_ids.iter().cloned());
     let tool_ids = tool_ids.into_iter().collect();
-    let integration_ids = resolve_config_ids(
-        "integration",
-        harnesses
+    // The setup's own plugin picks, or else its harnesses' recommendations,
+    // kept to the agents the setup has.
+    let agents: BTreeSet<&str> = harnesses
+        .iter()
+        .filter_map(|harness| harness.plugin_agent.as_deref())
+        .collect();
+    let requested: Vec<String> = match &selection.integrations {
+        Some(ids) => ids.clone(),
+        None => harnesses
             .iter()
-            .flat_map(|harness| harness.integration_ids.iter())
-            .cloned(),
-        &integrations
+            .flat_map(|harness| harness.integration_ids.iter().cloned())
+            .collect(),
+    };
+    let mut integration_ids = Vec::new();
+    for id in requested.into_iter().collect::<BTreeSet<_>>() {
+        let integration = integrations
             .integrations
             .iter()
-            .map(|entry| {
-                (
-                    &entry.id,
-                    &entry.providers[..],
-                    entry.unsupported_reason.as_deref(),
-                )
-            })
-            .collect::<Vec<_>>(),
-        target,
-    )?;
+            .find(|entry| entry.id == id)
+            .ok_or_else(|| {
+                RegistryError::Validation(format!(
+                    "integration `{id}` is not defined in the registry"
+                ))
+            })?;
+        if agents.contains(integration.agent.as_str()) {
+            integration_ids.push(id);
+        }
+    }
     // The setup's own MCP picks, or else its harnesses' recommendations.
     let mcp_server_ids: Vec<String> = match &selection.mcp_servers {
         Some(ids) => ids
@@ -728,40 +732,6 @@ pub fn resolve_selection(
         mcp_server_ids,
         mcp_clients,
     })
-}
-
-fn resolve_config_ids<'a>(
-    kind: &str,
-    requested: impl Iterator<Item = String>,
-    entries: &[(&'a String, &'a [ConfigProvider], Option<&'a str>)],
-    target: Platform,
-) -> Result<Vec<String>, RegistryError> {
-    let mut seen = BTreeSet::new();
-    let mut resolved = Vec::new();
-    for id in requested {
-        if !seen.insert(id.clone()) {
-            continue;
-        }
-        let (_, providers, unsupported_reason) = entries
-            .iter()
-            .find(|(entry_id, _, _)| *entry_id == &id)
-            .ok_or_else(|| {
-                RegistryError::Validation(format!("{kind} `{id}` is not defined in the registry"))
-            })?;
-        if !providers
-            .iter()
-            .any(|provider| provider.supported_platforms.contains(&target))
-        {
-            return Err(RegistryError::Validation(format!(
-                "{kind} `{id}` has no config-adapter provider for {target:?}{}",
-                unsupported_reason
-                    .map(|reason| format!(": {reason}"))
-                    .unwrap_or_default()
-            )));
-        }
-        resolved.push(id);
-    }
-    Ok(resolved)
 }
 
 fn resolve_harness(
@@ -918,10 +888,9 @@ harnesses = ["conductor"]
         assert_eq!(
             resolved.integration_ids,
             [
+                "claude-commit-commands",
                 "claude-github",
-                "claude-mem",
-                "codex-gmail",
-                "gemini-workspace"
+                "gemini-code-review"
             ]
         );
         assert_eq!(resolved.mcp_server_ids, ["context7", "sequential-thinking"]);
@@ -1137,29 +1106,37 @@ harnesses = ["conductor"]
     }
 
     #[test]
-    fn resolution_rejects_an_integration_without_a_target_provider() {
+    fn plugins_follow_the_setups_agents() {
         let catalog = catalog();
-        let selection = selection();
-        let mut integrations = integrations();
-        for entry in &mut integrations.integrations {
-            entry.providers.clear();
-            entry.unsupported_reason = Some("no verified adapter on any target".into());
-        }
+        let mut selection = selection();
+        // An explicit pick for an agent the setup has, and one it doesn't.
+        selection.integrations = Some(vec!["claude-linear".into(), "gemini-security".into()]);
+        selection.harnesses = vec!["claude".into()];
+        let resolved = resolve_selection(
+            &selection,
+            &catalog,
+            &tools(),
+            &integrations(),
+            &mcp(),
+            Platform::Darwin,
+        )
+        .unwrap();
+        assert_eq!(resolved.integration_ids, ["claude-linear"]);
 
+        selection.integrations = Some(vec!["nope".into()]);
         let error = resolve_selection(
             &selection,
             &catalog,
             &tools(),
-            &integrations,
+            &integrations(),
             &mcp(),
             Platform::Darwin,
         )
         .unwrap_err();
-
         assert!(
             error
                 .to_string()
-                .contains("integration `claude-github` has no config-adapter provider")
+                .contains("integration `nope` is not defined")
         );
     }
 }

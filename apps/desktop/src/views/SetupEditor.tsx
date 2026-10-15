@@ -10,7 +10,7 @@ import {
   type SelectionDraft,
 } from "../api";
 import type { AppContext } from "../App";
-import { CATEGORY_LABEL, isAvailable, titleFor } from "../catalog";
+import { AGENT_CLI_TITLE, CATEGORY_LABEL, isAvailable, titleFor } from "../catalog";
 import { ApplySheet } from "../components/ApplySheet";
 import { Checkbox, Monogram, ProviderBadge, Segmented, Switch } from "../components/ui";
 
@@ -33,6 +33,7 @@ export function SetupEditor({
   const [includeDesktopApps, setIncludeDesktopApps] = useState(existing?.includeDesktopApps ?? false);
   // `null` follows the agents' recommendations until you change the list.
   const [mcpPicks, setMcpPicks] = useState<string[] | null>(existing?.mcpServers ?? null);
+  const [pluginPicks, setPluginPicks] = useState<string[] | null>(existing?.integrations ?? null);
   const [target, setTarget] = useState<Platform>(env.hostTarget);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -42,9 +43,20 @@ export function SetupEditor({
   const request = useRef(0);
 
   const draft: SelectionDraft = useMemo(
-    () => ({ name, harnesses, mcpServers: mcpPicks, includeDesktopApps }),
-    [name, harnesses, mcpPicks, includeDesktopApps],
+    () => ({ name, harnesses, mcpServers: mcpPicks, integrations: pluginPicks, includeDesktopApps }),
+    [name, harnesses, mcpPicks, pluginPicks, includeDesktopApps],
   );
+  // Plugins: for the agents in the setup that have them.
+  const pluginAgents = new Set(harnesses.flatMap((id) => catalog.harnessById.get(id)?.plugin_agent ?? []));
+  const pluginChoices = catalog.integrations.filter((entry) => pluginAgents.has(entry.agent));
+  const recommendedPlugins = harnesses.flatMap((id) => catalog.harnessById.get(id)?.integration_ids ?? []);
+  const pluginsSelected = (pluginPicks ?? recommendedPlugins).filter((id) =>
+    pluginChoices.some((entry) => entry.id === id),
+  );
+  const togglePlugin = (id: string) =>
+    setPluginPicks(
+      pluginsSelected.includes(id) ? pluginsSelected.filter((entry) => entry !== id) : [...pluginsSelected, id],
+    );
   const recommendedMcp = useMemo(
     () => [...new Set(harnesses.flatMap((id) => catalog.harnessById.get(id)?.mcp_server_ids ?? []))],
     [harnesses, catalog.harnessById],
@@ -125,7 +137,6 @@ export function SetupEditor({
   const cliTools = resolved
     ? resolved.toolIds.filter((id) => !resolved.desktopAppIds.includes(id))
     : [];
-  const manual = resolved ? resolved.integrationIds : [];
   const installs = new Map(preview?.installs.map((install) => [install.toolId, install]));
   const hasOptionalDesktop = harnesses.some((id) => {
     const harness = catalog.harnessById.get(id);
@@ -250,6 +261,48 @@ export function SetupEditor({
             </div>
           </section>
 
+          {pluginChoices.length > 0 && (
+            <section className="section">
+              <div className="section-heading-row">
+                <h2 className="section-title">Plugins</h2>
+                {pluginPicks && (
+                  <button className="link-button" onClick={() => setPluginPicks(null)}>
+                    Use recommended
+                  </button>
+                )}
+              </div>
+              <p className="section-note">
+                Installed with each agent’s own plugin command after mise sets the agent up. Browse thousands more in
+                Agents › Plugins.
+              </p>
+              <div className="list">
+                {pluginChoices.map((entry) => {
+                  const checked = pluginsSelected.includes(entry.id);
+                  return (
+                    <button
+                      key={entry.id}
+                      className="list-row interactive"
+                      onClick={() => togglePlugin(entry.id)}
+                      role="checkbox"
+                      aria-checked={checked}
+                    >
+                      <Checkbox checked={checked} />
+                      <Monogram id={entry.id} title={entry.title} size={28} />
+                      <div className="row-main">
+                        <div className="row-title">{entry.title}</div>
+                        <div className="row-subtitle">{entry.description}</div>
+                      </div>
+                      <div className="row-trailing">
+                        <span className="badge">{AGENT_CLI_TITLE[entry.agent]}</span>
+                        {recommendedPlugins.includes(entry.id) && <span className="badge">Recommended</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           <section className="section">
             <h2 className="section-title">Options</h2>
             <div className="option-row">
@@ -372,14 +425,17 @@ export function SetupEditor({
                 </>
               )}
 
-              {manual.length > 0 && (
+              {preview && preview.plugins.length > 0 && (
                 <>
-                  <div className="side-heading">Set up yourself</div>
+                  <div className="side-heading">Plugins</div>
                   <div className="side-list">
-                    {manual.map((id) => (
-                      <div className="side-item" key={id}>
-                        <span className="name">{titleFor(catalog, id)}</span>
-                        <span className="badge orange">Manual</span>
+                    {preview.plugins.map((plugin) => (
+                      <div className="side-item" key={plugin.id} title={plugin.command}>
+                        <span className="name">
+                          {plugin.title}
+                          <span className="row-subtitle"> · {AGENT_CLI_TITLE[plugin.agent]}</span>
+                        </span>
+                        <span className="badge">{plugin.inTerminal ? "In terminal" : "Plugin"}</span>
                       </div>
                     ))}
                   </div>

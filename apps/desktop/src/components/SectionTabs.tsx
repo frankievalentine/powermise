@@ -34,7 +34,7 @@ export function AgentsTabs({
         { value: "harnesses", label: "Agents" },
         { value: "tools", label: "Agent Tools" },
         { value: "mcp", label: "MCP Servers" },
-        { value: "integrations", label: "Integrations" },
+        { value: "integrations", label: "Plugins" },
       ]}
     />
   );

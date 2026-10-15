@@ -3,12 +3,14 @@
 //! file it writes is an AI setup's `conf.d/powermise-<name>.toml` fragment.
 use std::{io, path::PathBuf};
 
+mod agents;
 mod client;
 mod machine;
 mod models;
 mod project;
 mod updater;
 
+pub use agents::{AgentCli, AgentPlugin, gemini_extensions, parse_plugin_list};
 pub use client::{
     MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program, validate_package_spec,
 };

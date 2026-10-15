@@ -10,11 +10,14 @@ import appsToml from "../../../../catalog/profiles/apps.toml?raw";
 import integrationsToml from "../../../../catalog/profiles/integrations.toml?raw";
 import mcpToml from "../../../../catalog/profiles/mcp.toml?raw";
 import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED } from "../catalog";
-import { demoMise, NOT_HANDLED, setBootstrapHook } from "./demoMise";
+import { demoMise, NOT_HANDLED, setBootstrapHook, setPluginHook } from "./demoMise";
 import { demoHasMise } from "./demoMachine";
 export { browserEvents } from "./demoMise";
 import type {
+  AgentCli,
   McpClientId,
+  PluginReport,
+  SetupPlugin,
   McpTarget,
   BootstrapPlan,
   CatalogBundle,
@@ -62,6 +65,7 @@ interface DemoSetup {
   name: string;
   harnesses: string[];
   mcpServers: string[] | null;
+  integrations: string[] | null;
   includeDesktopApps: boolean;
   /** Whether the demo applied its MCP servers. */
   mcpApplied?: boolean;
@@ -76,6 +80,7 @@ const setups: DemoSetup[] = [
     name: "engineering-agents",
     harnesses: ["claude", "codex", "gemini"],
     mcpServers: null,
+    integrations: null,
     includeDesktopApps: false,
     applied: null,
     installed: new Set(),
@@ -113,6 +118,7 @@ function compile(draft: SelectionDraft, target: Platform) {
   const integrations = new Set<string>();
   const mcp = new Set<string>();
   const clients = new Set<McpClientId>();
+  const pluginAgents = new Set<AgentCli>();
   for (const id of ids) {
     const harness = byId.get(id);
     if (!harness) continue;
@@ -131,7 +137,8 @@ function compile(draft: SelectionDraft, target: Platform) {
         } else unavailable.add(tool);
       }
     }
-    harness.integration_ids.forEach((entry) => integrations.add(entry));
+    if (!draft.integrations) harness.integration_ids.forEach((entry) => integrations.add(entry));
+    if (harness.plugin_agent) pluginAgents.add(harness.plugin_agent);
     if (!draft.mcpServers) harness.mcp_server_ids.forEach((entry) => mcp.add(entry));
     if (harness.mcp_client) clients.add(harness.mcp_client);
     if (harness.desktop_mcp_client && harness.desktop_tool_ids.some((tool) => desktop.has(tool))) {
@@ -139,6 +146,12 @@ function compile(draft: SelectionDraft, target: Platform) {
     }
   }
   draft.mcpServers?.forEach((entry) => mcp.add(entry));
+  draft.integrations?.forEach((entry) => integrations.add(entry));
+  const plugins: SetupPlugin[] = [...integrations].sort().flatMap((id) => {
+    const entry = catalog.integrations.integrations.find((item) => item.id === id);
+    if (!entry || !pluginAgents.has(entry.agent)) return [];
+    return [{ id, title: entry.title, agent: entry.agent, command: pluginCommand(entry.agent, entry.plugin), inTerminal: entry.agent === "codex" }];
+  });
 
   const installs: Install[] = [];
   for (const id of [...tools].sort()) {
@@ -181,8 +194,19 @@ function compile(draft: SelectionDraft, target: Platform) {
       }
     }
   }
-  return { ids, tools, desktop, unavailable, integrations, mcp, installs, mcpTargets, skipped };
+  return { ids, tools, desktop, unavailable, integrations: new Set(plugins.map((plugin) => plugin.id)), mcp, installs, mcpTargets, skipped, plugins };
 }
+
+function pluginCommand(agent: AgentCli, plugin: string): string {
+  return agent === "claude"
+    ? `mise x -- claude plugin install ${plugin} --scope user`
+    : agent === "codex"
+      ? `mise x -- codex plugin add ${plugin}`
+      : `mise x -- gemini extensions install ${plugin} --consent`;
+}
+
+/** Plugins the demo agents have installed. */
+const demoPlugins: Record<AgentCli, Set<string>> = { claude: new Set(), codex: new Set(), gemini: new Set() };
 
 /** Mirrors `McpClient::config_path` in powermise-domain. */
 const MCP_PATHS: Partial<Record<McpClientId, (platform: Platform) => string | null>> = {
@@ -262,6 +286,7 @@ function preview(draft: SelectionDraft, target: Platform): Preview {
     skipped: compiled.skipped,
     homebrewSetup: null,
     mcp: compiled.mcpTargets,
+    plugins: compiled.plugins,
   };
 }
 
@@ -271,6 +296,7 @@ function saved(setup: DemoSetup): SavedSelection {
     path: `${HOME}/.config/powermise/selections/${setup.name}.toml`,
     harnesses: setup.harnesses,
     mcpServers: setup.mcpServers,
+    integrations: setup.integrations,
     includeDesktopApps: setup.includeDesktopApps,
     fragmentPath: fragmentPath(setup.name),
     applied: setup.applied !== null,
@@ -303,12 +329,28 @@ setBootstrapHook(
     const setup = setups.find((entry) => entry.name === name);
     if (!setup) return [];
     setup.mcpApplied = true;
-    return compile(setup, "darwin").mcpTargets.map(
-      (entry) => `mise edits: applied ${entry.target} (merge:powermise-${name})`,
-    );
+    const compiled = compile(setup, "darwin");
+    const plugins = compiled.plugins.filter((plugin) => !plugin.inTerminal);
+    for (const plugin of plugins) {
+      const entry = catalog.integrations.integrations.find((item) => item.id === plugin.id);
+      if (entry) demoPlugins[plugin.agent].add(entry.installed_name ?? entry.plugin);
+    }
+    return [
+      ...compiled.mcpTargets.map((entry) => `mise edits: applied ${entry.target} (merge:powermise-${name})`),
+      ...plugins.map((plugin) => `$ ${plugin.command}\n✔ Installed ${plugin.title}`),
+    ];
   },
   demoTargets,
 );
+
+setPluginHook((agent, id, remove) => {
+  if (remove) demoPlugins[agent].delete(id);
+  else {
+    const entry = catalog.integrations.integrations.find((item) => item.plugin === id);
+    demoPlugins[agent].add(entry?.installed_name ?? id);
+  }
+  return [remove ? `✔ Removed ${id}` : `✔ Installed ${id}`];
+});
 
 function applyCommand(targets: McpTarget[]): string {
   return targets.length
@@ -340,6 +382,7 @@ export async function browserPreview<T>(command: string, args: Record<string, un
         Object.assign(existing, {
           harnesses: draft.harnesses,
           mcpServers: draft.mcpServers,
+          integrations: draft.integrations,
           includeDesktopApps: draft.includeDesktopApps,
         });
       }
@@ -388,6 +431,10 @@ export async function browserPreview<T>(command: string, args: Record<string, un
         change: next.change,
         applyCommand: next.applyCommand,
         mcp: next.mcp.map((entry) => ({ ...entry, state: setup.mcpApplied ? "applied" : "not applied" })),
+        plugins: next.plugins.map((plugin) => {
+          const entry = catalog.integrations.integrations.find((item) => item.id === plugin.id);
+          return { ...plugin, installed: !!entry && demoPlugins[plugin.agent].has(entry.installed_name ?? entry.plugin) };
+        }),
         items: next.installs.map((install) => {
           const system = install.kind === "system";
           const installed = system || setup.installed.has(install.key);
@@ -413,6 +460,34 @@ export async function browserPreview<T>(command: string, args: Record<string, un
       } satisfies RemovedSetup as T;
     }
     case "reveal_path":
+      return undefined as T;
+    case "agent_plugins": {
+      const agent = args.agent as AgentCli;
+      const known = catalog.integrations.integrations.filter((entry) => entry.agent === agent);
+      const plugin = (id: string, name: string, description: string | null, installed: boolean) => ({
+        id,
+        name,
+        description,
+        marketplace: id.split("@")[1] ?? null,
+        version: installed ? "1.0.0" : null,
+        installed,
+        enabled: installed,
+        signsInOnInstall: agent === "codex",
+      });
+      const installed = [...demoPlugins[agent]].map((id) => {
+        const entry = known.find((item) => (item.installed_name ?? item.plugin) === id);
+        return plugin(id, entry?.title ?? id, entry?.description ?? null, true);
+      });
+      const available =
+        agent === "gemini"
+          ? []
+          : [...known.map((entry) => plugin(entry.plugin, entry.plugin.split("@")[0], entry.description, false)),
+             plugin(`sentry@${agent === "claude" ? "anthropic-plugin-directory" : "openai-curated-remote"}`, "sentry", "Debug production errors with Sentry.", false),
+             plugin(`notion@${agent === "claude" ? "anthropic-plugin-directory" : "openai-curated-remote"}`, "notion", "Read and write Notion pages.", false)]
+            .filter((entry) => !demoPlugins[agent].has(entry.id));
+      return { installed, available, error: null } satisfies PluginReport as T;
+    }
+    case "install_plugin_in_terminal":
       return undefined as T;
     default:
       throw new Error(`browser preview does not implement \`${command}\``);

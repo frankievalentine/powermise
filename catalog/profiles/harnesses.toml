@@ -63,10 +63,8 @@ required_tool_ids = [
 desktop_tool_ids = [
     "claude-app",
 ]
-integration_ids = [
-    "claude-github",
-    "claude-mem",
-]
+integration_ids = ["claude-github", "claude-commit-commands"]
+plugin_agent = "claude"
 mcp_server_ids = ["context7", "sequential-thinking"]
 mcp_client = "claude-code"
 desktop_mcp_client = "claude-desktop"
@@ -113,7 +111,8 @@ required_tool_ids = [
 desktop_tool_ids = [
     "codex-app",
 ]
-integration_ids = ["codex-gmail"]
+integration_ids = []
+plugin_agent = "codex"
 mcp_server_ids = ["context7", "sequential-thinking"]
 mcp_client = "codex"
 source_file = "codex.json"
@@ -169,7 +168,8 @@ required_tool_ids = [
     "node",
     "gemini-cli",
 ]
-integration_ids = ["gemini-workspace"]
+integration_ids = ["gemini-code-review"]
+plugin_agent = "gemini"
 mcp_server_ids = ["context7", "sequential-thinking"]
 mcp_client = "gemini-cli"
 source_file = "gemini.json"

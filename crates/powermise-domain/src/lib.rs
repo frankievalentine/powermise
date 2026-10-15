@@ -46,6 +46,10 @@ pub struct Harness {
     /// MCP servers a new setup with this harness starts with; the setup can
     /// add or remove any (`Selection::mcp_servers`).
     pub mcp_server_ids: Vec<String>,
+    /// The agent CLI that installs this harness's plugins (`claude`, `codex`,
+    /// or `gemini`), when it has them.
+    #[serde(default)]
+    pub plugin_agent: Option<String>,
     /// Where the agent reads its MCP servers, if powermise can configure it.
     #[serde(default)]
     pub mcp_client: Option<McpClient>,
@@ -126,19 +130,6 @@ pub struct Tool {
     pub unsupported_reason: Option<String>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ConfigProviderKind {
-    ConfigAdapter,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ConfigProvider {
-    pub kind: ConfigProviderKind,
-    pub config_target: String,
-    pub supported_platforms: Vec<Platform>,
-}
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AppCatalog {
     pub schema_version: u32,
@@ -165,15 +156,27 @@ pub struct IntegrationCatalog {
     pub integrations: Vec<Integration>,
 }
 
+/// A plugin or extension an agent installs with its own CLI.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Integration {
     pub id: String,
     pub title: String,
     pub description: String,
-    pub providers: Vec<ConfigProvider>,
+    /// The agent CLI that installs it: `claude`, `codex`, or `gemini`.
+    pub agent: String,
+    /// What that CLI installs: a plugin id such as
+    /// `github@anthropic-plugin-directory`, or a Gemini extension's source URL.
+    pub plugin: String,
+    /// The installed extension's name, when it differs from `plugin` (Gemini
+    /// installs from a URL but removes by name).
     #[serde(default)]
-    pub unsupported_reason: Option<String>,
+    pub installed_name: Option<String>,
+    #[serde(default)]
+    pub homepage: Option<String>,
 }
+
+/// The agent CLIs that install plugins.
+pub const PLUGIN_AGENTS: [&str; 3] = ["claude", "codex", "gemini"];
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct McpServerCatalog {
@@ -331,6 +334,9 @@ pub struct Selection {
     /// MCP servers to configure. Unset means the harnesses' own picks.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mcp_servers: Option<Vec<String>>,
+    /// Plugins to install. Unset means the harnesses' own picks.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Vec<String>>,
     #[serde(default)]
     pub preferences: Preferences,
 }
