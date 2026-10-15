@@ -185,7 +185,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .manage(mise_commands::MiseState::default())
+        .manage(mise_commands::MiseState::load())
         .invoke_handler(tauri::generate_handler![
             get_environment,
             reveal_path,
@@ -193,6 +193,8 @@ pub fn run() {
             mise_commands::mise_info,
             mise_commands::installed_tools,
             mise_commands::outdated_tools,
+            mise_commands::tool_info,
+            mise_commands::backends,
             mise_commands::registry,
             mise_commands::remote_versions,
             mise_commands::doctor,
@@ -205,6 +207,7 @@ pub fn run() {
             projects::forget_project,
             projects::project_overview,
             projects::task_details,
+            projects::project_updates,
             setups::get_catalog,
             setups::list_selections,
             setups::save_selection,

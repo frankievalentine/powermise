@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Loader2 } from "lucide-react";
+import { api } from "../../api";
 import type { AppContext } from "../../App";
+import { useAsync } from "../../hooks";
 import { backendLabel } from "../../mise";
 import { Monogram } from "../../components/ui";
 
@@ -10,9 +12,28 @@ const FEATURED = ["node", "python", "go", "rust", "bun", "uv", "terraform", "kub
 /** Rows rendered before search narrows the list. */
 const PAGE = 120;
 
+/** Example full names, per backend, for the "install from anywhere" hint. */
+const BACKEND_EXAMPLES: Record<string, string> = {
+  npm: "npm:prettier",
+  github: "github:cli/cli",
+  cargo: "cargo:ripgrep",
+  pipx: "pipx:black",
+  pypi: "pypi:black",
+  go: "go:github.com/charmbracelet/glow",
+  gem: "gem:rubocop",
+  aqua: "aqua:hashicorp/terraform",
+  ubi: "ubi:sharkdp/fd",
+};
+
+/** `backend:name` — a tool spelled out by where it installs from. */
+const BACKEND_SPEC = /^([a-z][a-z0-9-]*):(\S+)$/;
+
 export function DiscoverView({ context, query }: { context: AppContext; query: string }) {
   const { mise, navigate } = context;
   const [showAll, setShowAll] = useState(false);
+  const backends = useAsync(() => api.backends(), []);
+  const spec = query.trim().match(BACKEND_SPEC);
+  const specBackend = spec && backends.data?.includes(spec[1]) ? spec[1] : null;
 
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -90,13 +111,62 @@ export function DiscoverView({ context, query }: { context: AppContext; query: s
           </section>
         )}
 
-        {mise.registry && (
+        {specBackend && (
+          <section className="section" style={{ marginTop: 0 }}>
+            <button
+              className="list-row interactive install-spec"
+              onClick={() => navigate({ kind: "tool", name: query.trim() })}
+            >
+              <Monogram id={query.trim()} title={spec![2].split("/").pop() ?? spec![2]} size={30} />
+              <div className="row-main">
+                <div className="row-title mono">{query.trim()}</div>
+                <div className="row-subtitle">
+                  Install {spec![2]} from {backendLabel(`${specBackend}:`)} — pick a version on the next page.
+                </div>
+              </div>
+              <ArrowRight size={16} />
+            </button>
+          </section>
+        )}
+
+        {!query && backends.data && backends.data.length > 0 && (
+          <section className="section" style={{ marginTop: featured.length ? undefined : 0 }}>
+            <h2 className="section-title">Install from anywhere</h2>
+            <p className="section-note">
+              Not in the list? mise installs from {backends.data.length} sources. Search for a full name like{" "}
+              {backends.data
+                .filter((backend) => BACKEND_EXAMPLES[backend])
+                .slice(0, 4)
+                .map((backend, index, shown) => (
+                  <span key={backend}>
+                    <code>{BACKEND_EXAMPLES[backend]}</code>
+                    {index < shown.length - 2 ? ", " : index === shown.length - 2 ? ", or " : ""}
+                  </span>
+                ))}
+              .
+            </p>
+            <div className="chip-row">
+              {backends.data
+                .filter((backend) => !["core", "asdf", "vfox"].includes(backend))
+                .map((backend) => (
+                  <span key={backend} className="badge mono" title={BACKEND_EXAMPLES[backend] ?? `${backend}:<name>`}>
+                    {backend}:
+                  </span>
+                ))}
+            </div>
+          </section>
+        )}
+
+        {mise.registry && !(specBackend && results.length === 0) && (
           <section className="section">
             <h2 className="section-title">{query ? `Results for “${query}”` : "All tools"}</h2>
             {results.length === 0 ? (
               <div className="empty">
                 <h3>No tools match</h3>
-                <p>mise can also install from GitHub releases, npm, cargo, and more by full name.</p>
+                <p>
+                  mise can also install by full name from GitHub releases, npm, cargo, and more — try{" "}
+                  <code>npm:{query.trim() || "prettier"}</code>.
+                </p>
               </div>
             ) : (
               <div className="list">

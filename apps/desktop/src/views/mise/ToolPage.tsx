@@ -1,11 +1,25 @@
 import { useEffect, useState } from "react";
-import { ArrowUpCircle, Download, ExternalLink, Link2, Loader2 } from "lucide-react";
+import { ArrowUpCircle, Download, ExternalLink, Link2, Loader2, ShieldCheck } from "lucide-react";
 import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { backendLabel, homeFrom, isGlobalPath, sourceLabel, upgradeTarget } from "../../mise";
 import { CommandBlock, Monogram, Section } from "../../components/ui";
-import { LinkSheet } from "../../components/machine";
+import { ExternalLinkButton, LinkSheet, canOpen } from "../../components/machine";
+
+const SECURITY_LABEL: Record<string, string> = {
+  checksum: "Checksum",
+  github_attestations: "GitHub attestations",
+  slsa: "SLSA provenance",
+  cosign: "Cosign signature",
+  minisign: "Minisign signature",
+  gpg: "GPG signature",
+};
+
+function securityLabel(check: { type: string } & Record<string, unknown>): string {
+  const label = SECURITY_LABEL[check.type] ?? check.type.replace(/_/g, " ");
+  return check.type === "checksum" && typeof check.algorithm === "string" ? `${label} (${check.algorithm})` : label;
+}
 
 export function ToolPage({ context, name }: { context: AppContext; name: string }) {
   const { mise, env, run } = context;
@@ -18,6 +32,15 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
   );
 
   const remote = useAsync(() => api.remoteVersions(name), [name]);
+  const info = useAsync(() => api.toolInfo(name), [name, mise.revision]);
+  // Options mise reports for this tool, leaving out unset and empty ones.
+  const options = Object.entries(info.data?.tool_options ?? {}).filter(
+    ([, value]) =>
+      value !== null &&
+      value !== false &&
+      !(Array.isArray(value) && value.length === 0) &&
+      !(typeof value === "object" && !Array.isArray(value) && Object.keys(value as object).length === 0),
+  );
   // Newest first; mise lists oldest first.
   const available = [...(remote.data ?? [])].reverse();
   const [selected, setSelected] = useState("latest");
@@ -41,7 +64,7 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
     <div className="content">
       <div className="page">
         <div className="detail-hero">
-          <Monogram id={name} title={name} size={64} />
+          <Monogram id={name} title={name.split(":").pop() ?? name} size={64} />
           <div style={{ minWidth: 0 }}>
             <h1 className="page-title">{name}</h1>
             <p className="page-subtitle">
@@ -178,27 +201,94 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
           </Section>
         )}
 
-        {entry && (
+        {(info.data || entry) && (
           <Section title="Details">
             <div className="list">
               <div className="list-row">
                 <div className="row-main">
                   <div className="row-title">Installs from</div>
+                  {entry && entry.backends.length > 1 && (
+                    <div className="row-subtitle">mise uses the first one that works on this computer.</div>
+                  )}
                 </div>
                 <div className="row-trailing" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
-                  {entry.backends.map((backend) => (
-                    <span key={backend} className="badge" title={backend}>
-                      {backendLabel(backend)} · {backend.split(":").slice(1).join(":")}
-                    </span>
-                  ))}
+                  {(info.data ? [info.data.backend, ...(entry?.backends ?? []).filter((b) => b !== info.data!.backend)] : entry!.backends).map(
+                    (backend, index) => (
+                      <span
+                        key={backend}
+                        className={`badge${index === 0 && info.data ? " accent" : ""}`}
+                        title={index === 0 && info.data ? `${backend} — what mise uses here` : backend}
+                      >
+                        {backendLabel(backend)} · {backend.split(":").slice(1).join(":")}
+                      </span>
+                    ),
+                  )}
                 </div>
               </div>
-              {entry.aliases.length > 0 && (
+              {info.data && (
+                <div className="list-row">
+                  <div className="row-main">
+                    <div className="row-title">Download checks</div>
+                    <div className="row-subtitle">
+                      {info.data.security.length
+                        ? "mise verifies every download before installing it."
+                        : "This source doesn’t publish checksums or signatures mise can verify."}
+                    </div>
+                  </div>
+                  <div className="row-trailing" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {info.data.security.length ? (
+                      info.data.security.map((check) => (
+                        <span
+                          key={check.type}
+                          className="badge green"
+                          title={Object.entries(check)
+                            .filter(([key]) => key !== "type")
+                            .map(([key, value]) => `${key}: ${String(value)}`)
+                            .join("\n")}
+                        >
+                          <ShieldCheck size={11} /> {securityLabel(check)}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="badge orange">Not verified</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {options.length > 0 && (
+                <div className="list-row">
+                  <div className="row-main">
+                    <div className="row-title">Options</div>
+                  </div>
+                  <div className="row-trailing mono selectable" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {options.map(([key, value]) => (
+                      <span key={key} className="badge">
+                        {key} = {typeof value === "string" ? value : JSON.stringify(value)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {entry && entry.aliases.length > 0 && (
                 <div className="list-row">
                   <div className="row-main">
                     <div className="row-title">Also known as</div>
                   </div>
                   <div className="row-trailing">{entry.aliases.join(", ")}</div>
+                </div>
+              )}
+              {info.data?.url && (
+                <div className="list-row">
+                  <div className="row-main">
+                    <div className="row-title">Homepage</div>
+                  </div>
+                  <div className="row-trailing">
+                    {canOpen(info.data.url) ? (
+                      <ExternalLinkButton url={info.data.url}>{info.data.url.replace(/^https:\/\//, "")}</ExternalLinkButton>
+                    ) : (
+                      <span className="selectable mono">{info.data.url}</span>
+                    )}
+                  </div>
                 </div>
               )}
               {available[0]?.release_url && (
@@ -207,8 +297,14 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
                     <div className="row-title">Latest release notes</div>
                   </div>
                   <div className="row-trailing">
-                    <ExternalLink size={13} />
-                    <span className="selectable mono">{available[0].release_url}</span>
+                    {canOpen(available[0].release_url) ? (
+                      <ExternalLinkButton url={available[0].release_url}>{available[0].version}</ExternalLinkButton>
+                    ) : (
+                      <>
+                        <ExternalLink size={13} />
+                        <span className="selectable mono">{available[0].release_url}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               )}

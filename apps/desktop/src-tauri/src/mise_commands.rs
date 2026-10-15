@@ -30,6 +30,71 @@ pub struct MiseState {
     registry: Mutex<Option<Vec<RegistryEntry>>>,
 }
 
+/// How many finished commands the activity log keeps across launches.
+const ACTIVITY_LIMIT: usize = 500;
+
+fn activity_path() -> Option<PathBuf> {
+    crate::layout()
+        .ok()
+        .map(|layout| layout.state.join("activity.json"))
+}
+
+impl MiseState {
+    /// Starts with the activity log saved by earlier launches. Commands still
+    /// running when powermise quit are marked as interrupted.
+    pub fn load() -> Self {
+        let mut activity: Vec<ActivityEntry> = activity_path()
+            .and_then(|path| std::fs::read(path).ok())
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+            .unwrap_or_default();
+        for entry in activity
+            .iter_mut()
+            .filter(|entry| entry.finished_at.is_none())
+        {
+            entry.finished_at = Some(entry.started_at);
+            entry.error = Some("powermise closed before this finished".into());
+        }
+        let next = activity.iter().map(|entry| entry.id).max().unwrap_or(0);
+        Self {
+            next_job: AtomicU64::new(next),
+            activity: Mutex::new(activity),
+            ..Self::default()
+        }
+    }
+
+    /// Saves finished commands (the newest [`ACTIVITY_LIMIT`]). Best effort:
+    /// a failed save only loses history.
+    fn save_activity(&self) {
+        let Some(path) = activity_path() else {
+            return;
+        };
+        let Ok(activity) = self.activity.lock() else {
+            return;
+        };
+        let finished: Vec<&ActivityEntry> = activity
+            .iter()
+            .filter(|entry| entry.finished_at.is_some())
+            .collect();
+        let kept = &finished[finished.len().saturating_sub(ACTIVITY_LIMIT)..];
+        if let Ok(mut bytes) = serde_json::to_vec_pretty(kept) {
+            bytes.push(b'\n');
+            let _ = powermise_state::write_atomically(&path, &bytes);
+        }
+    }
+}
+
+/// The installed mise's version, for features newer releases add.
+pub(crate) fn mise_version(client: &MiseClient) -> Option<MiseVersion> {
+    client
+        .version_info()
+        .ok()
+        .and_then(|info| MiseVersion::parse(&info.version))
+}
+
+fn has_global_scope(client: &MiseClient) -> bool {
+    mise_version(client).is_some_and(|version| version >= MiseVersion::GLOBAL_SCOPE)
+}
+
 pub(crate) fn client() -> CommandResult<MiseClient> {
     let executable = find_mise().ok_or_else(|| {
         "mise is not installed. Install it from https://mise.jdx.dev, then try again.".to_owned()
@@ -103,9 +168,32 @@ pub async fn installed_tools() -> CommandResult<ToolInventory> {
     blocking(|| client()?.tools(None).map_err(message)).await
 }
 
+/// What's outdated in the global config. On mise 2026.10.7+ this excludes
+/// project configs that happen to live in the home folder.
 #[tauri::command]
 pub async fn outdated_tools() -> CommandResult<OutdatedReport> {
-    blocking(|| client()?.outdated(None).map_err(message)).await
+    blocking(|| {
+        let client = client()?;
+        if has_global_scope(&client) {
+            client.outdated_global()
+        } else {
+            client.outdated(None)
+        }
+        .map_err(message)
+    })
+    .await
+}
+
+/// `mise tool --json`: backend, options, and how downloads are verified.
+#[tauri::command]
+pub async fn tool_info(tool: String) -> CommandResult<powermise_mise::ToolInfo> {
+    blocking(move || client()?.tool_info(&tool).map_err(message)).await
+}
+
+/// The backends this mise can install from.
+#[tauri::command]
+pub async fn backends() -> CommandResult<Vec<String>> {
+    blocking(|| client()?.backends().map_err(message)).await
 }
 
 #[tauri::command]
@@ -158,6 +246,10 @@ pub enum MiseAction {
         version: String,
     },
     Upgrade {
+        tool: Option<String>,
+    },
+    UpgradeProject {
+        project: PathBuf,
         tool: Option<String>,
     },
     SelfUpdate,
@@ -247,7 +339,15 @@ impl MiseAction {
             Self::UseGlobal { tool, version } => MiseCommand::use_global(tool, version),
             Self::UnuseGlobal { tool } => MiseCommand::unuse_global(tool),
             Self::Uninstall { tool, version } => MiseCommand::uninstall(tool, version),
-            Self::Upgrade { tool } => MiseCommand::upgrade(tool.as_deref()),
+            Self::Upgrade { tool } => match client() {
+                Ok(client) if has_global_scope(&client) => {
+                    MiseCommand::upgrade_global(tool.as_deref())
+                }
+                _ => MiseCommand::upgrade(tool.as_deref()),
+            },
+            Self::UpgradeProject { project, tool } => {
+                MiseCommand::upgrade_project(tool.as_deref(), project)
+            }
             Self::SelfUpdate => Ok(MiseCommand::self_update()),
             Self::InstallProject { project } => Ok(MiseCommand::install_all().in_project(project)),
             Self::TrustProject { project } => Ok(MiseCommand::trust(project)),
@@ -315,7 +415,7 @@ pub fn describe_action(action: MiseAction) -> CommandResult<String> {
     Ok(action.command()?.display())
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityEntry {
     id: u64,
@@ -406,6 +506,7 @@ pub fn run_action(
             }
             Some(entry.clone())
         });
+        state.save_activity();
         if let Some(entry) = finished {
             let _ = app.emit(FINISHED_EVENT, entry);
         }
@@ -421,7 +522,7 @@ pub fn cancel_job(state: State<'_, MiseState>, job_id: u64) -> CommandResult<()>
     Ok(())
 }
 
-/// Every command powermise ran this session, newest first.
+/// Every command powermise ran, newest first — kept across launches.
 #[tauri::command]
 pub fn activity(state: State<'_, MiseState>) -> CommandResult<Vec<ActivityEntry>> {
     let mut entries = state.activity.lock().map_err(message)?.clone();

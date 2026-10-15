@@ -82,6 +82,40 @@ impl From<&StoredProject> for ProjectEntry {
     }
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectUpdates {
+    path: PathBuf,
+    name: String,
+    outdated: powermise_mise::OutdatedReport,
+}
+
+/// For every saved, trusted project: the tools its own config asks for that
+/// have a newer version (`mise outdated --local --bump --json`). Untrusted or
+/// missing folders are skipped.
+#[tauri::command]
+pub async fn project_updates() -> CommandResult<Vec<ProjectUpdates>> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let client = crate::mise_commands::client()?;
+        let store = load_store()?;
+        Ok(store
+            .projects
+            .iter()
+            .filter(|project| project.path.is_dir())
+            .filter_map(|project| {
+                let outdated = client.outdated_local(&project.path).ok()?;
+                (!outdated.is_empty()).then(|| ProjectUpdates {
+                    name: folder_name(&project.path),
+                    path: project.path.clone(),
+                    outdated,
+                })
+            })
+            .collect())
+    })
+    .await
+    .map_err(message)?
+}
+
 /// Saved projects, most recently opened first.
 #[tauri::command]
 pub fn list_projects() -> CommandResult<Vec<ProjectEntry>> {

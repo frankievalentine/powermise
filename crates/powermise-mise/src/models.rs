@@ -15,6 +15,43 @@ pub struct ConfigSource {
     pub path: PathBuf,
 }
 
+/// `mise tool --json <tool>`: how a tool installs and how its downloads are
+/// verified.
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct ToolInfo {
+    /// For example `aqua:jqlang/jq`.
+    pub backend: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    /// The tool's homepage (2026.10+).
+    #[serde(default)]
+    pub url: Option<String>,
+    #[serde(default)]
+    pub installed_versions: Vec<String>,
+    #[serde(default)]
+    pub requested_versions: Option<Vec<String>>,
+    #[serde(default)]
+    pub active_versions: Option<Vec<String>>,
+    #[serde(default)]
+    pub config_source: Option<ConfigSource>,
+    /// Backend options; unset ones are `null`.
+    #[serde(default)]
+    pub tool_options: BTreeMap<String, serde_json::Value>,
+    #[serde(default)]
+    pub security: Vec<SecurityCheck>,
+}
+
+/// One way mise verifies a tool's downloads: `checksum`,
+/// `github_attestations`, `slsa`, `cosign`, `minisign`, `gpg`, …
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct SecurityCheck {
+    #[serde(rename = "type")]
+    pub kind: String,
+    /// Check-specific details, such as the algorithm or signer workflow.
+    #[serde(flatten)]
+    pub details: BTreeMap<String, serde_json::Value>,
+}
+
 /// One version of a tool from `mise ls --json`.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ToolVersion {
@@ -269,6 +306,13 @@ impl MiseVersion {
         year: 2026,
         minor: 10,
         patch: 0,
+    };
+
+    /// `outdated --global` and `upgrade --global`.
+    pub const GLOBAL_SCOPE: Self = Self {
+        year: 2026,
+        minor: 10,
+        patch: 7,
     };
 
     /// Parses the leading `YYYY.M.P` of a mise version string.

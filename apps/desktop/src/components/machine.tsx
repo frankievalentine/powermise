@@ -18,6 +18,20 @@ export function formatBytes(bytes: number): string {
   return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unit]}`;
 }
 
+/** Hosts the app opens links to (the backend enforces the same list). */
+const LINK_HOSTS = ["mise.jdx.dev", "github.com"];
+
+/** Whether `url` is a link the app can open in the browser. */
+export function canOpen(url: string | null | undefined): url is string {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && LINK_HOSTS.includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 /** A link to mise's docs or GitHub, opened in the default browser. */
 export function ExternalLinkButton({ url, children }: { url: string; children: React.ReactNode }) {
   return (

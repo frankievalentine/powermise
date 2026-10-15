@@ -169,7 +169,9 @@ function describe(action: MiseAction): string {
     case "uninstall":
       return `mise uninstall ${action.tool}@${action.version}`;
     case "upgrade":
-      return action.tool ? `mise upgrade --bump ${action.tool}` : "mise upgrade --bump";
+      return action.tool ? `mise upgrade --global --bump ${action.tool}` : "mise upgrade --global --bump";
+    case "upgradeProject":
+      return `cd ${action.project.replace("/Users/demo", "~")} && mise upgrade --local --bump${action.tool ? ` ${action.tool}` : ""}`;
     case "selfUpdate":
       return "mise self-update --yes";
     default:
@@ -319,6 +321,47 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
       return undefined;
     case "activity":
       return [...activityLog].reverse();
+    case "tool_info": {
+      const tool = args.tool as string;
+      const entry = registry.find((candidate) => candidate.short === tool);
+      const versions = machine.get(tool) ?? [];
+      return {
+        backend: entry?.backends[0] ?? tool,
+        description: entry?.description ?? null,
+        url: tool.includes(":") ? null : `https://github.com/search?q=${tool}`,
+        installed_versions: versions.map((version) => version.version),
+        requested_versions: versions.filter((version) => version.global).map((version) => version.version),
+        active_versions: versions.filter((version) => version.global).map((version) => version.version),
+        config_source: versions.some((version) => version.global) ? { type: "mise.toml", path: GLOBAL_CONFIG } : null,
+        tool_options: { os: null, depends: null, install_env: {} },
+        security: tool.startsWith("npm:")
+          ? []
+          : [
+              { type: "checksum", algorithm: "sha256" },
+              { type: "github_attestations", signer_workflow: `${tool}/.github/workflows/release.yml` },
+            ],
+      };
+    }
+    case "backends":
+      return ["aqua", "asdf", "cargo", "conda", "core", "dotnet", "gem", "github", "gitlab", "go", "npm", "pypi", "spm", "http", "ubi", "vfox"];
+    case "project_updates":
+      return [
+        {
+          path: `${HOME}/code/web-app`,
+          name: "web-app",
+          outdated: {
+            node: {
+              name: "node",
+              requested: "20",
+              current: "20.19.5",
+              bump: "24",
+              latest: "24.11.0",
+              release_url: null,
+              source: { type: "mise.toml", path: `${HOME}/code/web-app/mise.toml` },
+            },
+          },
+        },
+      ];
     case "prunable_versions":
       return [...machine.entries()].flatMap(([tool, versions]) =>
         versions

@@ -16,8 +16,8 @@ pub use machine::{
 pub use models::{
     BootstrapPlan, BootstrapStatus, ConfigFile, ConfigSource, Doctor, MiseDirs, MiseVersion,
     OutdatedReport, OutdatedTool, PackageManagerStatus, PackageStatus, PlanResource,
-    PlanResourceId, PlanSummary, RegistryEntry, RemoteVersion, ShellInfo, Task, ToolInventory,
-    ToolStatus, ToolVersion, VersionInfo,
+    PlanResourceId, PlanSummary, RegistryEntry, RemoteVersion, SecurityCheck, ShellInfo, Task,
+    ToolInfo, ToolInventory, ToolStatus, ToolVersion, VersionInfo,
 };
 pub use project::{
     ConfigPreview, EnvReport, EnvVar, PROJECT_CONFIG_FILES, TaskDetails, TaskInput, TrustStatus,

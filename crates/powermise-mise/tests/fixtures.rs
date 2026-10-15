@@ -257,3 +257,20 @@ fn doctor_reports_mise_directories() {
         assert!(dirs.cache.to_string_lossy().contains("mise"), "{version}");
     }
 }
+
+#[test]
+fn tool_info_reports_backend_options_and_verification() {
+    for version in VERSIONS {
+        let info: powermise_mise::ToolInfo = fixture(version, "tool-jq.json");
+        assert_eq!(info.backend, "aqua:jqlang/jq", "{version}");
+        assert_eq!(info.installed_versions, ["1.7.1"], "{version}");
+        assert!(info.tool_options.contains_key("install_env"), "{version}");
+        let kinds: Vec<_> = info
+            .security
+            .iter()
+            .map(|check| check.kind.as_str())
+            .collect();
+        assert_eq!(kinds, ["checksum", "github_attestations"], "{version}");
+        assert_eq!(info.security[0].details["algorithm"], "sha256", "{version}");
+    }
+}

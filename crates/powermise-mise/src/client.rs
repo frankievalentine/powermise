@@ -21,7 +21,7 @@ use crate::{
     machine::{ImportSource, Setting, TokenStatus, parse_settings, parse_token_status},
     models::{
         BootstrapPlan, BootstrapStatus, ConfigFile, Doctor, OutdatedReport, RegistryEntry,
-        RemoteVersion, Task, ToolInventory, VersionInfo,
+        RemoteVersion, Task, ToolInfo, ToolInventory, VersionInfo,
     },
     project::{
         EnvReport, TaskDetails, TrustStatus, is_untrusted_error, parse_task_details,
@@ -108,6 +108,50 @@ impl MiseClient {
     /// `mise outdated --bump --json`: includes newer versions beyond pins.
     pub fn outdated(&self, project: Option<&Path>) -> Result<OutdatedReport, MiseAdapterError> {
         self.read_json(&["outdated", "--bump", "--json"], project)
+    }
+
+    /// `mise outdated --global --bump --json` (2026.10.7+): only tools the
+    /// global config asks for, ignoring any project config in the home folder.
+    pub fn outdated_global(&self) -> Result<OutdatedReport, MiseAdapterError> {
+        self.read_json(&["outdated", "--global", "--bump", "--json"], None)
+    }
+
+    /// `mise outdated --local --bump --json` in a project: only the tools the
+    /// project's own config files ask for.
+    pub fn outdated_local(&self, project: &Path) -> Result<OutdatedReport, MiseAdapterError> {
+        self.read_json(&["outdated", "--local", "--bump", "--json"], Some(project))
+    }
+
+    /// `mise tool --json <tool>`: backend, options, and download verification.
+    pub fn tool_info(&self, tool: &str) -> Result<ToolInfo, MiseAdapterError> {
+        validate_argument(tool)?;
+        self.read_json(&["tool", "--json", tool], None)
+    }
+
+    /// `mise backends ls`: the backends this mise can install from (one per line).
+    pub fn backends(&self) -> Result<Vec<String>, MiseAdapterError> {
+        let output = self
+            .base(None)
+            .args(["backends", "ls"])
+            .output()
+            .map_err(|source| MiseAdapterError::Execute {
+                executable: self.executable.clone(),
+                source,
+            })?;
+        if !output.status.success() {
+            return Err(MiseAdapterError::Failed {
+                executable: self.executable.clone(),
+                status: output.status.code(),
+                stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+                stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+            });
+        }
+        Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .map(str::to_owned)
+            .collect())
     }
 
     /// `mise registry --json`: every tool mise knows how to install.
@@ -376,7 +420,7 @@ pub struct OutputLine {
     pub text: String,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct RunOutcome {
     pub success: bool,
     pub code: Option<i32>,
@@ -468,6 +512,25 @@ impl MiseCommand {
             arguments.push(tool.into());
         }
         Ok(Self::new(arguments))
+    }
+
+    /// `mise upgrade --global --bump [tool]` (2026.10.7+): only tools in the
+    /// global config.
+    pub fn upgrade_global(tool: Option<&str>) -> Result<Self, MiseAdapterError> {
+        let mut command = Self::upgrade(tool)?;
+        command.arguments.insert(1, "--global".into());
+        Ok(command)
+    }
+
+    /// `mise upgrade --local --bump [tool]` in a project: only tools the
+    /// project's own config files ask for, updating those files to match.
+    pub fn upgrade_project(
+        tool: Option<&str>,
+        project: impl Into<PathBuf>,
+    ) -> Result<Self, MiseAdapterError> {
+        let mut command = Self::upgrade(tool)?;
+        command.arguments.insert(1, "--local".into());
+        Ok(command.in_project(project))
     }
 
     /// `mise install`: install everything the current config requests.
@@ -861,6 +924,16 @@ mod tests {
         );
         assert!(MiseCommand::link("node", "20", Path::new("relative")).is_err());
         assert!(MiseCommand::untrust(Path::new("-rf")).is_err());
+        assert_eq!(
+            MiseCommand::upgrade_global(Some("node")).unwrap().display(),
+            "mise upgrade --global --bump node"
+        );
+        assert_eq!(
+            MiseCommand::upgrade_project(None, "/code/app")
+                .unwrap()
+                .display(),
+            "cd /code/app && mise upgrade --local --bump"
+        );
         assert_eq!(
             MiseCommand::sync(crate::ImportSource::Nvm).display(),
             "mise sync node --nvm"

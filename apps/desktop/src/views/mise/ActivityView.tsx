@@ -17,7 +17,7 @@ export function ActivityView({ context }: { context: AppContext }) {
           <div>
             <h1 className="page-title">Activity</h1>
             <p className="page-subtitle">
-              Every command powermise ran since it opened. Copy any of them to run it yourself.
+              Every command powermise has run, newest first — kept between launches. Copy any of them to run it yourself.
             </p>
           </div>
         </div>

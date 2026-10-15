@@ -46,6 +46,7 @@ const settings: Setting[] = [
   setting("github.github_attestations", "boolean", true, "Verify GitHub artifact attestations for github backend tools."),
   setting("status.show_tools", "boolean", false, "Show which tools are active when you change directories."),
   setting("self_update.auto", "boolean", false, "Update mise itself automatically in the background."),
+  setting("tool_update.global_auto", "boolean", false, "Upgrade global tools automatically in the background."),
 ];
 
 let cacheBytes = 412_000_000;

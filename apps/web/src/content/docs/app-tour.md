@@ -40,7 +40,11 @@ Reads: `mise ls --json`, `mise outdated --bump --json`, `mise ls --prunable --js
 The full [mise registry](https://mise.jdx.dev/registry.html): popular tools
 first, then everything else. Search matches names, aliases, and descriptions.
 
-Reads: `mise registry --json`
+Anything else mise can install, search by full name — `npm:prettier`,
+`github:cli/cli`, `cargo:ripgrep`, and so on — and open it like any other tool.
+**Install from anywhere** lists the sources this mise supports.
+
+Reads: `mise registry --json`, `mise backends ls`
 
 ## Tool pages
 
@@ -48,8 +52,9 @@ Reads: `mise registry --json`
   it as your default everywhere. Projects can still ask for their own version.
 - **On this computer** — each installed version and where it's used. Remove a
   tool from your global config, or uninstall a version that nothing uses.
-- **Details** — where mise installs it from (aqua, GitHub releases, a core
-  plugin, …) and any aliases.
+- **Details** — where mise installs it from (the source it actually uses is
+  highlighted), how it checks downloads (checksums, GitHub attestations, SLSA,
+  signatures), tool options, aliases, the homepage, and release notes.
 
 | Action | Command |
 |---|---|
@@ -58,7 +63,7 @@ Reads: `mise registry --json`
 | Remove from global | `mise unuse -g <tool>` |
 | Uninstall one version | `mise uninstall <tool>@<version>` |
 
-Reads: `mise ls-remote --json <tool>`
+Reads: `mise ls-remote --json <tool>`, `mise tool --json <tool>`
 
 Each tool page also has **Link a Folder…**: point mise at an install made
 outside it — built by hand or by another tool — and it uses that copy as a
@@ -70,7 +75,21 @@ Everything with a newer version — including tools pinned to an exact version,
 which a plain `mise outdated` leaves out. Upgrading a pinned tool moves the pin
 in your config to the new version.
 
-Commands: `mise upgrade --bump <tool>`, or `mise upgrade --bump` for all.
+- **Global tools** — your global config. On mise 2026.10.7+ this uses
+  `--global`, so a project config that lives in your home folder isn't mixed in.
+- **Each project** you've added — what its own config asks for, upgraded in
+  that project's config (`mise upgrade --local --bump`, run in the folder).
+- **Automatic updates** (mise 2026.10+) — switches for upgrading global tools
+  (`tool_update.global_auto`) and mise itself (`self_update.auto`) in the
+  background.
+
+Commands: `mise upgrade --global --bump [<tool>]` (or without `--global` on older
+mise), `mise upgrade --local --bump [<tool>]` in a project.
+
+## Activity
+
+Every command powermise has run, kept between launches (the newest 500), with
+how long it took and whether it worked. Copy any of them to run it yourself.
 
 ## Projects
 
@@ -115,11 +134,6 @@ Values are never shown in the activity log: `mise set --file mise.local.toml API
 
 The files mise reads in the folder, most specific first — when two ask for the
 same tool, the higher one wins.
-
-## Activity
-
-Every command powermise ran since it opened, with how long it took and whether
-it worked. Copy any of them to run it yourself.
 
 ## Health
 

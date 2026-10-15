@@ -82,15 +82,16 @@ apps/web (Astro)          marketing site + docs; hosts the interactive app demo
 - [x] Activity log: every command powermise ran this session, with its result.
 - [x] **Clean up**: list versions nothing uses with their size (`mise ls --prunable
       --json`), then `mise prune --tools --yes` — on Installed and Health.
-- [ ] Tool pages from `mise tool --json`: backend, tool options, and supply-chain
-      checks (checksums, GitHub attestations) shown as "Verified" badges.
-- [ ] Install anything mise supports beyond the registry: a backend picker for
-      `npm:`, `pipx:`, `cargo:`, `go:`, `github:`, `aqua:`, `ubi:`, … (`mise backends ls`).
-- [ ] Split Updates into global vs. project tools (`mise outdated --global`,
-      `mise upgrade --global`; needs mise 2026.10.7+).
-- [ ] Automatic updates: toggles for `tool_update.global_auto`, per-tool `auto_update`,
-      and `self_update.auto` (2026.10.4+), set through `mise settings set`.
-- [ ] Persist the activity log across launches.
+- [x] Tool pages from `mise tool --json`: backend in use, tool options, homepage,
+      and download checks (checksums, GitHub attestations, SLSA, signatures).
+- [x] Install anything mise supports beyond the registry: search a full
+      `backend:name`, with the sources from `mise backends ls`.
+- [x] Split Updates into global and per-project tools (`--global` on 2026.10.7+;
+      `outdated|upgrade --local` in each added project).
+- [x] Automatic updates: `tool_update.global_auto` and `self_update.auto`
+      switches, shown when the installed mise has them.
+- [ ] Per-tool `auto_update` (a tool option in the config, not a setting).
+- [x] Persist the activity log across launches (newest 500, in powermise's state).
 
 ### M3 — Projects (first pass ✅)
 

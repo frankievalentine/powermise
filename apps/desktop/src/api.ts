@@ -236,6 +236,7 @@ export type MiseAction =
   | { kind: "unuseGlobal"; tool: string }
   | { kind: "uninstall"; tool: string; version: string }
   | { kind: "upgrade"; tool: string | null }
+  | { kind: "upgradeProject"; project: string; tool: string | null }
   | { kind: "selfUpdate" }
   | { kind: "installProject"; project: string }
   | { kind: "trustProject"; project: string }
@@ -292,6 +293,26 @@ export interface DetectedImport {
   source: ImportSource;
   tool: string;
   versions: string[];
+}
+
+/** `mise tool --json`. */
+export interface ToolInfo {
+  backend: string;
+  description: string | null;
+  url: string | null;
+  installed_versions: string[];
+  requested_versions: string[] | null;
+  active_versions: string[] | null;
+  config_source: ConfigSource | null;
+  tool_options: Record<string, unknown>;
+  /** `type` is `checksum`, `github_attestations`, `slsa`, …; the rest is detail. */
+  security: ({ type: string } & Record<string, unknown>)[];
+}
+
+export interface ProjectUpdates {
+  path: string;
+  name: string;
+  outdated: OutdatedReport;
 }
 
 export interface DiskUsage {
@@ -453,6 +474,9 @@ export const api = {
   miseInstallers: () => call<InstallerOption[]>("mise_installers"),
   openUrl: (url: string) => call<void>("open_url", { url }),
   diskUsage: () => call<DiskUsage>("disk_usage"),
+  toolInfo: (tool: string) => call<ToolInfo>("tool_info", { tool }),
+  backends: () => call<string[]>("backends"),
+  projectUpdates: () => call<ProjectUpdates[]>("project_updates"),
   trustedFolders: () => call<TrustReport>("trusted_folders"),
   pickFolder: () => call<string | null>("pick_folder"),
   describe: (action: MiseAction) => call<string>("describe_action", { action }),
