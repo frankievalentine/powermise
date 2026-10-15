@@ -4,6 +4,7 @@ import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { homeFrom, sourceLabel, upgradeTarget } from "../../mise";
 import { Monogram, Switch } from "../../components/ui";
+import { MyToolsTabs } from "../../components/SectionTabs";
 
 /** Global switches for automatic updates (mise 2026.10+), shown only when
  *  the installed mise has them. */
@@ -35,9 +36,10 @@ export function UpdatesView({ context }: { context: AppContext }) {
   return (
     <div className="content">
       <div className="page">
+        <MyToolsTabs context={context} current="updates" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Updates</h1>
+            <h1 className="page-title">My Tools</h1>
             <p className="page-subtitle">
               Newer versions of the tools you use. Upgrading installs the new version and updates
               the config file that asked for it.

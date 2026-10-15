@@ -4,6 +4,7 @@ import { PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
 import { categoryLabel, isAvailable, titleFor } from "../catalog";
 import { Monogram, PlatformChips, Segmented } from "../components/ui";
+import { AgentsTabs } from "../components/SectionTabs";
 
 type Filter = "all" | "terminal" | "ide" | "gui";
 
@@ -41,9 +42,10 @@ export function HarnessesView({ context, query }: { context: AppContext; query: 
   return (
     <div className="content">
       <div className="page">
+        <AgentsTabs context={context} current="harnesses" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Harnesses</h1>
+            <h1 className="page-title">Agents</h1>
             <p className="page-subtitle">
               AI coding agents and the editors they live in. Pick the ones you want and powermise
               installs everything they need with mise.

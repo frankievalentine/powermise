@@ -1159,6 +1159,142 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Health: details tucked away */
+.more-details {
+  margin-top: 26px;
+}
+
+.more-details > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+  list-style: none;
+}
+
+.more-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-details > summary::before {
+  content: "›";
+  display: inline-block;
+  transition: transform 120ms ease-out;
+}
+
+.more-details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.more-details > summary:hover {
+  background: var(--fill);
+  color: var(--text);
+}
+
+/* Home */
+.home-checklist .list-row.done .row-title {
+  color: var(--text-secondary);
+}
+
+.home-checklist .section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-glance {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.card.glance {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.glance-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.glance-arrow {
+  margin-left: auto;
+  color: var(--text-tertiary);
+}
+
+.glance-value {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card.glance.attention .glance-value {
+  color: var(--accent);
+}
+
+/* Sidebar: rarely used places, pinned under the scrolling list. */
+.sidebar-bottom {
+  margin: 0;
+  padding: 8px 0 6px;
+  border-top: 1px solid var(--separator);
+}
+
+.icon-button.active {
+  background: var(--fill-hover);
+  color: var(--text);
+}
+
+/* Tabs between sibling pages */
+.page-tabs {
+  display: flex;
+  gap: 4px;
+  margin: -4px 0 18px;
+  border-bottom: 1px solid var(--separator);
+}
+
+.page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.page-tab:hover {
+  color: var(--text);
+}
+
+.page-tab.selected {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+
+.page-tab-badge {
+  min-width: 18px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10.5px;
+  line-height: 16px;
+  text-align: center;
+}
+
 .discover-chips {
   margin: -4px 0 14px;
 }

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { PLATFORMS, PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
 import { PROVIDER_HINT, PROVIDER_SHORT, providerFor } from "../catalog";
+import { AgentsTabs } from "../components/SectionTabs";
 
 export function ToolsView({ context, query }: { context: AppContext; query: string }) {
   const { catalog, env } = context;
@@ -20,9 +21,10 @@ export function ToolsView({ context, query }: { context: AppContext; query: stri
   return (
     <div className="content">
       <div className="page">
+        <AgentsTabs context={context} current="tools" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Tools</h1>
+            <h1 className="page-title">Agents</h1>
             <p className="page-subtitle">
               Every program a harness can install, and which package manager provides it on each
               platform. Versions are pinned by the catalog.

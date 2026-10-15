@@ -4,6 +4,7 @@ import type { ConfigEntry } from "../api";
 import type { AppContext } from "../App";
 import { targetTitle } from "../catalog";
 import { Section } from "../components/ui";
+import { AgentsTabs } from "../components/SectionTabs";
 
 const COPY = {
   mcp: {
@@ -48,9 +49,10 @@ export function ConfigView({
   return (
     <div className="content">
       <div className="page">
+        <AgentsTabs context={context} current={kind} />
         <div className="page-header">
           <div>
-            <h1 className="page-title">{COPY[kind].title}</h1>
+            <h1 className="page-title">Agents</h1>
             <p className="page-subtitle">{COPY[kind].subtitle}</p>
           </div>
         </div>

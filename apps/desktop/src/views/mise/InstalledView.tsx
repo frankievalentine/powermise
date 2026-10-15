@@ -4,6 +4,7 @@ import type { AppContext } from "../../App";
 import { homeFrom, isGlobalPath, sourceLabel, upgradeTarget } from "../../mise";
 import { Monogram } from "../../components/ui";
 import { CleanupSheet } from "../../components/machine";
+import { MyToolsTabs } from "../../components/SectionTabs";
 
 export function InstalledView({ context, query }: { context: AppContext; query: string }) {
   const { mise, env, navigate } = context;
@@ -63,9 +64,10 @@ export function InstalledView({ context, query }: { context: AppContext; query: 
   return (
     <div className="content">
       <div className="page">
+        <MyToolsTabs context={context} current="installed" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Installed</h1>
+            <h1 className="page-title">My Tools</h1>
             <p className="page-subtitle">
               Every tool mise manages on this computer, the version you use, and where it’s set.
             </p>

@@ -15,7 +15,7 @@ export function ActivityView({ context }: { context: AppContext }) {
       <div className="page">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Activity</h1>
+            <h1 className="page-title">History</h1>
             <p className="page-subtitle">
               Every command powermise has run, newest first — kept between launches. Copy any of them to run it yourself.
             </p>

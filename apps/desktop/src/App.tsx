@@ -1,21 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
 import {
-  Activity,
   AlertTriangle,
-  ArrowUpCircle,
   Blocks,
   ChevronLeft,
   Compass,
   Cpu,
   Folder,
   HeartPulse,
+  History,
+  House,
   Layers,
-  Package,
-  Plug,
   Plus,
   Search,
-  Server,
   MonitorCog,
   SlidersHorizontal,
 } from "lucide-react";
@@ -53,17 +50,19 @@ import { SettingsView } from "./views/mise/SettingsView";
 import { MachineView } from "./views/mise/MachineView";
 import { MacosSettingsView } from "./views/mise/MacosSettingsView";
 import { WelcomeView, hasBeenWelcomed } from "./views/mise/WelcomeView";
+import { HomeView } from "./views/HomeView";
 import { ActivityView } from "./views/mise/ActivityView";
 import { ProjectView } from "./views/mise/ProjectView";
 
 export type Route =
+  | { kind: "home" }
   // mise
   | { kind: "installed" }
   | { kind: "discover" }
   | { kind: "tool"; name: string }
   | { kind: "updates" }
   | { kind: "activity" }
-  | { kind: "health" }
+  | { kind: "health"; section?: "github" | "imports" }
   | { kind: "settings" }
   | { kind: "machine" }
   | { kind: "macos-settings" }
@@ -113,6 +112,7 @@ export interface AppContext {
 const spring = { type: "spring", bounce: 0, duration: 0.35 } as const;
 
 const TOP_LEVEL: Route["kind"][] = [
+  "home",
   "installed",
   "discover",
   "updates",
@@ -151,9 +151,11 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   // First run starts on Welcome; the site demo (embedded) never does.
   const [history, setHistory] = useState<Route[]>([
     initialRoute ??
-      (hasBeenWelcomed() || document.body.classList.contains("embedded")
+      (document.body.classList.contains("embedded")
         ? { kind: "installed" }
-        : { kind: "welcome" }),
+        : hasBeenWelcomed()
+          ? { kind: "home" }
+          : { kind: "welcome" }),
   ]);
   const [query, setQuery] = useState("");
   const [runRequest, setRunRequest] = useState<RunRequest | null>(null);
@@ -351,6 +353,14 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
                 <span data-tauri-drag-region>{toolbarTitle(route, context)}</span>
               </div>
               <div className="toolbar-spacer" data-tauri-drag-region />
+              <button
+                className={`icon-button${route.kind === "activity" ? " active" : ""}`}
+                onClick={() => navigate({ kind: "activity" })}
+                aria-label="History"
+                title="History — every command powermise ran"
+              >
+                <History size={16} />
+              </button>
               {SEARCHABLE.includes(route.kind) && (
                 <label className="search">
                   <Search size={14} />
@@ -388,22 +398,24 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
 
 function toolbarTitle(route: Route, context: AppContext): string {
   switch (route.kind) {
+    case "home":
+      return "Home";
     case "installed":
-      return "Installed";
+      return "My Tools";
     case "discover":
       return "Discover";
     case "tool":
       return route.name;
     case "updates":
-      return "Updates";
+      return "My Tools";
     case "activity":
-      return "Activity";
+      return "History";
     case "health":
       return "Health";
     case "settings":
       return "Settings";
     case "machine":
-      return "Machine";
+      return "This Computer";
     case "macos-settings":
       return "macOS Settings";
     case "welcome":
@@ -411,15 +423,13 @@ function toolbarTitle(route: Route, context: AppContext): string {
     case "project":
       return route.path.split(/[\\/]/).filter(Boolean).pop() ?? route.path;
     case "harnesses":
-      return "Harnesses";
+      return "Agents";
     case "harness":
       return context.catalog.harnessById.get(route.id)?.title ?? route.id;
     case "tools":
-      return "Agent Tools";
     case "mcp":
-      return "MCP Servers";
     case "integrations":
-      return "Integrations";
+      return "Agents";
     case "setup":
       return route.name;
     case "editor":
@@ -443,6 +453,8 @@ const NEEDS_MISE: Route["kind"][] = [
 function RouteView({ route, context, query }: { route: Route; context: AppContext; query: string }) {
   if (!context.env.misePath && NEEDS_MISE.includes(route.kind)) return <WelcomeView context={context} />;
   switch (route.kind) {
+    case "home":
+      return <HomeView context={context} />;
     case "installed":
       return <InstalledView context={context} query={query} />;
     case "discover":
@@ -454,7 +466,7 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
     case "activity":
       return <ActivityView context={context} />;
     case "health":
-      return <HealthView context={context} />;
+      return <HealthView context={context} section={route.section} />;
     case "settings":
       return <SettingsView context={context} query={query} />;
     case "machine":
@@ -483,64 +495,52 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
 }
 
 function Sidebar({ route, root, context }: { route: Route; root: Route; context: AppContext }) {
-  const { catalog, selections, projects, env, mise, navigate, addProject } = context;
+  const { selections, projects, env, mise, navigate, addProject } = context;
   const platform = usePlatform();
   const installedCount = Object.keys(mise.inventory ?? {}).length;
   const updateCount = Object.keys(mise.outdated ?? {}).length;
   const health = healthSummary(mise.info, mise.doctor);
-
-  const miseItems = [
-    { kind: "installed" as const, label: "Installed", icon: Layers, trailing: installedCount || null },
-    { kind: "discover" as const, label: "Discover", icon: Compass, trailing: null },
-    {
-      kind: "updates" as const,
-      label: "Updates",
-      icon: ArrowUpCircle,
-      trailing: updateCount ? <span className="sidebar-badge">{updateCount}</span> : null,
-    },
-    { kind: "activity" as const, label: "Activity", icon: Activity, trailing: null },
-    {
-      kind: "health" as const,
-      label: "Health",
-      icon: HeartPulse,
-      trailing: health.severity ? (
-        <span
-          className={`sidebar-badge health ${health.severity}`}
-          title={`${health.count} ${health.count === 1 ? "thing needs" : "things need"} attention`}
-        >
-          {health.count}
-        </span>
-      ) : null,
-    },
-    { kind: "machine" as const, label: "Machine", icon: MonitorCog, trailing: null },
-    { kind: "settings" as const, label: "Settings", icon: SlidersHorizontal, trailing: null },
-  ];
-  const aiItems = [
-    { kind: "harnesses" as const, label: "Harnesses", icon: Cpu, count: catalog.harnesses.length },
-    { kind: "tools" as const, label: "Agent Tools", icon: Package, count: catalog.tools.length },
-    { kind: "mcp" as const, label: "MCP Servers", icon: Server, count: catalog.mcpServers.length },
-    { kind: "integrations" as const, label: "Integrations", icon: Plug, count: catalog.integrations.length },
-  ];
   // Detail pages keep the section they were opened from highlighted.
-  const isActive = (kind: string) => root.kind === kind;
+  const isActive = (...kinds: Route["kind"][]) => kinds.includes(root.kind);
+
+  const item = (
+    kinds: Route["kind"][],
+    label: string,
+    Icon: typeof Layers,
+    trailing: React.ReactNode = null,
+  ) => (
+    <button
+      key={kinds[0]}
+      className="sidebar-item"
+      aria-current={isActive(...kinds) ? "page" : undefined}
+      onClick={() => navigate({ kind: kinds[0] } as Route)}
+    >
+      <Icon size={16} />
+      <span className="label">{label}</span>
+      {typeof trailing === "number" ? <span className="count">{trailing}</span> : trailing}
+    </button>
+  );
 
   return (
     <nav className="sidebar" data-tauri-drag-region aria-label="Sidebar">
       <div className="sidebar-scroll">
+        <div className="sidebar-section">{item(["home"], "Home", House)}</div>
+
         <div className="sidebar-section">
-          <div className="sidebar-heading">mise</div>
-          {miseItems.map(({ kind, label, icon: Icon, trailing }) => (
-            <button
-              key={kind}
-              className="sidebar-item"
-              aria-current={isActive(kind) ? "page" : undefined}
-              onClick={() => navigate({ kind })}
-            >
-              <Icon size={16} />
-              <span className="label">{label}</span>
-              {typeof trailing === "number" ? <span className="count">{trailing}</span> : trailing}
-            </button>
-          ))}
+          <div className="sidebar-heading">Tools</div>
+          {item(
+            ["installed", "updates"],
+            "My Tools",
+            Layers,
+            updateCount ? (
+              <span className="sidebar-badge" title={`${updateCount} ${updateCount === 1 ? "update" : "updates"}`}>
+                {updateCount}
+              </span>
+            ) : (
+              installedCount || null
+            ),
+          )}
+          {item(["discover"], "Discover", Compass)}
         </div>
 
         <div className="sidebar-section">
@@ -572,29 +572,13 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
         </div>
 
         <div className="sidebar-section">
-          <div className="sidebar-heading">AI Setups</div>
-          {aiItems.map(({ kind, label, icon: Icon, count }) => (
-            <button
-              key={kind}
-              className="sidebar-item"
-              aria-current={isActive(kind) ? "page" : undefined}
-              onClick={() => navigate({ kind })}
-            >
-              <Icon size={16} />
-              <span className="label">{label}</span>
-              <span className="count">{count}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="sidebar-section">
           <div className="sidebar-heading">
-            My Setups
+            AI Agents
             <button onClick={() => navigate({ kind: "editor" })} aria-label="New setup" title="New Setup">
               <Plus size={14} />
             </button>
           </div>
-          {selections.length === 0 && <div className="sidebar-empty">No setups yet</div>}
+          {item(["harnesses", "harness", "tools", "mcp", "integrations"], "Browse Agents", Cpu)}
           {selections.map((selection) => {
             const active =
               (route.kind === "setup" && route.name === selection.name) ||
@@ -622,6 +606,23 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
             </button>
           )}
         </div>
+      </div>
+      <div className="sidebar-section sidebar-bottom">
+        {item(["machine", "macos-settings"], "This Computer", MonitorCog)}
+        {item(
+          ["health"],
+          "Health",
+          HeartPulse,
+          health.severity ? (
+            <span
+              className={`sidebar-badge health ${health.severity}`}
+              title={`${health.count} ${health.count === 1 ? "thing needs" : "things need"} attention`}
+            >
+              {health.count}
+            </span>
+          ) : null,
+        )}
+        {item(["settings"], "Settings", SlidersHorizontal)}
       </div>
       <div className="sidebar-footer">
         {mise.info?.version ? (

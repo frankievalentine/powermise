@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   CheckCircle2,
-  ChevronRight,
   CircleAlert,
   Eye,
   GitCompare,
@@ -93,7 +92,7 @@ export function MachineView({ context }: { context: AppContext }) {
       <div className="page">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Machine</h1>
+            <h1 className="page-title">This Computer</h1>
             <p className="page-subtitle">
               What your mise config sets up on this computer beyond tools — system packages, dotfiles, repositories,
               and settings — from its <code>[bootstrap]</code> and <code>[dotfiles]</code> sections.{" "}
@@ -112,18 +111,6 @@ export function MachineView({ context }: { context: AppContext }) {
           )}
         </div>
 
-        {context.env.hostTarget === "darwin" && (
-          <button className="list-row interactive install-spec macos-entry" onClick={() => context.navigate({ kind: "macos-settings" })}>
-            <MonitorCog size={18} />
-            <div className="row-main">
-              <div className="row-title">macOS Settings</div>
-              <div className="row-subtitle">
-                Dock, Finder, keyboard, trackpad, screenshots, and more — pick settings and mise keeps this Mac that way.
-              </div>
-            </div>
-            <ChevronRight size={16} />
-          </button>
-        )}
 
         {status.error && <div className="callout error selectable">{status.error}</div>}
         {status.loading && !data && (
@@ -164,12 +151,19 @@ export function MachineView({ context }: { context: AppContext }) {
                   {titleOf(section.id)}
                   {notReady > 0 && <span className="badge orange">{notReady} to apply</span>}
                 </h2>
-                {part?.only && (
+                {(part?.only || section.id === "macos_defaults") && (
                   <div className="detail-actions">
-                    <button className="button" onClick={() => preview(part.only!, titleOf(section.id).toLowerCase())}>
-                      Preview
-                    </button>
-                    {notReady > 0 && (
+                    {section.id === "macos_defaults" && context.env.hostTarget === "darwin" && (
+                      <button className="button" onClick={() => context.navigate({ kind: "macos-settings" })}>
+                        Add Settings…
+                      </button>
+                    )}
+                    {part?.only && (
+                      <button className="button" onClick={() => preview(part.only!, titleOf(section.id).toLowerCase())}>
+                        Preview
+                      </button>
+                    )}
+                    {part?.only && notReady > 0 && (
                       <button className="button" onClick={() => apply(part.only!, titleOf(section.id).toLowerCase())}>
                         Apply…
                       </button>
@@ -193,6 +187,23 @@ export function MachineView({ context }: { context: AppContext }) {
             </section>
           );
         })}
+
+        {data && context.env.hostTarget === "darwin" && !data.sections.some((section) => section.id === "macos_defaults") && (
+          <section className="section">
+            <div className="section-heading-row">
+              <h2 className="section-title">macOS settings</h2>
+              <div className="detail-actions">
+                <button className="button" onClick={() => context.navigate({ kind: "macos-settings" })}>
+                  Add Settings…
+                </button>
+              </div>
+            </div>
+            <p className="section-note">
+              Dock, Finder, keyboard, trackpad, screenshots, and more — choose settings and mise keeps this Mac set that
+              way.
+            </p>
+          </section>
+        )}
 
         {data && <DotfilesHistory data={data} context={context} />}
       </div>

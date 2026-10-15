@@ -175,3 +175,34 @@ export function DiffView({ diff }: { diff: string }) {
     </pre>
   );
 }
+
+/** Tabs that switch between sibling pages (My Tools: Installed · Updates). */
+export function PageTabs<T extends string>({
+  tabs,
+  current,
+  onSelect,
+  label,
+}: {
+  tabs: { value: T; label: string; badge?: number }[];
+  current: T;
+  onSelect: (value: T) => void;
+  label: string;
+}) {
+  return (
+    <div className="page-tabs" role="tablist" aria-label={label}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          role="tab"
+          aria-selected={tab.value === current}
+          className={`page-tab${tab.value === current ? " selected" : ""}`}
+          onClick={() => onSelect(tab.value)}
+        >
+          {tab.label}
+          {!!tab.badge && <span className="page-tab-badge">{tab.badge}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
