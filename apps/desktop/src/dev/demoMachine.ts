@@ -118,8 +118,8 @@ const imports: DetectedImport[] = [
 ];
 
 const installers: InstallerOption[] = [
+  { id: "script", label: "mise’s installer", command: "curl -fsSL https://mise.run | sh" },
   { id: "homebrew", label: "Homebrew", command: "brew install mise" },
-  { id: "script", label: "mise's install script", command: "curl -fsSL https://mise.run | sh" },
 ];
 
 function githubStatus(): GithubStatus {

@@ -396,7 +396,7 @@ impl MiseInstaller {
     }
 
     pub(crate) fn program(self) -> Option<PathBuf> {
-        if matches!(self, Self::Script) && cfg!(windows) {
+        if matches!(self, Self::Script) && (cfg!(windows) || find_program("curl").is_none()) {
             return None;
         }
         find_program(self.program_name())
@@ -437,7 +437,7 @@ impl MiseInstaller {
             Self::Homebrew => "Homebrew",
             Self::Winget => "winget",
             Self::Scoop => "Scoop",
-            Self::Script => "mise's install script",
+            Self::Script => "mise’s installer",
         }
     }
 }
@@ -452,10 +452,14 @@ pub struct InstallerOption {
 
 #[tauri::command]
 pub fn mise_installers() -> Vec<InstallerOption> {
+    // mise's recommendations (https://mise.jdx.dev/installing-mise.html):
+    // winget on Windows; elsewhere its own installer, whose official build
+    // updates itself and needs no admin password (Homebrew's build can't
+    // self-update, and is slower and larger).
     let order: &[MiseInstaller] = if cfg!(windows) {
         &[MiseInstaller::Winget, MiseInstaller::Scoop]
     } else {
-        &[MiseInstaller::Homebrew, MiseInstaller::Script]
+        &[MiseInstaller::Script, MiseInstaller::Homebrew]
     };
     order
         .iter()

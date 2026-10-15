@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { api } from "../../api";
 import type { AppContext } from "../../App";
@@ -29,6 +29,12 @@ export function hasBeenWelcomed(): boolean {
 /** First run: install mise, turn it on in the shell, bring over versions from
  *  other managers, and sign GitHub downloads in. Each step reflects what's
  *  already true, so it's also a checklist to come back to. */
+/** Why the first install option is the one to pick. */
+const RECOMMENDED: Partial<Record<string, string>> = {
+  script: "Recommended by mise: its official build, which keeps itself up to date. No administrator password needed.",
+  winget: "Recommended by mise on Windows.",
+};
+
 export function WelcomeView({ context }: { context: AppContext }) {
   const { env, mise, navigate, run } = context;
   const hasMise = !!env.misePath;
@@ -76,7 +82,8 @@ export function WelcomeView({ context }: { context: AppContext }) {
                 </p>
               )}
               {(installers.data ?? []).map((installer, index) => (
-                <div className="welcome-install" key={installer.id}>
+                <Fragment key={installer.id}>
+                  <div className="welcome-install">
                   <CommandBlock command={installer.command} />
                   <button
                     className={`button large${index === 0 ? " primary" : ""}`}
@@ -84,15 +91,25 @@ export function WelcomeView({ context }: { context: AppContext }) {
                       run({
                         action: { kind: "installMise", installer: installer.id },
                         title: "Install mise?",
-                        description: `powermise runs ${installer.label} to install mise. Nothing else on your computer changes.`,
+                        description:
+                          installer.id === "script"
+                            ? "powermise runs mise’s official installer, which puts mise in ~/.local/bin — no administrator password needed. Nothing else on your computer changes."
+                            : `powermise runs ${installer.label} to install mise. Nothing else on your computer changes.`,
                         verb: "Install mise",
                       })
                     }
                   >
                     Install with {installer.label}
                   </button>
-                </div>
+                  </div>
+                  {index === 0 && RECOMMENDED[installer.id] && (
+                    <p className="field-hint" style={{ margin: "-2px 0 10px" }}>
+                      {RECOMMENDED[installer.id]}
+                    </p>
+                  )}
+                </Fragment>
               ))}
+
               {installers.data?.length === 0 && (
                 <p className="section-note">
                   No package manager powermise can use was found.{" "}
