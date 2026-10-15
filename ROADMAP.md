@@ -80,8 +80,8 @@ apps/web (Astro)          marketing site + docs; hosts the interactive app demo
 - [x] **Updates**: everything outdated (including past pins, `--bump`), with "Upgrade all".
 - [x] Streamed command output with cancel (whole process group), shared by every change.
 - [x] Activity log: every command powermise ran this session, with its result.
-- [ ] **Clean up**: remove versions nothing uses (`mise prune --dry-run` to preview,
-      then `mise prune`).
+- [x] **Clean up**: list versions nothing uses with their size (`mise ls --prunable
+      --json`), then `mise prune --tools --yes` — on Installed and Health.
 - [ ] Tool pages from `mise tool --json`: backend, tool options, and supply-chain
       checks (checksums, GitHub attestations) shown as "Verified" badges.
 - [ ] Install anything mise supports beyond the registry: a backend picker for
@@ -128,16 +128,22 @@ apps/web (Astro)          marketing site + docs; hosts the interactive app demo
 - [x] mise self-update.
 - [x] Explain shell-only configuration (env vars from `~/.zshrc`) that a Dock-launched
       app can't see.
-- [ ] Settings browser (`mise settings ls --json`) grouped with docs links; edit through
-      `mise settings set` / `unset`.
-- [ ] GitHub token check: rate-limited downloads are the most common install failure.
-      Show what `mise token` finds and guide `mise token github --oauth`.
+- [x] Settings browser (`mise settings ls --all --json-extended`) grouped, with
+      sources and a docs link; edit through `mise settings set` / `unset`. Lists are
+      read-only for now.
+- [x] GitHub token check on Health and Welcome: what `mise token github` finds, and
+      one-click ways to borrow an existing login (`gh auth token` as
+      `github.credential_command`, or `github.use_git_credentials`). Native
+      `--oauth` needs a GitHub App client ID, so it's linked, not offered.
 - [ ] Disk usage and cache: `mise cache path` / `clear` / `prune`, and the download
       cache size limit.
 - [ ] Trusted configs: review and revoke.
 - [ ] Shims vs. activation, explained, with `mise reshim` when shims are in use.
-- [ ] First run: detect a missing mise and guide installation; offer to bring over
-      versions from nvm, pyenv, or Homebrew (`mise sync node|python|ruby`, `mise link`).
+- [x] First run (Welcome): install a missing mise (Homebrew or mise.run on
+      macOS/Linux, winget or Scoop on Windows), shell activation, bringing over
+      versions from nvm, nodenv, pyenv, uv, or Homebrew (`mise sync`), and GitHub.
+- [ ] `mise link` for hand-built or other installs that `mise sync` doesn't cover.
+- [ ] Edit list settings (arrays) in the Settings screen.
 - [ ] Gate features by mise version (several above need 2026.10.x) and explain why a
       control is disabled. Capture a second fixture set from 2026.10 so both ends of
       the supported range stay tested.

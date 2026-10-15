@@ -4,6 +4,13 @@
 // demo behaves like the real app without touching anyone's machine.
 import registryEntries from "./registry.json";
 import {
+  demoHasMise,
+  demoMachine,
+  describeMachineAction,
+  NOT_A_MACHINE_COMMAND,
+  performMachineAction,
+} from "./demoMachine";
+import {
   demoProjects,
   describeProjectAction,
   NOT_A_PROJECT_COMMAND,
@@ -148,11 +155,13 @@ function doctor(): Doctor {
 function describe(action: MiseAction): string {
   const project = describeProjectAction(action);
   if (project) return project;
+  const machineAction = describeMachineAction(action);
+  if (machineAction) return machineAction;
   switch (action.kind) {
     case "bootstrapPackagesAndTools":
       return "mise bootstrap --yes --only packages,tools";
     case "pruneTools":
-      return "mise prune --tools";
+      return "mise prune --tools --yes";
     case "useGlobal":
       return `mise use -g ${action.tool}@${action.version}`;
     case "unuseGlobal":
@@ -183,6 +192,8 @@ function installLines(tool: string, version: string): string[] {
 function perform(action: MiseAction): string[] {
   const project = performProjectAction(action);
   if (project) return project;
+  const machineAction = performMachineAction(action);
+  if (machineAction) return machineAction;
   switch (action.kind) {
     case "bootstrapPackagesAndTools":
       return bootstrapHook();
@@ -270,6 +281,17 @@ function run(action: MiseAction): number {
 export function demoMise(command: string, args: Record<string, unknown>): unknown {
   switch (command) {
     case "mise_info":
+      if (!demoHasMise) {
+        return {
+          path: null,
+          version: null,
+          latest: null,
+          minimum: "2026.7.18",
+          recommended: "2026.10.0",
+          supported: false,
+          recommendedMet: false,
+        } satisfies MiseInfo;
+      }
       return {
         path: "/Users/demo/.local/bin/mise",
         version: `${miseVersion} macos-arm64 (demo)`,
@@ -280,9 +302,9 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
         recommendedMet: miseVersion.startsWith("2026.10"),
       } satisfies MiseInfo;
     case "installed_tools":
-      return inventory();
+      return demoHasMise ? inventory() : {};
     case "outdated_tools":
-      return outdated();
+      return demoHasMise ? outdated() : {};
     case "registry":
       return registry;
     case "remote_versions":
@@ -297,7 +319,20 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
       return undefined;
     case "activity":
       return [...activityLog].reverse();
+    case "prunable_versions":
+      return [...machine.entries()].flatMap(([tool, versions]) =>
+        versions
+          .filter((entry) => !entry.global)
+          .map((entry) => ({
+            tool,
+            version: entry.version,
+            installPath: `${DATA}/${tool}/${entry.version}`,
+            bytes: 187_400_000,
+          })),
+      );
     default: {
+      const machineResult = demoMachine(command);
+      if (machineResult !== NOT_A_MACHINE_COMMAND) return machineResult;
       const result = demoProjects(command, args);
       return result === NOT_A_PROJECT_COMMAND ? NOT_HANDLED : result;
     }

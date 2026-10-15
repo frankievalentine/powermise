@@ -25,15 +25,21 @@ to your shell's startup file — then open a new terminal.
 
 ## An install fails with a GitHub rate limit
 
-Many tools download from GitHub releases, which limits anonymous downloads.
-Check which token mise is using:
+Many tools download from GitHub releases, which allows only 60 anonymous
+requests an hour. Open **Health** → **GitHub downloads**: it shows whether mise
+has a token, and can borrow your GitHub CLI login (`gh auth login` first) or
+Git's saved GitHub login.
+
+From a terminal, check which token mise is using:
 
 ```sh
 mise token github
 ```
 
-On mise 2026.10 or newer, `mise token github --oauth` signs in with your GitHub
-account and stores the token for you.
+A `GITHUB_TOKEN` exported in `~/.zshrc` only reaches mise in the terminal, not
+the app. mise can also sign in natively with `mise token github --oauth`, but
+that needs a GitHub App of your own (`github.oauth_client_id`); see
+[GitHub tokens](https://mise.jdx.dev/dev-tools/github-tokens.html).
 
 ## My mise settings are ignored in the app
 

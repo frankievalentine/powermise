@@ -4,10 +4,15 @@
 use std::{io, path::PathBuf};
 
 mod client;
+mod machine;
 mod models;
 mod project;
 
-pub use client::{MiseClient, MiseCommand, OutputLine, RunOutcome, Stream};
+pub use client::{MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program};
+pub use machine::{
+    DetectedImport, ImportSource, Setting, TokenStatus, detect_imports, directory_size,
+    parse_settings, parse_token_status,
+};
 pub use models::{
     BootstrapPlan, BootstrapStatus, ConfigFile, ConfigSource, Doctor, MiseVersion, OutdatedReport,
     OutdatedTool, PackageManagerStatus, PackageStatus, PlanResource, PlanResourceId, PlanSummary,
@@ -45,7 +50,7 @@ pub enum MiseAdapterError {
         #[source]
         source: serde_json::Error,
     },
-    #[error("`{value}` is not a valid tool name or version")]
+    #[error("`{value}` is not a valid argument for mise")]
     InvalidArgument { value: String },
     #[error("mise won't read this project's config until it's trusted")]
     Untrusted { stderr: String },

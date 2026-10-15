@@ -983,6 +983,96 @@ button {
   font-size: 12px;
 }
 
+/* Lists whose rows explain something: let the text wrap. */
+.list.prose .row-subtitle {
+  white-space: normal;
+}
+
+/* Welcome: numbered steps with a check when each is already true. */
+.welcome-step {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.welcome-marker {
+  padding-top: 1px;
+  color: var(--text-tertiary);
+}
+
+.welcome-body .section-title {
+  margin: 0 0 4px;
+}
+
+.welcome-body .section-note {
+  margin: 0 0 10px;
+}
+
+.welcome-install {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.welcome-install .command {
+  flex: 1 1 320px;
+}
+
+.welcome-foot {
+  display: flex;
+  gap: 8px;
+  margin: 28px 0 0 40px;
+}
+
+/* Settings: full descriptions, an inline editor, and where a value comes from. */
+.setting-row {
+  align-items: flex-start;
+}
+
+.setting-row .row-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.setting-row .row-subtitle {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.setting-row .row-trailing {
+  max-width: 45%;
+  min-height: 28px;
+}
+
+.setting-row .row-trailing > .row-subtitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.setting-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 3px;
+  color: var(--text-tertiary);
+}
+
+.setting-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.setting-edit .text-field {
+  width: 200px;
+}
+
 .mono {
   font-family: var(--font-mono);
   font-size: 11.5px;

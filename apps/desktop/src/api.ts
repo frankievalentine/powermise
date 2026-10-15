@@ -244,7 +244,58 @@ export type MiseAction =
   | { kind: "setEnv"; project: string; key: string; value: string; file: string | null }
   | { kind: "unsetEnv"; project: string; key: string; file: string | null }
   | { kind: "bootstrapPackagesAndTools" }
-  | { kind: "pruneTools" };
+  | { kind: "pruneTools" }
+  | { kind: "setSetting"; key: string; value: string }
+  | { kind: "unsetSetting"; key: string }
+  | { kind: "syncVersions"; source: ImportSource }
+  | { kind: "installMise"; installer: MiseInstaller };
+
+// ---------------------------------------------------------------------------
+// Machine (src-tauri/src/machine.rs)
+// ---------------------------------------------------------------------------
+
+/** One mise setting (`mise settings ls --all --json-extended`, flattened). */
+export interface Setting {
+  key: string;
+  value: unknown;
+  /** mise's type name: `boolean`, `number`, `string`, `array`, or a union. */
+  type: string;
+  description: string;
+  /** The file (or variable) that sets it; null means the default. */
+  source: string | null;
+  deprecated: boolean;
+}
+
+export interface GithubStatus {
+  /** `mise token github`, masked. */
+  token: { host: string; token: string | null; source: string | null };
+  ghSignedIn: boolean;
+  credentialCommand: string;
+  useGitCredentials: boolean;
+}
+
+export interface PrunableVersion {
+  tool: string;
+  version: string;
+  installPath: string;
+  bytes: number;
+}
+
+export type ImportSource = "nvm" | "nodenv" | "node-brew" | "pyenv" | "uv" | "ruby-brew";
+
+export interface DetectedImport {
+  source: ImportSource;
+  tool: string;
+  versions: string[];
+}
+
+export type MiseInstaller = "homebrew" | "winget" | "scoop" | "script";
+
+export interface InstallerOption {
+  id: MiseInstaller;
+  label: string;
+  command: string;
+}
 
 // ---------------------------------------------------------------------------
 // Projects (src-tauri/src/projects.rs)
@@ -378,6 +429,12 @@ export const api = {
   registry: () => call<RegistryEntry[]>("registry"),
   remoteVersions: (tool: string) => call<RemoteVersion[]>("remote_versions", { tool }),
   doctor: () => call<Doctor>("doctor"),
+  settings: () => call<Setting[]>("settings"),
+  githubStatus: () => call<GithubStatus>("github_status"),
+  prunableVersions: () => call<PrunableVersion[]>("prunable_versions"),
+  detectImports: () => call<DetectedImport[]>("detect_imports"),
+  miseInstallers: () => call<InstallerOption[]>("mise_installers"),
+  openUrl: (url: string) => call<void>("open_url", { url }),
   describe: (action: MiseAction) => call<string>("describe_action", { action }),
   run: (action: MiseAction) => call<number>("run_action", { action }),
   cancel: (jobId: number) => call<void>("cancel_job", { jobId }),

@@ -1,0 +1,157 @@
+// Demo state for machine-wide screens: settings, GitHub downloads, versions
+// from other managers, and installing mise (`?nomise` starts without it).
+import type {
+  DetectedImport,
+  GithubStatus,
+  InstallerOption,
+  MiseAction,
+  Setting,
+} from "../api";
+
+const GLOBAL_CONFIG = "/Users/demo/.config/mise/config.toml";
+
+/** Whether the demo machine has mise. `?nomise` shows the first-run install. */
+export let demoHasMise = !new URLSearchParams(globalThis.location?.search ?? "").has("nomise");
+
+const setting = (
+  key: string,
+  type: string,
+  value: unknown,
+  description: string,
+  extra: Partial<Setting> = {},
+): Setting => ({ key, type, value, description, source: null, deprecated: false, ...extra });
+
+const settings: Setting[] = [
+  setting("jobs", "number", 8, "How many jobs to run concurrently such as tool installs.", {
+    source: GLOBAL_CONFIG,
+  }),
+  setting("experimental", "boolean", false, "Enable experimental features, which may change or be removed in any release."),
+  setting("auto_install", "boolean", true, "Install missing tools automatically when running commands like `mise exec` or `mise run`."),
+  setting("not_found_auto_install", "boolean", true, "Install a missing tool when its command isn't found in an activated shell."),
+  setting("http_timeout", "string", "30s", "How long to wait for HTTP requests before giving up."),
+  setting("idiomatic_version_file_enable_tools", "array", [], "Tools whose idiomatic version files (like .nvmrc) mise reads."),
+  setting("trusted_config_paths", "array", [], "Config paths mise trusts without asking."),
+  setting("disable_tools", "array", [], "Tools mise ignores even when a config asks for them."),
+  setting("always_keep_download", "boolean", false, "Keep downloaded archives and sources after installing, for debugging.", {
+    deprecated: true,
+  }),
+  setting("node.corepack", "boolean", false, "Enable corepack after installing Node.js, so pnpm and yarn match the project."),
+  setting("node.compile", "boolean | string", false, "Build Node.js from source instead of downloading a prebuilt binary."),
+  setting("python.uv_venv_auto", "boolean | string", false, "Create and activate a uv virtual environment for projects that have a uv.lock."),
+  setting("python.default_packages_file", "string", "~/.default-python-packages", "Packages to install with every new Python version."),
+  setting("go.default_packages_file", "string", "~/.default-go-packages", "Packages to install with every new Go version."),
+  setting("github.credential_command", "string", "", "Command that prints a GitHub token on stdout."),
+  setting("github.use_git_credentials", "boolean", false, "Get GitHub tokens from your Git credential helpers with `git credential fill`."),
+  setting("github.gh_cli_tokens", "boolean", true, "Read GitHub tokens that the gh CLI stores in its `hosts.yml` file."),
+  setting("github.github_attestations", "boolean", true, "Verify GitHub artifact attestations for github backend tools."),
+  setting("status.show_tools", "boolean", false, "Show which tools are active when you change directories."),
+  setting("self_update.auto", "boolean", false, "Update mise itself automatically in the background."),
+];
+
+const imports: DetectedImport[] = [
+  { source: "nvm", tool: "node", versions: ["18.20.4", "20.11.1"] },
+  { source: "pyenv", tool: "python", versions: ["3.11.9"] },
+];
+
+const installers: InstallerOption[] = [
+  { id: "homebrew", label: "Homebrew", command: "brew install mise" },
+  { id: "script", label: "mise's install script", command: "curl -fsSL https://mise.run | sh" },
+];
+
+function githubStatus(): GithubStatus {
+  const credentialCommand = String(settings.find((entry) => entry.key === "github.credential_command")?.value ?? "");
+  const useGitCredentials = settings.find((entry) => entry.key === "github.use_git_credentials")?.value === true;
+  const signedIn = credentialCommand === "gh auth token" || useGitCredentials;
+  return {
+    token: {
+      host: "github.com",
+      token: signedIn ? "gho_…k2Qa" : null,
+      source: signedIn ? (credentialCommand ? "github.credential_command" : "git credential fill") : null,
+    },
+    ghSignedIn: true,
+    credentialCommand,
+    useGitCredentials,
+  };
+}
+
+const SYNC: Record<string, string> = {
+  nvm: "node --nvm",
+  nodenv: "node --nodenv",
+  "node-brew": "node --brew",
+  pyenv: "python --pyenv",
+  uv: "python --uv",
+  "ruby-brew": "ruby --brew",
+};
+
+export function describeMachineAction(action: MiseAction): string | null {
+  switch (action.kind) {
+    case "setSetting":
+      return `mise settings set ${action.key} ${/\s/.test(action.value) ? `'${action.value}'` : action.value}`;
+    case "unsetSetting":
+      return `mise settings unset ${action.key}`;
+    case "syncVersions":
+      return `mise sync ${SYNC[action.source]}`;
+    case "installMise":
+      return installers.find((entry) => entry.id === action.installer)?.command ?? "brew install mise";
+    default:
+      return null;
+  }
+}
+
+/** Applies a machine action to the demo state; null when it isn't one. */
+export function performMachineAction(action: MiseAction): string[] | null {
+  switch (action.kind) {
+    case "setSetting": {
+      const entry = settings.find((candidate) => candidate.key === action.key);
+      if (entry) {
+        entry.value =
+          entry.type === "boolean" ? action.value === "true" : entry.type === "number" ? Number(action.value) : action.value;
+        entry.source = GLOBAL_CONFIG;
+      }
+      return [];
+    }
+    case "unsetSetting": {
+      const entry = settings.find((candidate) => candidate.key === action.key);
+      if (entry) {
+        entry.source = null;
+        if (entry.key === "jobs") entry.value = 8;
+        if (entry.type === "boolean") entry.value = false;
+        if (entry.key === "github.credential_command") entry.value = "";
+      }
+      return [];
+    }
+    case "syncVersions": {
+      const index = imports.findIndex((entry) => entry.source === action.source);
+      const [found] = index >= 0 ? imports.splice(index, 1) : [];
+      return (found?.versions ?? []).map((version) => `mise linked ${found.tool}@${version}`);
+    }
+    case "installMise":
+      demoHasMise = true;
+      return [
+        "==> Downloading https://ghcr.io/v2/homebrew/core/mise/manifests/2026.10.10",
+        "==> Pouring mise--2026.10.10.arm64_sequoia.bottle.tar.gz",
+        "🍺  /opt/homebrew/Cellar/mise/2026.10.10: 12 files, 48.2MB",
+      ];
+    default:
+      return null;
+  }
+}
+
+export const NOT_A_MACHINE_COMMAND = Symbol("not a machine command");
+
+export function demoMachine(command: string): unknown {
+  switch (command) {
+    case "settings":
+      return settings.map((entry) => ({ ...entry }));
+    case "github_status":
+      return githubStatus();
+    case "detect_imports":
+      return imports.map((entry) => ({ ...entry }));
+    case "mise_installers":
+      return installers;
+    case "open_url":
+      return undefined;
+    default:
+      return NOT_A_MACHINE_COMMAND;
+  }
+}

@@ -16,6 +16,7 @@ import {
   Plus,
   Search,
   Server,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   api,
@@ -47,6 +48,8 @@ import { DiscoverView } from "./views/mise/DiscoverView";
 import { ToolPage } from "./views/mise/ToolPage";
 import { UpdatesView } from "./views/mise/UpdatesView";
 import { HealthView } from "./views/mise/HealthView";
+import { SettingsView } from "./views/mise/SettingsView";
+import { WelcomeView, hasBeenWelcomed } from "./views/mise/WelcomeView";
 import { ActivityView } from "./views/mise/ActivityView";
 import { ProjectView } from "./views/mise/ProjectView";
 
@@ -58,6 +61,8 @@ export type Route =
   | { kind: "updates" }
   | { kind: "activity" }
   | { kind: "health" }
+  | { kind: "settings" }
+  | { kind: "welcome" }
   | { kind: "project"; path: string }
   // AI Setups
   | { kind: "harnesses" }
@@ -108,6 +113,8 @@ const TOP_LEVEL: Route["kind"][] = [
   "updates",
   "activity",
   "health",
+  "settings",
+  "welcome",
   "project",
   "harnesses",
   "tools",
@@ -116,7 +123,7 @@ const TOP_LEVEL: Route["kind"][] = [
   "setup",
 ];
 
-const SEARCHABLE: Route["kind"][] = ["installed", "discover", "harnesses", "tools", "mcp", "integrations"];
+const SEARCHABLE: Route["kind"][] = ["installed", "discover", "settings", "harnesses", "tools", "mcp", "integrations"];
 
 const routeKey = (route: Route) =>
   route.kind === "harness"
@@ -135,7 +142,13 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const [selections, setSelections] = useState<SavedSelection[]>([]);
   const [projects, setProjects] = useState<ProjectEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<Route[]>([initialRoute ?? { kind: "installed" }]);
+  // First run starts on Welcome; the site demo (embedded) never does.
+  const [history, setHistory] = useState<Route[]>([
+    initialRoute ??
+      (hasBeenWelcomed() || document.body.classList.contains("embedded")
+        ? { kind: "installed" }
+        : { kind: "welcome" }),
+  ]);
   const [query, setQuery] = useState("");
   const [runRequest, setRunRequest] = useState<RunRequest | null>(null);
 
@@ -213,7 +226,11 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   }, [revision, reloadDoctor]);
 
   useEffect(() => {
-    const stop = onMiseFinished(() => setRevision((value) => value + 1));
+    const stop = onMiseFinished(() => {
+      setRevision((value) => value + 1);
+      // A finished job can be mise's own install, which changes where it is.
+      api.environment().then(setEnv).catch(() => undefined);
+    });
     return () => {
       stop.then((unlisten) => unlisten());
     };
@@ -377,6 +394,10 @@ function toolbarTitle(route: Route, context: AppContext): string {
       return "Activity";
     case "health":
       return "Health";
+    case "settings":
+      return "Settings";
+    case "welcome":
+      return "Welcome";
     case "project":
       return route.path.split(/[\\/]/).filter(Boolean).pop() ?? route.path;
     case "harnesses":
@@ -396,7 +417,11 @@ function toolbarTitle(route: Route, context: AppContext): string {
   }
 }
 
+/** Screens that need mise; without it they show the install step instead. */
+const NEEDS_MISE: Route["kind"][] = ["installed", "discover", "tool", "updates", "health", "settings", "project"];
+
 function RouteView({ route, context, query }: { route: Route; context: AppContext; query: string }) {
+  if (!context.env.misePath && NEEDS_MISE.includes(route.kind)) return <WelcomeView context={context} />;
   switch (route.kind) {
     case "installed":
       return <InstalledView context={context} query={query} />;
@@ -410,6 +435,10 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
       return <ActivityView context={context} />;
     case "health":
       return <HealthView context={context} />;
+    case "settings":
+      return <SettingsView context={context} query={query} />;
+    case "welcome":
+      return <WelcomeView context={context} />;
     case "project":
       return <ProjectView context={context} path={route.path} />;
     case "harnesses":
@@ -459,6 +488,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
         </span>
       ) : null,
     },
+    { kind: "settings" as const, label: "Settings", icon: SlidersHorizontal, trailing: null },
   ];
   const aiItems = [
     { kind: "harnesses" as const, label: "Harnesses", icon: Cpu, count: catalog.harnesses.length },

@@ -2,19 +2,13 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw } from "lucide-react";
 import { api } from "../../api";
 import type { AppContext } from "../../App";
-import { healthSummary } from "../../health";
+import { activationCommand, healthSummary } from "../../health";
+import { useAsync } from "../../hooks";
 import { usePlatform } from "../../platform";
+import { CleanupSheet, GithubCard, ImportList, formatBytes } from "../../components/machine";
 import { CommandBlock, Section } from "../../components/ui";
 
 /** The line that hooks mise into a shell, by shell name. */
-function activationCommand(shell: string): { file: string; line: string } {
-  if (shell.includes("bash")) return { file: "~/.bashrc", line: 'eval "$(mise activate bash)"' };
-  if (shell.includes("fish")) return { file: "~/.config/fish/config.fish", line: "mise activate fish | source" };
-  if (shell.includes("pwsh") || shell.includes("powershell"))
-    return { file: "$PROFILE", line: "mise activate pwsh | Out-String | Invoke-Expression" };
-  return { file: "~/.zshrc", line: 'eval "$(mise activate zsh)"' };
-}
-
 export function HealthView({ context }: { context: AppContext }) {
   const { mise, run } = context;
   const platform = usePlatform();
@@ -36,6 +30,9 @@ export function HealthView({ context }: { context: AppContext }) {
   const problems = [...(doctor.data?.errors ?? []), ...(doctor.data?.warnings ?? [])];
   const shell = activationCommand(doctor.data?.shell?.name ?? "zsh");
   const summary = healthSummary(info, doctor.data);
+  const imports = useAsync(() => api.detectImports(), [mise.revision]);
+  const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
+  const [cleanupOpen, setCleanupOpen] = useState(false);
   const healthy = !!doctor.data && summary.count === 0;
 
   return (
@@ -201,6 +198,39 @@ export function HealthView({ context }: { context: AppContext }) {
           </Section>
         )}
 
+        <Section title="GitHub downloads">
+          <GithubCard context={context} />
+        </Section>
+
+        {imports.data && imports.data.length > 0 && (
+          <Section
+            title="Versions from other tools"
+            note="Installed by another version manager. mise can use them without downloading them again."
+          >
+            <ImportList context={context} imports={imports.data} />
+          </Section>
+        )}
+
+        <Section title="Disk space">
+          <div className="list">
+            <div className="list-row">
+              <div className="row-main">
+                <div className="row-title">Unused tool versions</div>
+                <div className="row-subtitle">
+                  {prunable.data
+                    ? prunable.data.length
+                      ? `${prunable.data.length} ${prunable.data.length === 1 ? "version" : "versions"} no config uses · ${formatBytes(prunable.data.reduce((sum, entry) => sum + entry.bytes, 0))}`
+                      : "Every installed version is in use."
+                    : "Checking…"}
+                </div>
+              </div>
+              <button className="button" onClick={() => setCleanupOpen(true)} disabled={!prunable.data?.length}>
+                Clean Up…
+              </button>
+            </div>
+          </div>
+        </Section>
+
         <Section title="In the terminal">
           <CommandBlock command="mise doctor" />
         </Section>
@@ -213,6 +243,7 @@ export function HealthView({ context }: { context: AppContext }) {
           </p>
         </Section>
       </div>
+      <CleanupSheet open={cleanupOpen} onDismiss={() => setCleanupOpen(false)} context={context} />
     </div>
   );
 }

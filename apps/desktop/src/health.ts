@@ -19,3 +19,12 @@ export function healthSummary(info: MiseInfo | null, doctor: Doctor | null): Hea
   const count = errors + warnings;
   return { count, severity: errors ? "error" : warnings ? "warning" : null };
 }
+
+/** The line that turns mise on in a shell, and the file it goes in. */
+export function activationCommand(shell: string): { file: string; line: string } {
+  if (shell.includes("bash")) return { file: "~/.bashrc", line: 'eval "$(mise activate bash)"' };
+  if (shell.includes("fish")) return { file: "~/.config/fish/config.fish", line: "mise activate fish | source" };
+  if (shell.includes("pwsh") || shell.includes("powershell"))
+    return { file: "$PROFILE", line: "mise activate pwsh | Out-String | Invoke-Expression" };
+  return { file: "~/.zshrc", line: 'eval "$(mise activate zsh)"' };
+}

@@ -1,8 +1,9 @@
-import { useMemo } from "react";
-import { ArrowUpCircle, Compass, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowUpCircle, Compass, Loader2, Trash2 } from "lucide-react";
 import type { AppContext } from "../../App";
 import { homeFrom, isGlobalPath, sourceLabel, upgradeTarget } from "../../mise";
 import { Monogram } from "../../components/ui";
+import { CleanupSheet } from "../../components/machine";
 
 export function InstalledView({ context, query }: { context: AppContext; query: string }) {
   const { mise, env, navigate } = context;
@@ -24,6 +25,7 @@ export function InstalledView({ context, query }: { context: AppContext; query: 
   const inUse = tools.filter((tool) => tool.versions.some((version) => version.source));
   const unused = tools.filter((tool) => !tool.versions.some((version) => version.source));
   const outdatedCount = Object.keys(mise.outdated ?? {}).length;
+  const [cleanupOpen, setCleanupOpen] = useState(false);
 
   const row = (tool: (typeof tools)[number]) => {
     const outdated = mise.outdated?.[tool.name];
@@ -68,11 +70,18 @@ export function InstalledView({ context, query }: { context: AppContext; query: 
               Every tool mise manages on this computer, the version you use, and where it’s set.
             </p>
           </div>
-          {outdatedCount > 0 && (
-            <button className="button large" onClick={() => navigate({ kind: "updates" })}>
-              <ArrowUpCircle size={15} /> {outdatedCount} {outdatedCount === 1 ? "update" : "updates"}
-            </button>
-          )}
+          <div className="detail-actions">
+            {mise.inventory && (
+              <button className="button large" onClick={() => setCleanupOpen(true)}>
+                <Trash2 size={14} /> Clean Up…
+              </button>
+            )}
+            {outdatedCount > 0 && (
+              <button className="button large" onClick={() => navigate({ kind: "updates" })}>
+                <ArrowUpCircle size={15} /> {outdatedCount} {outdatedCount === 1 ? "update" : "updates"}
+              </button>
+            )}
+          </div>
         </div>
 
         {mise.error && <div className="callout error selectable">{mise.error}</div>}
@@ -112,6 +121,7 @@ export function InstalledView({ context, query }: { context: AppContext; query: 
           </section>
         )}
       </div>
+      <CleanupSheet open={cleanupOpen} onDismiss={() => setCleanupOpen(false)} context={context} />
     </div>
   );
 }

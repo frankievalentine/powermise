@@ -1,0 +1,10 @@
+{
+  "jq": [
+    {
+      "version": "1.6",
+      "install_path": "/Users/demo/.local/share/mise/installs/jq/1.6",
+      "installed": true,
+      "active": false
+    }
+  ]
+}

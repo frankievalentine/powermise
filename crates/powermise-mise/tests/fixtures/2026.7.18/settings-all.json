@@ -1,0 +1,86 @@
+{
+  "jobs": {
+    "value": 4,
+    "type": "number",
+    "description": "How many jobs to run concurrently such as tool installs.",
+    "source": "/Users/demo/.config/mise/config.toml"
+  },
+  "experimental": {
+    "value": false,
+    "type": "boolean",
+    "description": "Enable experimental mise features which are incomplete or unstable\u2014breakings changes may occur"
+  },
+  "always_keep_download": {
+    "value": false,
+    "type": "boolean",
+    "description": "keep downloaded files after installation for debugging"
+  },
+  "github": {
+    "credential_command": {
+      "value": "",
+      "type": ""
+    },
+    "gh_cli_tokens": {
+      "value": true,
+      "type": ""
+    },
+    "github_attestations": {
+      "value": true,
+      "type": ""
+    },
+    "oauth_api_url": {
+      "value": "https://api.github.com",
+      "type": ""
+    },
+    "oauth_auth_url": {
+      "value": "https://github.com/login",
+      "type": ""
+    },
+    "oauth_client_id": {
+      "value": "",
+      "type": ""
+    },
+    "oauth_export_env": {
+      "value": "GITHUB_TOKEN",
+      "type": ""
+    },
+    "oauth_open_browser": {
+      "value": true,
+      "type": ""
+    },
+    "oauth_scopes": {
+      "value": "",
+      "type": ""
+    },
+    "slsa": {
+      "value": true,
+      "type": ""
+    },
+    "use_git_credentials": {
+      "value": false,
+      "type": ""
+    }
+  },
+  "node": {
+    "corepack": {
+      "value": false,
+      "type": ""
+    },
+    "nodenv_root": {
+      "value": "~/.nodenv",
+      "type": ""
+    },
+    "npm_shim": {
+      "value": true,
+      "type": ""
+    },
+    "nvm_dir": {
+      "value": "~/.nvm",
+      "type": ""
+    },
+    "verify": {
+      "value": true,
+      "type": ""
+    }
+  }
+}

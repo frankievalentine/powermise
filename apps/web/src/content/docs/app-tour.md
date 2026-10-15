@@ -7,6 +7,18 @@ Every action in powermise opens a sheet that shows the mise command it will run.
 Confirm it, and the sheet streams mise's output live; you can stop it at any
 time. When it finishes, every screen refreshes from mise.
 
+## Welcome
+
+The first time powermise opens, it walks through four steps, each checked off
+when it's already true:
+
+1. **Install mise**, if it's missing — with Homebrew or mise's install script on
+   macOS and Linux, winget or Scoop on Windows. The sheet shows the exact command.
+2. **Turn mise on in your terminal** — the line to add to your shell's startup file.
+3. **Bring over versions you already have** from nvm, nodenv, pyenv, uv, or
+   Homebrew, so mise uses them without downloading them again (`mise sync`).
+4. **Sign in GitHub downloads** (optional) — see [Health](#health).
+
 ## Installed
 
 Every tool mise manages on this computer:
@@ -17,7 +29,11 @@ Every tool mise manages on this computer:
 
 A blue badge means a newer version is available. Click a tool to open its page.
 
-Reads: `mise ls --json`, `mise outdated --bump --json`
+**Clean Up…** lists installed versions no config uses — not your global config,
+a project, or an AI setup — with the disk space each takes, and deletes them.
+
+Reads: `mise ls --json`, `mise outdated --bump --json`, `mise ls --prunable --json`
+· Runs: `mise prune --tools --yes`
 
 ## Discover
 
@@ -108,8 +124,28 @@ it worked. Copy any of them to run it yourself.
 - **Your shell** — whether mise is activated. If it isn't, powermise shows the
   line to add to your shell's startup file. It won't edit that file for you.
 - **Problems mise found** and the **config files** it reads.
+- **GitHub downloads** — whether mise has a GitHub token (masked), and two ways
+  to give it one you already have: your GitHub CLI login
+  (`github.credential_command = "gh auth token"`) or Git's saved login
+  (`github.use_git_credentials`).
+- **Versions from other tools** — the same bring-over list as Welcome.
+- **Disk space** — unused versions, with **Clean Up…**.
 
-Reads: `mise doctor --json`, `mise version --json`
+The **Health** badge in the sidebar counts what needs attention: amber for
+warnings, red when something is broken.
+
+Reads: `mise doctor --json`, `mise version --json`, `mise token github`
+
+## Settings
+
+Every mise setting, grouped (General, GitHub, Node, Python, …) with its
+description and where it's set. Switches and text fields change your global
+config through `mise settings set`; **Reset to default** runs
+`mise settings unset`. Lists are shown, and edited in your config file. A
+setting another file sets (a project, or a `conf.d` file) is labelled with that
+file. **Changed** shows only what you've set.
+
+Reads: `mise settings ls --all --json-extended`
 
 ## AI Setups
 

@@ -10,8 +10,8 @@ macOS, Windows, and Linux are on the [roadmap](https://github.com/frankievalenti
 ## 1. Install mise
 
 powermise works with mise **2026.7.18 or newer**, and is designed around
-**2026.10 or newer** — the version a fresh install gets. If you don't have mise
-yet:
+**2026.10 or newer** — the version a fresh install gets. If you don't have mise,
+powermise's Welcome screen can install it for you. Or install it yourself:
 
 ```sh
 curl https://mise.run | sh

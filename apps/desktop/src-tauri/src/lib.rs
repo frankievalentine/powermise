@@ -3,9 +3,12 @@
 //! - `mise_commands`: what mise manages, read through its JSON output and
 //!   changed only by running mise commands (streamed, cancellable, logged).
 //! - `projects`: folders the person adds, read through mise from inside them.
+//! - `machine`: settings, GitHub downloads, cleanup, importing versions from
+//!   other managers, and installing mise itself on first run.
 //! - `setups`: AI Setups — the curated catalog compiled into one mise config
 //!   fragment, `conf.d/powermise-<name>.toml`, that mise then applies.
 //! - This module: shared environment helpers and app startup.
+mod machine;
 mod mise_commands;
 mod projects;
 mod setups;
@@ -45,7 +48,16 @@ fn extra_path_dirs() -> Vec<PathBuf> {
         directories.push(home.join(".local/share/mise/bin"));
         directories.push(home.join(".cargo/bin"));
     }
-    if cfg!(target_os = "macos") {
+    if cfg!(windows) {
+        // Where winget, the mise installer, and Scoop put commands.
+        if let Some(local) = env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+            directories.push(local.join("Microsoft/WinGet/Links"));
+            directories.push(local.join("mise/bin"));
+        }
+        if let Some(home) = home_dir() {
+            directories.push(home.join("scoop/shims"));
+        }
+    } else if cfg!(target_os = "macos") {
         directories.push(PathBuf::from("/opt/homebrew/bin"));
         directories.push(PathBuf::from("/usr/local/bin"));
     } else if cfg!(target_os = "linux") {
@@ -73,17 +85,25 @@ fn augmented_path() -> Option<std::ffi::OsString> {
     env::join_paths(directories).ok()
 }
 
-/// Finds the `mise` executable on PATH.
-pub(crate) fn find_mise() -> Option<PathBuf> {
-    let names: &[&str] = if cfg!(windows) {
-        &["mise.exe", "mise.cmd"]
+/// Finds a program on PATH, or in the usual install locations even if they
+/// didn't exist when the app started (mise installed from the app lands in
+/// one of those).
+pub(crate) fn find_program(name: &str) -> Option<PathBuf> {
+    let names: Vec<String> = if cfg!(windows) {
+        vec![format!("{name}.exe"), format!("{name}.cmd")]
     } else {
-        &["mise"]
+        vec![name.to_owned()]
     };
-    let path = env::var_os("PATH")?;
+    let path = env::var_os("PATH").unwrap_or_default();
     env::split_paths(&path)
+        .chain(extra_path_dirs())
         .flat_map(|directory| names.iter().map(move |name| directory.join(name)))
         .find(|candidate| candidate.is_file())
+}
+
+/// Finds the `mise` executable.
+pub(crate) fn find_mise() -> Option<PathBuf> {
+    find_program("mise")
 }
 
 pub(crate) fn layout() -> CommandResult<PowermiseLayout> {
@@ -126,6 +146,35 @@ fn reveal_path(path: PathBuf) -> CommandResult<()> {
         .map_err(message)
 }
 
+/// Hosts the app links to: mise's docs and GitHub (tokens, releases).
+const LINK_HOSTS: &[&str] = &["mise.jdx.dev", "github.com"];
+
+/// Opens a link in the default browser. Only https links to [`LINK_HOSTS`],
+/// so nothing a page shows can make the app open arbitrary programs or files.
+#[tauri::command]
+fn open_url(url: String) -> CommandResult<()> {
+    let host = url
+        .strip_prefix("https://")
+        .and_then(|rest| rest.split(['/', '#', '?']).next())
+        .unwrap_or_default();
+    let allowed = LINK_HOSTS.contains(&host)
+        && !url.chars().any(|character| {
+            character.is_whitespace() || character.is_control() || character == '"'
+        });
+    if !allowed {
+        return Err(format!("powermise doesn't open links like `{url}`"));
+    }
+    let mut command = if cfg!(target_os = "macos") {
+        std::process::Command::new("open")
+    } else if cfg!(windows) {
+        // `explorer` opens a URL in the default browser without a shell.
+        std::process::Command::new("explorer")
+    } else {
+        std::process::Command::new("xdg-open")
+    };
+    command.arg(&url).spawn().map(|_| ()).map_err(message)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     if let Some(path) = augmented_path() {
@@ -140,6 +189,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_environment,
             reveal_path,
+            open_url,
             mise_commands::mise_info,
             mise_commands::installed_tools,
             mise_commands::outdated_tools,
@@ -163,6 +213,11 @@ pub fn run() {
             setups::setup_status,
             setups::bootstrap_plan,
             setups::remove_setup,
+            machine::settings,
+            machine::github_status,
+            machine::prunable_versions,
+            machine::detect_imports,
+            machine::mise_installers,
         ])
         .run(tauri::generate_context!())
         .expect("error while running the powermise desktop app");

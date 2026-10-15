@@ -93,6 +93,15 @@ cd "$SANDBOX/untrusted"
 capture trust-show-untrusted.txt "$MISE" trust --show
 "$MISE" ls --json </dev/null 2>&1 >/dev/null | sanitize >"$OUT/untrusted-error.txt" || true
 
+# Settings (one set in the global config), an unused version for prune,
+# and the GitHub token status with no token anywhere.
+cd "$SANDBOX/home"
+"$MISE" settings set jobs 4 >/dev/null 2>&1
+"$MISE" install jq@1.6 >/dev/null 2>&1
+"$MISE" settings ls --all --json-extended </dev/null 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); keep={k: d[k] for k in ("jobs","experimental","always_keep_download","github","node") if k in d}; print(json.dumps(keep, indent=2))' | sanitize >"$OUT/settings-all.json"
+capture ls-prunable.json "$MISE" ls --prunable --json
+env -u GITHUB_TOKEN -u GH_TOKEN -u MISE_GITHUB_TOKEN -u GITHUB_API_TOKEN "$MISE" token github </dev/null 2>/dev/null | sanitize >"$OUT/token-github-none.txt"
+
 # AI Setups: a conf.d fragment, as powermise writes one (mise 2026.10+).
 version="$("$MISE" version --json </dev/null 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"].split()[0])')"
 if [[ "$(printf '%s\n2026.10.0\n' "$version" | sort -V | head -n1)" == "2026.10.0" ]]; then

@@ -10,6 +10,7 @@ import appsToml from "../../../../catalog/profiles/apps.toml?raw";
 import integrationsToml from "../../../../catalog/profiles/integrations.toml?raw";
 import mcpToml from "../../../../catalog/profiles/mcp.toml?raw";
 import { demoMise, NOT_HANDLED, setBootstrapHook } from "./demoMise";
+import { demoHasMise } from "./demoMachine";
 export { browserEvents } from "./demoMise";
 import type {
   BootstrapPlan,
@@ -231,7 +232,7 @@ export async function browserPreview<T>(command: string, args: Record<string, un
         hostTarget: "darwin",
         powermiseDir: `${HOME}/.config/powermise`,
         miseConfigDir: MISE_CONFIG_DIR,
-        misePath: `${HOME}/.local/bin/mise`,
+        misePath: demoHasMise ? `${HOME}/.local/bin/mise` : null,
       } satisfies EnvironmentInfo as T;
     case "get_catalog":
       return catalog as T;

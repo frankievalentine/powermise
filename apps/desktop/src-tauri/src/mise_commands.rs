@@ -13,13 +13,13 @@ use std::{
 };
 
 use powermise_mise::{
-    Doctor, MiseClient, MiseCommand, MiseVersion, OutdatedReport, RegistryEntry, RemoteVersion,
-    RunOutcome, ToolInventory,
+    Doctor, ImportSource, MiseClient, MiseCommand, MiseVersion, OutdatedReport, RegistryEntry,
+    RemoteVersion, RunOutcome, ToolInventory, run_program,
 };
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 
-use crate::{CommandResult, find_mise, home_dir, message};
+use crate::{CommandResult, find_mise, home_dir, machine::MiseInstaller, message};
 
 /// Running jobs, the activity log, and the cached registry.
 #[derive(Default)]
@@ -194,6 +194,40 @@ pub enum MiseAction {
     // AI Setups: install what the config declares, and clean up afterwards.
     BootstrapPackagesAndTools,
     PruneTools,
+    // Machine-wide.
+    SetSetting {
+        key: String,
+        value: String,
+    },
+    UnsetSetting {
+        key: String,
+    },
+    SyncVersions {
+        source: ImportSource,
+    },
+    /// Installs mise itself — the one action that doesn't run mise.
+    InstallMise {
+        installer: MiseInstaller,
+    },
+}
+
+/// What a job runs: a mise command, or (to install mise) a package manager.
+enum Job {
+    Mise(MiseClient, MiseCommand),
+    Program {
+        program: PathBuf,
+        arguments: Vec<String>,
+        display: String,
+    },
+}
+
+impl Job {
+    fn display(&self) -> String {
+        match self {
+            Self::Mise(_, command) => command.display(),
+            Self::Program { display, .. } => display.clone(),
+        }
+    }
 }
 
 impl MiseAction {
@@ -227,14 +261,37 @@ impl MiseAction {
             }
             Self::BootstrapPackagesAndTools => Ok(MiseCommand::bootstrap_packages_and_tools()),
             Self::PruneTools => Ok(MiseCommand::prune_tools()),
+            Self::SetSetting { key, value } => MiseCommand::set_setting(key, value),
+            Self::UnsetSetting { key } => MiseCommand::unset_setting(key),
+            Self::SyncVersions { source } => Ok(MiseCommand::sync(*source)),
+            Self::InstallMise { .. } => {
+                return Err("installing mise doesn't run mise".into());
+            }
         }
         .map_err(message)
+    }
+
+    fn job(&self) -> CommandResult<Job> {
+        if let Self::InstallMise { installer } = self {
+            let program = installer.program().ok_or_else(|| {
+                format!("{} isn't available on this computer", installer.display())
+            })?;
+            return Ok(Job::Program {
+                program,
+                arguments: installer.arguments(),
+                display: installer.display(),
+            });
+        }
+        Ok(Job::Mise(client()?, self.command()?))
     }
 }
 
 /// The exact command line an action runs, for confirmation sheets.
 #[tauri::command]
 pub fn describe_action(action: MiseAction) -> CommandResult<String> {
+    if let MiseAction::InstallMise { installer } = action {
+        return Ok(installer.display());
+    }
     Ok(action.command()?.display())
 }
 
@@ -277,8 +334,7 @@ pub fn run_action(
     state: State<'_, MiseState>,
     action: MiseAction,
 ) -> CommandResult<u64> {
-    let client = client()?;
-    let command = action.command()?;
+    let job = action.job()?;
     let id = state.next_job.fetch_add(1, Ordering::Relaxed) + 1;
     let cancel = Arc::new(AtomicBool::new(false));
     state
@@ -288,7 +344,7 @@ pub fn run_action(
         .insert(id, cancel.clone());
     state.activity.lock().map_err(message)?.push(ActivityEntry {
         id,
-        command: command.display(),
+        command: job.display(),
         started_at: now_ms(),
         finished_at: None,
         outcome: None,
@@ -296,7 +352,7 @@ pub fn run_action(
     });
 
     std::thread::spawn(move || {
-        let result = client.run(&command, &cancel, |line| {
+        let emit = |line: powermise_mise::OutputLine| {
             let _ = app.emit(
                 OUTPUT_EVENT,
                 OutputEvent {
@@ -305,7 +361,16 @@ pub fn run_action(
                     text: line.text,
                 },
             );
-        });
+        };
+        let result = match &job {
+            Job::Mise(client, command) => client.run(command, &cancel, emit),
+            Job::Program {
+                program, arguments, ..
+            } => {
+                let cwd = home_dir().unwrap_or_else(std::env::temp_dir);
+                run_program(program, arguments, &cwd, &cancel, emit)
+            }
+        };
         let state = app.state::<MiseState>();
         if let Ok(mut running) = state.running.lock() {
             running.remove(&id);

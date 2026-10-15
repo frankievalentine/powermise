@@ -1,0 +1,117 @@
+{
+  "jobs": {
+    "value": 4,
+    "type": "number",
+    "description": "How many jobs to run concurrently such as tool installs. Values below 1 are treated as 1.",
+    "source": "/Users/demo/.config/mise/config.toml"
+  },
+  "experimental": {
+    "value": false,
+    "type": "boolean",
+    "description": "Enable experimental features, which may change or be removed in any release."
+  },
+  "always_keep_download": {
+    "value": false,
+    "type": "boolean",
+    "description": "[deprecated] Keep downloaded archives and sources after installing, for debugging."
+  },
+  "github": {
+    "credential_command": {
+      "value": "",
+      "type": "string",
+      "description": "Command that prints a GitHub token on stdout."
+    },
+    "gh_cli_tokens": {
+      "value": true,
+      "type": "boolean",
+      "description": "Read GitHub tokens that the gh CLI stores in its `hosts.yml` file."
+    },
+    "github_attestations": {
+      "value": true,
+      "type": "boolean",
+      "description": "Verify GitHub artifact attestations for github backend tools."
+    },
+    "oauth_api_url": {
+      "value": "https://api.github.com",
+      "type": "string",
+      "description": "GitHub API base URL mise uses to validate native OAuth tokens."
+    },
+    "oauth_auth_url": {
+      "value": "https://github.com/login",
+      "type": "string",
+      "description": "GitHub OAuth endpoint base URL for the native device flow."
+    },
+    "oauth_cache_get": {
+      "value": "",
+      "type": "string",
+      "description": "Command that prints the native GitHub OAuth refresh tokens stored by github.oauth_cache_set."
+    },
+    "oauth_cache_secure_enclave": {
+      "value": false,
+      "type": "boolean",
+      "description": "Keep the native GitHub OAuth refresh token behind Touch ID in the macOS Secure Enclave."
+    },
+    "oauth_cache_set": {
+      "value": "",
+      "type": "string",
+      "description": "Command that stores the native GitHub OAuth refresh tokens, read from its stdin."
+    },
+    "oauth_client_id": {
+      "value": "",
+      "type": "string",
+      "description": "GitHub App client ID that turns on native OAuth device-flow tokens."
+    },
+    "oauth_export_env": {
+      "value": "GITHUB_TOKEN",
+      "type": "string",
+      "description": "Environment variable that mise exports the native GitHub OAuth token under; empty turns the export off."
+    },
+    "oauth_open_browser": {
+      "value": true,
+      "type": "boolean",
+      "description": "Open the verification page in your browser during the native GitHub OAuth device flow."
+    },
+    "oauth_scopes": {
+      "value": "",
+      "type": "string",
+      "description": "OAuth scopes requested for native GitHub device-flow tokens."
+    },
+    "slsa": {
+      "value": true,
+      "type": "boolean",
+      "description": "Verify SLSA provenance for github backend tools that name a signer."
+    },
+    "use_git_credentials": {
+      "value": false,
+      "type": "boolean",
+      "description": "Get GitHub tokens from your Git credential helpers with `git credential fill`."
+    }
+  },
+  "node": {
+    "corepack": {
+      "value": false,
+      "type": "boolean",
+      "description": "Run `corepack enable` after installing a Node.js version, so `yarn` and `pnpm` go through Corepack."
+    },
+    "nodenv_root": {
+      "value": "~/.nodenv",
+      "type": "string",
+      "description": "Root directory of nodenv, which `mise sync node --nodenv` imports Node.js versions from."
+    },
+    "npm_shim": {
+      "value": true,
+      "type": "boolean",
+      "description": "Wrap each Node.js version's `npm` so that `npm install -g` runs `mise reshim` afterwards."
+    },
+    "nvm_dir": {
+      "value": "~/.nvm",
+      "type": "string",
+      "description": "Directory of nvm, which `mise sync node --nvm` imports Node.js versions from."
+    },
+    "verify": {
+      "value": true,
+      "type": "boolean",
+      "description": "Verify downloaded Node.js archives against the SHA-256 checksums in `SHASUMS256.txt`."
+    }
+  }
+}

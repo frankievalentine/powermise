@@ -18,6 +18,7 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     MiseAdapterError,
+    machine::{ImportSource, Setting, TokenStatus, parse_settings, parse_token_status},
     models::{
         BootstrapPlan, BootstrapStatus, ConfigFile, Doctor, OutdatedReport, RegistryEntry,
         RemoteVersion, Task, ToolInventory, VersionInfo,
@@ -205,68 +206,132 @@ impl MiseClient {
         &self,
         command: &MiseCommand,
         cancel: &AtomicBool,
-        mut on_line: impl FnMut(OutputLine),
+        on_line: impl FnMut(OutputLine),
     ) -> Result<RunOutcome, MiseAdapterError> {
         let mut process = self.base(command.cwd.as_deref());
-        process
-            .args(&command.arguments)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        // Its own process group, so cancelling also stops the downloads and
-        // extractors mise starts.
-        #[cfg(unix)]
-        std::os::unix::process::CommandExt::process_group(&mut process, 0);
-        let mut child = process
-            .spawn()
+        process.args(&command.arguments);
+        stream(process, &self.executable, cancel, on_line)
+    }
+
+    /// `mise settings ls --all --json-extended`: every setting, flattened,
+    /// with its effective value and, when set, the file it comes from.
+    pub fn settings(&self) -> Result<Vec<Setting>, MiseAdapterError> {
+        let json: serde_json::Value =
+            self.read_json(&["settings", "ls", "--all", "--json-extended"], None)?;
+        Ok(parse_settings(&json))
+    }
+
+    /// `mise ls --prunable --json`: installed versions no config uses, which
+    /// `mise prune --tools` would delete.
+    pub fn prunable(&self) -> Result<ToolInventory, MiseAdapterError> {
+        self.read_json(&["ls", "--prunable", "--json"], None)
+    }
+
+    /// `mise token github`: whether mise has a GitHub token, masked, and
+    /// where it comes from. Never asks for the unmasked token.
+    pub fn github_token(&self) -> Result<TokenStatus, MiseAdapterError> {
+        let output = self
+            .base(None)
+            .args(["token", "github"])
+            .output()
             .map_err(|source| MiseAdapterError::Execute {
                 executable: self.executable.clone(),
                 source,
             })?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        parse_token_status(&stdout).ok_or_else(|| MiseAdapterError::Failed {
+            executable: self.executable.clone(),
+            status: output.status.code(),
+            stdout: stdout.into_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        })
+    }
+}
 
-        let (sender, receiver) = mpsc::channel();
-        let readers = [
-            child
-                .stdout
-                .take()
-                .map(|pipe| forward(pipe, Stream::Stdout, sender.clone())),
-            child
-                .stderr
-                .take()
-                .map(|pipe| forward(pipe, Stream::Stderr, sender.clone())),
-        ];
-        drop(sender);
+/// Runs a program that isn't mise (a package manager installing mise
+/// itself), with the same streaming and cancellation as mise commands.
+pub fn run_program(
+    program: &Path,
+    arguments: &[String],
+    cwd: &Path,
+    cancel: &AtomicBool,
+    on_line: impl FnMut(OutputLine),
+) -> Result<RunOutcome, MiseAdapterError> {
+    let mut process = Command::new(program);
+    process
+        .args(arguments)
+        .current_dir(cwd)
+        .stdin(Stdio::null())
+        .env("NO_COLOR", "1")
+        // Homebrew: don't spend minutes updating every formula first.
+        .env("HOMEBREW_NO_AUTO_UPDATE", "1")
+        .env_remove("MISE_YES");
+    stream(process, program, cancel, on_line)
+}
 
-        let mut cancelled = false;
-        loop {
-            match receiver.recv_timeout(Duration::from_millis(100)) {
-                Ok(line) => on_line(line),
-                Err(mpsc::RecvTimeoutError::Timeout) => {}
-                // Both pipes closed: the process has exited.
-                Err(mpsc::RecvTimeoutError::Disconnected) => {
-                    for reader in readers.into_iter().flatten() {
-                        let _ = reader.join();
-                    }
-                    break;
+/// Spawns `process`, streams its output lines, and kills it (and everything
+/// it started) when `cancel` is set.
+fn stream(
+    mut process: Command,
+    executable: &Path,
+    cancel: &AtomicBool,
+    mut on_line: impl FnMut(OutputLine),
+) -> Result<RunOutcome, MiseAdapterError> {
+    process.stdout(Stdio::piped()).stderr(Stdio::piped());
+    // Its own process group, so cancelling also stops the downloads and
+    // extractors mise starts.
+    #[cfg(unix)]
+    std::os::unix::process::CommandExt::process_group(&mut process, 0);
+    let mut child = process
+        .spawn()
+        .map_err(|source| MiseAdapterError::Execute {
+            executable: executable.to_path_buf(),
+            source,
+        })?;
+
+    let (sender, receiver) = mpsc::channel();
+    let readers = [
+        child
+            .stdout
+            .take()
+            .map(|pipe| forward(pipe, Stream::Stdout, sender.clone())),
+        child
+            .stderr
+            .take()
+            .map(|pipe| forward(pipe, Stream::Stderr, sender.clone())),
+    ];
+    drop(sender);
+
+    let mut cancelled = false;
+    loop {
+        match receiver.recv_timeout(Duration::from_millis(100)) {
+            Ok(line) => on_line(line),
+            Err(mpsc::RecvTimeoutError::Timeout) => {}
+            // Both pipes closed: the process has exited.
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                for reader in readers.into_iter().flatten() {
+                    let _ = reader.join();
                 }
-            }
-            if cancel.load(Ordering::Relaxed) {
-                cancelled = true;
-                terminate(&mut child);
-                // Don't wait on the pipes: a grandchild can hold them open.
-                // The detached reader threads end when it exits.
                 break;
             }
         }
-        let status = child.wait().map_err(|source| MiseAdapterError::Execute {
-            executable: self.executable.clone(),
-            source,
-        })?;
-        Ok(RunOutcome {
-            success: status.success() && !cancelled,
-            code: status.code(),
-            cancelled,
-        })
+        if cancel.load(Ordering::Relaxed) {
+            cancelled = true;
+            terminate(&mut child);
+            // Don't wait on the pipes: a grandchild can hold them open.
+            // The detached reader threads end when it exits.
+            break;
+        }
     }
+    let status = child.wait().map_err(|source| MiseAdapterError::Execute {
+        executable: executable.to_path_buf(),
+        source,
+    })?;
+    Ok(RunOutcome {
+        success: status.success() && !cancelled,
+        code: status.code(),
+        cancelled,
+    })
 }
 
 /// Stops a running command and everything it started.
@@ -491,9 +556,47 @@ impl MiseCommand {
         ])
     }
 
-    /// `mise prune --tools`: deletes tool versions no config uses anymore.
+    /// `mise prune --tools --yes`: deletes tool versions no config uses
+    /// anymore. `--yes` because mise won't prune without a terminal to
+    /// confirm in, and the person already reviewed the list in the app.
     pub fn prune_tools() -> Self {
-        Self::new(vec!["prune".into(), "--tools".into()])
+        Self::new(vec!["prune".into(), "--tools".into(), "--yes".into()])
+    }
+
+    /// `mise settings set <key> <value>`, in the global config.
+    pub fn set_setting(key: &str, value: &str) -> Result<Self, MiseAdapterError> {
+        validate_setting_key(key)?;
+        if value.starts_with('-') || value.chars().any(char::is_control) {
+            return Err(MiseAdapterError::InvalidArgument {
+                value: value.into(),
+            });
+        }
+        Ok(Self::new(vec![
+            "settings".into(),
+            "set".into(),
+            key.into(),
+            value.into(),
+        ]))
+    }
+
+    /// `mise settings unset <key>`: back to the default, in the global config.
+    pub fn unset_setting(key: &str) -> Result<Self, MiseAdapterError> {
+        validate_setting_key(key)?;
+        Ok(Self::new(vec![
+            "settings".into(),
+            "unset".into(),
+            key.into(),
+        ]))
+    }
+
+    /// `mise sync <tool> --<source>`: lets mise use versions another version
+    /// manager already installed, without reinstalling them.
+    pub fn sync(source: ImportSource) -> Self {
+        Self::new(vec![
+            "sync".into(),
+            source.tool().into(),
+            format!("--{}", source.flag()),
+        ])
     }
 
     /// `mise self-update --yes`: update mise itself (the person already
@@ -545,6 +648,22 @@ fn tool_spec(tool: &str, version: &str) -> Result<String, MiseAdapterError> {
     validate_argument(tool)?;
     validate_argument(version)?;
     Ok(format!("{tool}@{version}"))
+}
+
+/// Setting keys as mise lists them: dotted lowercase words.
+fn validate_setting_key(key: &str) -> Result<(), MiseAdapterError> {
+    let valid = !key.is_empty()
+        && key.split('.').all(|part| {
+            !part.is_empty()
+                && part.chars().all(|character| {
+                    character.is_ascii_lowercase() || character.is_ascii_digit() || character == '_'
+                })
+        });
+    if valid {
+        Ok(())
+    } else {
+        Err(MiseAdapterError::InvalidArgument { value: key.into() })
+    }
 }
 
 /// Tool names and versions come from people and from the registry. They are
@@ -666,6 +785,36 @@ mod tests {
                 .unwrap()
                 .display(),
             "cd /Users/demo/code/app && mise use node@22"
+        );
+    }
+
+    #[test]
+    fn settings_prune_and_sync_commands() {
+        assert_eq!(
+            MiseCommand::set_setting("github.credential_command", "gh auth token")
+                .unwrap()
+                .display(),
+            "mise settings set github.credential_command 'gh auth token'"
+        );
+        assert_eq!(
+            MiseCommand::unset_setting("jobs").unwrap().display(),
+            "mise settings unset jobs"
+        );
+        for bad in ["", "Jobs", "jobs;rm", "--all", "node..x"] {
+            assert!(MiseCommand::set_setting(bad, "1").is_err(), "{bad}");
+        }
+        assert!(MiseCommand::set_setting("jobs", "--yes").is_err());
+        assert_eq!(
+            MiseCommand::prune_tools().display(),
+            "mise prune --tools --yes"
+        );
+        assert_eq!(
+            MiseCommand::sync(crate::ImportSource::Nvm).display(),
+            "mise sync node --nvm"
+        );
+        assert_eq!(
+            MiseCommand::sync(crate::ImportSource::RubyBrew).display(),
+            "mise sync ruby --brew"
         );
     }
 

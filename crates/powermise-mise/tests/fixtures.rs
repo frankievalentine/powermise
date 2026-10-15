@@ -6,7 +6,8 @@ use std::path::PathBuf;
 
 use powermise_mise::{
     ConfigFile, Doctor, EnvReport, MiseVersion, OutdatedReport, RegistryEntry, RemoteVersion, Task,
-    ToolInventory, is_untrusted_error, parse_task_details, parse_trust_show,
+    ToolInventory, is_untrusted_error, parse_settings, parse_task_details, parse_token_status,
+    parse_trust_show,
 };
 
 /// Fixture sets, oldest first: the supported minimum and the recommended version.
@@ -197,4 +198,48 @@ fn bootstrap_plan_and_status_parse() {
             .iter()
             .any(|tool| tool.tool == "jq" && tool.installed)
     );
+}
+
+#[test]
+fn settings_prunable_versions_and_token_status_parse() {
+    for version in VERSIONS {
+        let json: serde_json::Value = fixture(version, "settings-all.json");
+        let settings = parse_settings(&json);
+        let jobs = settings
+            .iter()
+            .find(|setting| setting.key == "jobs")
+            .unwrap();
+        assert_eq!(jobs.value, 4, "{version}");
+        assert_eq!(jobs.kind, "number", "{version}");
+        assert!(
+            jobs.source
+                .as_deref()
+                .is_some_and(|source| source.ends_with("config.toml")),
+            "{version}"
+        );
+        // Nested groups flatten to dotted keys; unset ones have no source.
+        let gh_cli = settings
+            .iter()
+            .find(|setting| setting.key == "github.gh_cli_tokens")
+            .unwrap();
+        assert_eq!(gh_cli.source, None, "{version}");
+        // 2026.10 marks deprecated settings in their description; 2026.7 doesn't.
+        let keep_download = settings
+            .iter()
+            .find(|setting| setting.key == "always_keep_download")
+            .unwrap();
+        assert_eq!(
+            keep_download.deprecated,
+            *version != "2026.7.18",
+            "{version}"
+        );
+
+        let prunable: ToolInventory = fixture(version, "ls-prunable.json");
+        assert_eq!(prunable["jq"][0].version, "1.6", "{version}");
+        assert!(!prunable["jq"][0].active, "{version}");
+
+        let token = parse_token_status(&text(version, "token-github-none.txt")).unwrap();
+        assert_eq!(token.host, "github.com", "{version}");
+        assert_eq!(token.token, None, "{version}");
+    }
 }
