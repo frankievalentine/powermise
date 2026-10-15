@@ -2474,3 +2474,58 @@ button {
 .settings-advanced-head .section-note {
   margin: 0;
 }
+
+/* Import */
+.import-page {
+  padding-bottom: 96px;
+}
+
+.import-row {
+  gap: 10px;
+}
+
+.import-row-main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.import-row .row-trailing {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 50%;
+}
+
+.import-default {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.import-bar {
+  position: sticky;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--surface-raised, var(--surface));
+  box-shadow:
+    0 0 0 1px var(--separator),
+    0 10px 30px -12px rgba(0, 0, 0, 0.35);
+  font-size: 13px;
+}

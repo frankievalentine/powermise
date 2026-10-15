@@ -41,6 +41,7 @@ import { HarnessDetail } from "./views/HarnessDetail";
 import { ToolsView } from "./views/ToolsView";
 import { PluginsView } from "./views/PluginsView";
 import { SkillsView } from "./views/SkillsView";
+import { ImportView } from "./views/mise/ImportView";
 import { McpServersView } from "./views/McpServersView";
 import { SetupEditor } from "./views/SetupEditor";
 import { SetupView } from "./views/SetupView";
@@ -78,6 +79,7 @@ export type Route =
   | { kind: "mcp" }
   | { kind: "integrations" }
   | { kind: "skills" }
+  | { kind: "import" }
   | { kind: "setup"; name: string }
   | { kind: "editor"; name?: string; seed?: string[] };
 
@@ -433,6 +435,8 @@ function toolbarTitle(route: Route, context: AppContext): string {
       return "Health";
     case "settings":
       return "Settings";
+    case "import":
+      return "Import";
     case "machine":
       return "This Computer";
     case "macos-settings":
@@ -514,6 +518,8 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
       return <PluginsView context={context} query={query} />;
     case "skills":
       return <SkillsView context={context} query={query} />;
+    case "import":
+      return <ImportView context={context} />;
     case "setup":
       return <SetupView context={context} name={route.name} />;
     case "editor":
@@ -635,7 +641,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
         </div>
       </div>
       <div className="sidebar-section sidebar-bottom">
-        {item(["machine", "macos-settings"], "This Computer", MonitorCog)}
+        {item(["machine", "macos-settings", "import"], "This Computer", MonitorCog)}
         {item(
           ["health"],
           "Health",

@@ -10,14 +10,10 @@ import {
   ActivationSteps,
   CleanupSheet,
   GithubCard,
-  GlobalPackageList,
-  ImportList,
   ShellConflictRows,
   UpdateMise,
   formatBytes,
-  ProgramToolList,
   pendingImports,
-  programTools,
 } from "../../components/machine";
 import { CommandBlock, Section } from "../../components/ui";
 
@@ -46,11 +42,6 @@ export function HealthView({ context, section }: { context: AppContext; section?
   const shell = activationCommand(doctor.data?.shell?.name, context.env.hostTarget, context.env.misePath);
   const imports = useAsync(() => api.detectImports(), [mise.revision]);
   const conflicts = useAsync(() => api.shellConflicts(), [mise.revision]);
-  const packages = useAsync(() => api.globalPackages(), [mise.revision]);
-  const programs = useAsync(() => api.installedPrograms(), [mise.revision]);
-  // Tools the package list already offers aren't offered twice.
-  const packageNames = new Set((packages.data ?? []).map((pkg) => pkg.name.replace(/^@[^/]+\//, "")));
-  const programRows = programs.data ? programTools(context, programs.data, packageNames) : [];
   const summary = healthSummary(info, doctor.data, conflicts.data?.length ?? 0);
   const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
   const disk = useAsync(() => api.diskUsage(), [mise.revision]);
@@ -271,29 +262,19 @@ export function HealthView({ context, section }: { context: AppContext; section?
 
           <div id="health-imports" ref={section === "imports" ? scrollTo : undefined} />
           {imports.data && pendingImports(context, imports.data).length > 0 && (
-            <Section
-              title="Versions from other tools"
-              note="Installed by another version manager. mise can use them without downloading them again, and make that manager’s default yours."
-            >
-              <ImportList context={context} imports={imports.data} />
-            </Section>
-          )}
-
-          {packages.data && packages.data.length > 0 && (
-            <Section
-              title="Command-line packages"
-              note="Installed globally with npm, pipx, uv, or cargo. Let mise manage them, and they stay put when you switch Node or Python versions."
-            >
-              <GlobalPackageList context={context} packages={packages.data} />
-            </Section>
-          )}
-
-          {programRows.length > 0 && (
-            <Section
-              title="Tools installed another way"
-              note="From Homebrew, an install script, or go install — and mise has them too. Let mise manage the ones you pick so they update with the rest of your tools."
-            >
-              <ProgramToolList context={context} tools={programRows} />
+            <Section title="Bring over what you already have">
+              <div className="list">
+                <button className="list-row interactive" onClick={() => context.navigate({ kind: "import" })}>
+                  <div className="row-main">
+                    <div className="row-title">Versions, packages, and apps from other tools</div>
+                    <div className="row-subtitle">
+                      Version managers, Homebrew and your Brewfile, App Store apps, and command-line packages — with a
+                      dry run before anything changes.
+                    </div>
+                  </div>
+                  <span className="button">Open Import</span>
+                </button>
+              </div>
             </Section>
           )}
 

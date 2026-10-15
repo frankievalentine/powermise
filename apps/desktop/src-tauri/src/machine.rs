@@ -142,6 +142,124 @@ pub async fn shell_conflicts() -> CommandResult<Vec<powermise_mise::ShellConflic
     .await
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportScan {
+    homebrew: powermise_mise::HomebrewInventory,
+    brewfiles: Vec<powermise_mise::Brewfile>,
+    /// From `mas list`; empty when `mas` isn't installed.
+    mas_apps: Vec<powermise_mise::MasApp>,
+    default_packages: Vec<powermise_mise::DefaultPackage>,
+    /// Packages already in `conf.d/powermise-imported.toml`.
+    imported_packages: Vec<String>,
+}
+
+/// Homebrew's installs, Brewfiles in the usual places, Mac App Store apps,
+/// and asdf-style default-package files — read-only.
+#[tauri::command]
+pub async fn import_scan() -> CommandResult<ImportScan> {
+    blocking(|| {
+        let home = home_dir().ok_or("could not determine your home directory")?;
+        let brewfiles = powermise_mise::brewfile_paths(&home)
+            .into_iter()
+            .filter_map(|path| {
+                let text = std::fs::read_to_string(&path).ok()?;
+                Some(powermise_mise::parse_brewfile(&path, &text))
+            })
+            .collect();
+        // `mas list` only reads the App Store's records.
+        let mas_apps = find_program("mas")
+            .and_then(|mas| std::process::Command::new(mas).arg("list").output().ok())
+            .filter(|output| output.status.success())
+            .map(|output| powermise_mise::parse_mas_list(&String::from_utf8_lossy(&output.stdout)))
+            .unwrap_or_default();
+        Ok(ImportScan {
+            homebrew: if cfg!(windows) {
+                Default::default()
+            } else {
+                powermise_mise::homebrew_inventory(powermise_mise::homebrew_prefixes())
+            },
+            brewfiles,
+            mas_apps,
+            default_packages: powermise_mise::default_packages(&home),
+            imported_packages: crate::mise_config_dir()
+                .map(|mise| {
+                    powermise_setups::read_imported(&mise)
+                        .bootstrap
+                        .packages
+                        .into_keys()
+                        .collect()
+                })
+                .unwrap_or_default(),
+        })
+    })
+    .await
+}
+
+/// Reads a Brewfile you pick.
+#[tauri::command]
+pub async fn read_brewfile(app: AppHandle) -> CommandResult<Option<powermise_mise::Brewfile>> {
+    blocking(move || {
+        let Some(path) = app
+            .dialog()
+            .file()
+            .set_title("Choose a Brewfile")
+            .blocking_pick_file()
+            .and_then(|picked| picked.into_path().ok())
+        else {
+            return Ok(None);
+        };
+        let text = std::fs::read_to_string(&path).map_err(message)?;
+        Ok(Some(powermise_mise::parse_brewfile(&path, &text)))
+    })
+    .await
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportFile {
+    path: PathBuf,
+    contents: String,
+    change: powermise_state::GeneratedFileChange,
+}
+
+fn imported_with(
+    tools: &[(String, String)],
+    packages: &[String],
+) -> CommandResult<(PathBuf, powermise_setups::ImportedConfig)> {
+    for (tool, version) in tools {
+        powermise_mise::MiseCommand::use_global(tool, version).map_err(message)?;
+    }
+    for package in packages {
+        powermise_mise::validate_import_package(package).map_err(message)?;
+    }
+    let mise = crate::mise_config_dir()?;
+    let config = powermise_setups::read_imported(&mise).merged(tools, packages);
+    Ok((mise, config))
+}
+
+/// What `conf.d/powermise-imported.toml` would become with these picks.
+#[tauri::command]
+pub fn import_file_preview(
+    tools: Vec<(String, String)>,
+    packages: Vec<String>,
+) -> CommandResult<ImportFile> {
+    let (mise, config) = imported_with(&tools, &packages)?;
+    Ok(ImportFile {
+        path: powermise_setups::imported_path(&mise),
+        contents: config.contents().map_err(message)?,
+        change: powermise_setups::inspect_imported(&mise, &config).map_err(message)?,
+    })
+}
+
+/// Adds the picks to `conf.d/powermise-imported.toml`. Installing is the
+/// separate `applyImport` run.
+#[tauri::command]
+pub fn write_import(tools: Vec<(String, String)>, packages: Vec<String>) -> CommandResult<PathBuf> {
+    let (mise, config) = imported_with(&tools, &packages)?;
+    powermise_setups::write_imported(&mise, &config).map_err(message)
+}
+
 /// Programs in the usual install folders (Homebrew, installer scripts,
 /// `go install`, …) that the app matches against the registry.
 #[tauri::command]

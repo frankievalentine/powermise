@@ -5,6 +5,7 @@ import type {
   DetectedImport,
   GlobalPackage,
   GithubStatus,
+  ImportScan,
   InstalledProgram,
   InstallerOption,
   MiseAction,
@@ -156,6 +157,61 @@ const installedPrograms: InstalledProgram[] = [
   { name: "terraform", path: "/opt/homebrew/bin/terraform", foundIn: "Homebrew", package: "terraform", removeCommand: "brew uninstall terraform" },
   { name: "supabase", path: "/Users/demo/go/bin/supabase", foundIn: "go install", package: null, removeCommand: null },
 ];
+
+const importScan: ImportScan = {
+  homebrew: {
+    formulas: [
+      { name: "gh", version: "2.80.0" },
+      { name: "coreutils", version: "9.7" },
+      { name: "wget", version: "1.25.0" },
+      { name: "mongodb/brew/mongodb-community", version: "8.0.4" },
+    ],
+    casks: [
+      { name: "ghostty", version: "1.3.1" },
+      { name: "raycast", version: "1.104.0" },
+      { name: "font-jetbrains-mono-nerd-font", version: "3.4.0" },
+    ],
+  },
+  brewfiles: [
+    {
+      path: "/Users/demo/Brewfile",
+      taps: ["mongodb/brew"],
+      formulas: ["gh", "coreutils", "wget", "mongodb-community", "tmux"],
+      casks: ["ghostty", "raycast", "font-jetbrains-mono-nerd-font", "obsidian"],
+      mas: [["Magnet", "441258766"]],
+      skipped: [],
+    },
+  ],
+  masApps: [{ id: "441258766", name: "Magnet", version: "3.0.7" }],
+  defaultPackages: [{ backend: "npm", name: "typescript", version: null, file: "/Users/demo/.default-npm-packages" }],
+  importedPackages: [],
+};
+
+/** Whether the demo machine already has a package (Homebrew or App Store). */
+export function demoInstalledPackage(spec: string): boolean {
+  const name = spec.slice(spec.indexOf(":") + 1);
+  if (spec.startsWith("brew:")) return importScan.homebrew.formulas.some((item) => item.name === name);
+  if (spec.startsWith("brew-cask:")) return importScan.homebrew.casks.some((item) => item.name === name);
+  if (spec.startsWith("mas:")) return importScan.masApps.some((app) => app.id === name);
+  return false;
+}
+
+/** What the demo's import file holds. */
+const imported = { tools: new Map<string, string>(), packages: new Set<string>() };
+
+function importedContents(tools: [string, string][], packages: string[]): string {
+  const allTools = new Map(imported.tools);
+  for (const [tool, version] of tools) allTools.set(tool, version);
+  const allPackages = new Set([...imported.packages, ...packages]);
+  const quote = (key: string) => (/^[A-Za-z0-9_-]+$/.test(key) ? key : `"${key}"`);
+  return [
+    "# Written by powermise's Import. Tools and packages you brought into mise",
+    "# from other version managers, Homebrew, a Brewfile, and so on.",
+    "",
+    ...(allTools.size ? ["[tools]", ...[...allTools].sort().map(([tool, version]) => `${quote(tool)} = "${version}"`), ""] : []),
+    ...(allPackages.size ? ["[bootstrap.packages]", ...[...allPackages].sort().map((spec) => `"${spec}" = "latest"`), ""] : []),
+  ].join("\n");
+}
 
 const globalPackages: GlobalPackage[] = [
   { backend: "npm", name: "prettier", version: "3.3.3", foundIn: "npm, in nvm’s Node 20.11.1" },
@@ -375,6 +431,33 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
       return globalPackages;
     case "installed_programs":
       return installedPrograms;
+    case "import_scan":
+      return { ...importScan, importedPackages: [...imported.packages] };
+    case "read_brewfile":
+      return null;
+    case "import_file_preview": {
+      const tools = (args.tools as [string, string][]) ?? [];
+      const packages = (args.packages as string[]) ?? [];
+      return {
+        path: "/Users/demo/.config/mise/conf.d/powermise-imported.toml",
+        contents: importedContents(tools, packages),
+        change: { path: "/Users/demo/.config/mise/conf.d/powermise-imported.toml", kind: imported.tools.size || imported.packages.size ? "update" : "create", diff: "" },
+      };
+    }
+    case "write_import": {
+      for (const [tool, version] of (args.tools as [string, string][]) ?? []) imported.tools.set(tool, version);
+      for (const spec of (args.packages as string[]) ?? []) imported.packages.add(spec);
+      for (const spec of (args.packages as string[]) ?? []) {
+        const name = spec.slice(spec.indexOf(":") + 1);
+        if (spec.startsWith("brew:") && !importScan.homebrew.formulas.some((item) => item.name === name)) {
+          importScan.homebrew.formulas.push({ name, version: "latest" });
+        }
+        if (spec.startsWith("brew-cask:") && !importScan.homebrew.casks.some((item) => item.name === name)) {
+          importScan.homebrew.casks.push({ name, version: "latest" });
+        }
+      }
+      return "/Users/demo/.config/mise/conf.d/powermise-imported.toml";
+    }
     case "mise_installers":
       return installers;
     case "open_url":

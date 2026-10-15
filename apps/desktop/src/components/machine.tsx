@@ -262,7 +262,7 @@ export function GithubCard({ context }: { context: AppContext }) {
 // Bring over versions from other managers
 // ---------------------------------------------------------------------------
 
-const SOURCE_LABEL: Record<ImportSource, string> = {
+export const SOURCE_LABEL: Record<ImportSource, string> = {
   nvm: "nvm",
   nodenv: "nodenv",
   "node-brew": "Homebrew",
@@ -281,7 +281,7 @@ const SOURCE_LABEL: Record<ImportSource, string> = {
 };
 
 const TOOL_LABEL: Record<string, string> = { node: "Node.js", python: "Python", ruby: "Ruby", go: "Go" };
-const toolLabel = (tool: string) => TOOL_LABEL[tool] ?? tool;
+export const toolLabel = (tool: string) => TOOL_LABEL[tool] ?? tool;
 
 /** Sources mise imports itself with `mise sync`; the rest are linked. */
 const SYNCED: Partial<Record<ImportSource, string>> = {
@@ -294,7 +294,7 @@ const SYNCED: Partial<Record<ImportSource, string>> = {
 };
 
 /** The version of `tool` your global mise config uses, if any. */
-function globalVersion(context: AppContext, tool: string): string | undefined {
+export function globalVersion(context: AppContext, tool: string): string | undefined {
   return context.mise.inventory?.[tool]?.find(
     (version) => version.source && isGlobalPath(version.source.path, context.env.miseConfigDir),
   )?.version;
@@ -302,7 +302,7 @@ function globalVersion(context: AppContext, tool: string): string | undefined {
 
 /** What's left to do for an import: versions mise doesn't have, and whether
  *  the manager's default isn't your mise default yet. */
-function importTodo(context: AppContext, entry: DetectedImport) {
+export function importTodo(context: AppContext, entry: DetectedImport) {
   const missing = entry.versions.filter((version) => !version.inMise);
   const current = globalVersion(context, entry.tool);
   const offerDefault = !!entry.defaultVersion && current !== entry.defaultVersion;
@@ -417,7 +417,10 @@ export function ShellConflictRows({ conflicts }: { conflicts: ShellConflict[] })
 
 /** The mise tool a global package becomes: the registry's short name when
  *  mise has one for it, otherwise `<backend>:<name>`. */
-function packageTool(context: AppContext, pkg: GlobalPackage): { tool: string; version: string } {
+export function packageTool(
+  context: AppContext,
+  pkg: { backend: string; name: string; version: string | null },
+): { tool: string; version: string } {
   const plain = pkg.name.replace(/^@[^/]+\//, "");
   const entry = context.mise.registryByName.get(pkg.name) ?? context.mise.registryByName.get(plain);
   if (entry) {
@@ -490,7 +493,7 @@ export function GlobalPackageList({ context, packages }: { context: AppContext; 
 }
 
 /** Homebrew names that differ from mise's (as in scripts/discover-popularity.py). */
-const BREW_RENAMES: Record<string, string> = {
+export const BREW_RENAMES: Record<string, string> = {
   "git-delta": "delta",
   "kubernetes-cli": "kubectl",
   "go-task": "task",
@@ -500,7 +503,7 @@ const BREW_RENAMES: Record<string, string> = {
 };
 
 /** Tools Bring Over already handles, with their versions and defaults. */
-const RUNTIMES = new Set(["node", "python", "ruby", "go"]);
+export const RUNTIMES = new Set(["node", "python", "ruby", "go"]);
 
 interface ProgramTool {
   tool: string;

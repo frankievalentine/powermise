@@ -719,6 +719,37 @@ impl MiseCommand {
         ]))
     }
 
+    /// `mise install [--dry-run] <tool>@<version>…`.
+    pub fn install_specs(
+        tools: &[(String, String)],
+        dry_run: bool,
+    ) -> Result<Self, MiseAdapterError> {
+        let mut arguments = vec!["install".into()];
+        if dry_run {
+            arguments.push("--dry-run".into());
+        }
+        for (tool, version) in tools {
+            arguments.push(tool_spec(tool, version)?);
+        }
+        Ok(Self::new(arguments))
+    }
+
+    /// `mise bootstrap packages apply --yes|--dry-run <manager:package>…`:
+    /// just these packages (they needn't be in a config for a dry run).
+    pub fn packages_apply(packages: &[String], dry_run: bool) -> Result<Self, MiseAdapterError> {
+        let mut arguments = vec![
+            "bootstrap".into(),
+            "packages".into(),
+            "apply".into(),
+            if dry_run { "--dry-run" } else { "--yes" }.into(),
+        ];
+        for package in packages {
+            validate_import_package(package)?;
+            arguments.push(package.clone());
+        }
+        Ok(Self::new(arguments))
+    }
+
     /// `mise use -g <tool>@<version>…`: several tools in one command.
     pub fn use_global_many(tools: &[(String, String)]) -> Result<Self, MiseAdapterError> {
         let mut arguments = vec!["use".into(), "-g".into()];
@@ -1234,6 +1265,31 @@ fn tool_spec(tool: &str, version: &str) -> Result<String, MiseAdapterError> {
     validate_argument(tool)?;
     validate_argument(version)?;
     Ok(format!("{tool}@{version}"))
+}
+
+/// `manager:package` for what Import brings in: Homebrew formulas (also
+/// tap-qualified, `mongodb/brew/mongodb-community`), casks, and Mac App
+/// Store apps by numeric id.
+pub fn validate_import_package(spec: &str) -> Result<(), MiseAdapterError> {
+    let valid = spec
+        .split_once(':')
+        .is_some_and(|(manager, package)| match manager {
+            "brew" | "brew-cask" => {
+                !package.is_empty()
+                    && !package.starts_with('-')
+                    && package.split('/').count() <= 3
+                    && package.chars().all(|character| {
+                        character.is_ascii_alphanumeric() || "._+-@/".contains(character)
+                    })
+            }
+            "mas" => !package.is_empty() && package.bytes().all(|byte| byte.is_ascii_digit()),
+            _ => false,
+        });
+    if valid {
+        Ok(())
+    } else {
+        Err(MiseAdapterError::InvalidArgument { value: spec.into() })
+    }
 }
 
 /// `manager:package` for the managers Discover installs with.

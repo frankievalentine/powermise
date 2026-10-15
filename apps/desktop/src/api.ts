@@ -410,6 +410,13 @@ export type MiseAction =
   | { kind: "unsetSetting"; key: string }
   | { kind: "importVersions"; source: ImportSource; tool: string; makeDefault: boolean }
   | { kind: "useGlobalMany"; tools: [string, string][] }
+  | { kind: "importDryRun"; tools: [string, string][]; packages: string[] }
+  | {
+      kind: "applyImport";
+      versions: [ImportSource, string, boolean][];
+      tools: [string, string][];
+      packages: string[];
+    }
   | { kind: "installMise"; installer: MiseInstaller }
   | { kind: "untrust"; path: string }
   | { kind: "lock"; project: string }
@@ -525,6 +532,50 @@ export interface InstalledProgram {
   package: string | null;
   /** The command that removes the old copy (`brew uninstall flyctl`). Shown, never run. */
   removeCommand: string | null;
+}
+
+export interface BrewItem {
+  /** Tap-qualified for other taps (`mongodb/brew/mongodb-community`). */
+  name: string;
+  version: string | null;
+}
+
+export interface Brewfile {
+  path: string;
+  taps: string[];
+  formulas: string[];
+  casks: string[];
+  /** `[name, App Store id]`. */
+  mas: [string, string][];
+  skipped: string[];
+}
+
+export interface MasApp {
+  id: string;
+  name: string;
+  version: string | null;
+}
+
+export interface DefaultPackage {
+  backend: "npm" | "pipx" | "gem";
+  name: string;
+  version: string | null;
+  file: string;
+}
+
+export interface ImportScan {
+  homebrew: { formulas: BrewItem[]; casks: BrewItem[] };
+  brewfiles: Brewfile[];
+  masApps: MasApp[];
+  defaultPackages: DefaultPackage[];
+  /** Packages already in powermise's import file. */
+  importedPackages: string[];
+}
+
+export interface ImportFile {
+  path: string;
+  contents: string;
+  change: FileChange;
 }
 
 /** A command-line package installed globally outside mise. */
@@ -789,6 +840,11 @@ export const api = {
   shellConflicts: () => call<ShellConflict[]>("shell_conflicts"),
   globalPackages: () => call<GlobalPackage[]>("global_packages"),
   installedPrograms: () => call<InstalledProgram[]>("installed_programs"),
+  importScan: () => call<ImportScan>("import_scan"),
+  readBrewfile: () => call<Brewfile | null>("read_brewfile"),
+  importFilePreview: (tools: [string, string][], packages: string[]) =>
+    call<ImportFile>("import_file_preview", { tools, packages }),
+  writeImport: (tools: [string, string][], packages: string[]) => call<string>("write_import", { tools, packages }),
   miseInstallers: () => call<InstallerOption[]>("mise_installers"),
   openUrl: (url: string) => call<void>("open_url", { url }),
   diskUsage: () => call<DiskUsage>("disk_usage"),

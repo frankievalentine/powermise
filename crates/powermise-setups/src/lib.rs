@@ -6,9 +6,13 @@
 //! the fragment removes the setup from mise's config. powermise keeps only
 //! the setup files themselves (`<powermise>/selections/<name>.toml`).
 mod catalog;
+mod imported;
 mod mcp_files;
 mod selection;
 
+pub use imported::{
+    ImportedConfig, imported_path, inspect_imported, read_imported, write_imported,
+};
 pub use mcp_files::{RemovedServer, expand_home, files_dir, remove_mcp_files, write_mcp_files};
 pub use selection::SelectionStore;
 
@@ -263,6 +267,8 @@ pub enum SetupsError {
     },
     #[error("could not determine your home directory")]
     NoConfigDir,
+    #[error("could not write the imported config: {0}")]
+    Render(String),
     #[error("setup `{name}` does not exist")]
     NotFound { name: String },
     #[error("setup `{name}` already exists at `{path}`")]

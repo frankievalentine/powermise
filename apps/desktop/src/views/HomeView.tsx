@@ -68,7 +68,7 @@ export function HomeView({ context }: { context: AppContext }) {
             title: "Bring over versions you already have",
             detail: `${[...new Set(pendingImports(context, imports.data).map((entry) => entry.source))].join(", ")} installed versions mise can use without downloading again.`,
             done: false,
-            action: { label: "Bring Over", run: () => navigate({ kind: "health", section: "imports" }) },
+            action: { label: "Review", run: () => navigate({ kind: "import" }) },
           },
         ]
       : []),

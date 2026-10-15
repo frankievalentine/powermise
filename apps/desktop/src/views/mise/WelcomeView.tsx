@@ -4,7 +4,7 @@ import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { activationCommand } from "../../health";
 import { useAsync } from "../../hooks";
-import { ActivationSteps, ExternalLinkButton, GithubCard, ImportList, pendingImports } from "../../components/machine";
+import { ActivationSteps, ExternalLinkButton, GithubCard, pendingImports } from "../../components/machine";
 import { CommandBlock } from "../../components/ui";
 
 export const WELCOMED_KEY = "powermise.welcomed";
@@ -149,7 +149,11 @@ export function WelcomeView({ context }: { context: AppContext }) {
                 : "These were installed by another version manager. mise can use them as they are, without downloading them again."
             }
           >
-            {imports.data && <ImportList context={context} imports={imports.data} />}
+            {imports.data && pendingImports(context, imports.data).length > 0 && (
+              <button className="button" onClick={() => navigate({ kind: "import" })}>
+                Review What to Bring Over
+              </button>
+            )}
           </Step>
         )}
 

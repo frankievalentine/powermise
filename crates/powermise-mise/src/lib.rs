@@ -5,6 +5,7 @@ use std::{io, path::PathBuf};
 
 mod agents;
 mod client;
+mod import_sources;
 mod imports;
 mod machine;
 mod models;
@@ -14,7 +15,12 @@ mod updater;
 
 pub use agents::{AgentCli, AgentPlugin, gemini_extensions, parse_plugin_list};
 pub use client::{
-    MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program, validate_package_spec,
+    MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program, validate_import_package,
+    validate_package_spec,
+};
+pub use import_sources::{
+    BrewItem, Brewfile, DefaultPackage, HomebrewInventory, MasApp, brewfile_paths,
+    default_packages, homebrew_inventory, homebrew_prefixes, parse_brewfile, parse_mas_list,
 };
 pub use imports::{
     DetectedImport, GlobalPackage, HOMEBREW_PREFIXES, ImportSource, ImportVersion,

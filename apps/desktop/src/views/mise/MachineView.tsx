@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  FileDown,
   CheckCircle2,
   CircleAlert,
   Eye,
@@ -107,6 +108,11 @@ export function MachineView({ context }: { context: AppContext }) {
               and settings — from its <code>[bootstrap]</code> and <code>[dotfiles]</code> sections.{" "}
               <ExternalLinkButton url="https://mise.jdx.dev/cli/bootstrap.html">About bootstrap</ExternalLinkButton>
             </p>
+          </div>
+          <div className="detail-actions">
+            <button className="button large" onClick={() => context.navigate({ kind: "import" })}>
+              <FileDown size={14} /> Import…
+            </button>
           </div>
           {data && data.sections.length > 0 && (
             <div className="detail-actions">

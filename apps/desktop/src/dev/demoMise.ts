@@ -7,6 +7,7 @@ import {
   demoHasMise,
   demoMachine,
   demoImport,
+  demoInstalledPackage,
   describeMachineAction,
   NOT_A_MACHINE_COMMAND,
   performMachineAction,
@@ -179,6 +180,17 @@ function describe(action: MiseAction): string {
       return `mise bootstrap --yes --only packages,tools && mise dotfiles apply --yes ${applySetupTargets(action.name).join(" ")}`.trim();
     case "pruneTools":
       return "mise prune --tools --yes";
+    case "importDryRun":
+      return [
+        ...(action.tools.length ? [`mise install --dry-run ${action.tools.map(([tool, version]) => `${tool}@${version}`).join(" ")}`] : []),
+        ...(action.packages.length ? [`mise bootstrap packages apply --dry-run ${action.packages.join(" ")}`] : []),
+      ].join(" && ");
+    case "applyImport":
+      return [
+        ...action.versions.map(([source, tool]) => `mise sync/link ${tool} (${source})`),
+        ...(action.tools.length ? [`mise install ${action.tools.map(([tool, version]) => `${tool}@${version}`).join(" ")}`] : []),
+        ...(action.packages.length ? [`mise bootstrap packages apply --yes ${action.packages.join(" ")}`] : []),
+      ].join(" && ");
     case "useGlobalMany":
       return `mise use -g ${action.tools.map(([tool, version]) => `${tool}@${version}`).join(" ")}`;
     case "useGlobal":
@@ -250,6 +262,20 @@ function perform(action: MiseAction): string[] {
       if (action.makeDefault && entry?.defaultVersion) {
         lines.push(...perform({ kind: "useGlobal", tool: action.tool, version: entry.defaultVersion }));
       }
+      return lines;
+    }
+    case "importDryRun":
+      return [
+        ...action.tools.map(([tool, version]) => `mise ${tool}@${version} ⇢ would install`),
+        ...action.packages.map((spec) => `mise ${spec}: ${demoInstalledPackage(spec) ? "already installed" : "would install"}`),
+      ];
+    case "applyImport": {
+      const lines: string[] = [];
+      for (const [source, tool, makeDefault] of action.versions) {
+        lines.push(...perform({ kind: "importVersions", source, tool, makeDefault }));
+      }
+      for (const [tool, version] of action.tools) lines.push(...perform({ kind: "useGlobal", tool, version }));
+      lines.push(...action.packages.map((spec) => `mise ${spec}: ${demoInstalledPackage(spec) ? "already installed" : "✓ installed"}`));
       return lines;
     }
     case "useGlobalMany":

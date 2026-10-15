@@ -24,7 +24,7 @@ when it's already true:
 1. **Install mise**, if it's missing — with Homebrew or mise's install script on
    macOS and Linux, winget or Scoop on Windows. The sheet shows the exact command.
 2. **Turn mise on in your terminal** — the line to add to your shell's startup file.
-3. **Bring over versions you already have**, so mise uses them without
+3. **Bring over versions you already have** opens [Import](#import), so mise uses them without
    downloading them again: nvm, nodenv, pyenv, uv, and Homebrew with
    `mise sync`; fnm, Volta, n, nvm for Windows, rbenv, RVM, chruby, goenv, and
    asdf (every tool it manages) with `mise link`, one version at a time.
@@ -201,6 +201,35 @@ Config Files…** tidies their layout (`mise fmt`).
   a dev container, previewed before mise writes it (`mise generate … --write`).
   The workflow and hook need a Git repository.
 
+## Import
+
+**This Computer › Import…** (also from Home and Welcome) brings over what you
+already have, in one list with a dry run before anything changes:
+
+- **Version managers** — nvm, nodenv, pyenv, uv, and Homebrew (`mise sync`);
+  fnm, Volta, n, nvm for Windows, rbenv, RVM, chruby, goenv, and asdf (`mise
+  link`), with each manager's default as your mise default if you keep **Use
+  …** checked.
+- **Command-line packages** — `npm -g`, pipx, `uv tool`, `cargo install`, and
+  asdf-style default-package files (`~/.default-npm-packages`, `-python-`,
+  `~/.default-gems`, which mise is retiring), as mise tools.
+- **Homebrew** — formulas you installed yourself, casks, and every Brewfile
+  (`~/Brewfile`, `~/.Brewfile`, `~/.config/homebrew/Brewfile`, or **Add a
+  Brewfile…**). Formulas mise has as its own tools become mise tools; the rest
+  become `brew:` and `brew-cask:` packages, tap-qualified where needed.
+- **Mac App Store** — apps from `mas list` and your Brewfile's `mas` lines.
+- **Installed another way** — install scripts, `go install`, Snap, winget, and
+  Scoop.
+
+Brewfile entries are checked to start; things only found installed aren't.
+Each row says what it becomes in mise and whether it's already installed.
+**Dry Run** runs `mise install --dry-run` and `mise bootstrap packages apply
+--dry-run` for your picks. **Review & Import** shows the file powermise writes —
+`conf.d/powermise-imported.toml`, its own, which it adds to on later imports and
+which you can delete to undo — then links versions, sets defaults, and installs
+only what isn't here yet. What Homebrew already installed stays Homebrew's; on
+your next Mac, `mise bootstrap` installs it all without Homebrew.
+
 ## Health
 
 Health leads with **Needs attention** — only what's wrong, each with its fix —
@@ -219,21 +248,8 @@ and keeps the rest under **More details**:
   `.profile`, or fish line that starts nvm, pyenv, rbenv, asdf, fnm, Volta, or
   another manager, which fights mise over `PATH`. Health shows the file and line
   to remove once your versions are brought over; it won't edit the file for you.
-- **Versions from other tools** — the same bring-over list as Welcome.
-- **Command-line packages** — tools installed globally with `npm -g`, pipx,
-  `uv tool`, or `cargo install`, which mise can manage instead (`npm:prettier`,
-  `pipx:black`, or the registry's own name when it has one), so they survive a
-  Node or Python switch. **Add to mise** runs one `mise use -g` for the ones you
-  pick; the old copies stay until you remove them.
-- **Tools installed another way** — command-line tools from Homebrew, an
-  install script (`~/.local/bin`, `~/.fly/bin`, Bun's and Deno's folders),
-  `go install`, Snap, winget, or Scoop that mise's registry also has: flyctl,
-  stripe, gh, terraform, and so on. Homebrew's are matched by formula or cask,
-  the rest only when the command is the tool's own name, so a same-named
-  stranger never matches; an app's command-line helper (VS Code's `code`,
-  Docker Desktop's `docker`) is left alone. None are picked to start. **Add to
-  mise** installs the latest of each with `mise use -g`, and powermise shows the
-  `brew uninstall` to remove Homebrew's copies yourself.
+- **Bring over what you already have** — a link to [Import](#import) when it
+  finds something.
 - **Shims** — when mise's shims are on your PATH, what they're for and
   **Rebuild Shims** (`mise reshim`).
 - **Plugins** — legacy asdf and vfox plugins, when any are installed (read-only).

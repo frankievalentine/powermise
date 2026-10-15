@@ -344,6 +344,19 @@ pub enum MiseAction {
         tool: String,
         make_default: bool,
     },
+    /// Import's dry run: what mise would install for these tools and
+    /// packages, without writing or installing anything.
+    ImportDryRun {
+        tools: Vec<(String, String)>,
+        packages: Vec<String>,
+    },
+    /// Import: bring in versions from other managers (and their defaults),
+    /// then install the tools and packages just added to the imported file.
+    ApplyImport {
+        versions: Vec<(ImportSource, String, bool)>,
+        tools: Vec<(String, String)>,
+        packages: Vec<String>,
+    },
     /// `mise use -g` for several `(tool, version)` pairs at once.
     UseGlobalMany {
         tools: Vec<(String, String)>,
@@ -574,6 +587,8 @@ impl MiseAction {
             }
             Self::InstallMise { .. }
             | Self::ImportVersions { .. }
+            | Self::ImportDryRun { .. }
+            | Self::ApplyImport { .. }
             | Self::RelaunchApp { .. }
             | Self::UpdateMiseWithManager
             | Self::ApplySetup { .. } => {
@@ -603,6 +618,78 @@ impl MiseAction {
                     }
                 ),
             });
+        }
+        if let Self::ImportDryRun { tools, packages } = self {
+            let client = client()?;
+            let mut steps = Vec::new();
+            if !tools.is_empty() {
+                steps.push(Job::Mise(
+                    client.clone(),
+                    MiseCommand::install_specs(tools, true).map_err(message)?,
+                ));
+            }
+            if !packages.is_empty() {
+                steps.push(Job::Mise(
+                    client,
+                    MiseCommand::packages_apply(packages, true).map_err(message)?,
+                ));
+            }
+            return match steps.len() {
+                0 => Err("nothing to check".into()),
+                1 => Ok(steps.remove(0)),
+                _ => Ok(Job::Steps(steps)),
+            };
+        }
+        if let Self::ApplyImport {
+            versions,
+            tools,
+            packages,
+        } = self
+        {
+            let client = client()?;
+            let mut steps = Vec::new();
+            if !versions.is_empty() {
+                let home = home_dir().ok_or("could not determine your home directory")?;
+                let installs = crate::machine::mise_installs_dir();
+                let found = powermise_mise::detect_imports(&home, installs.as_deref());
+                for (source, tool, make_default) in versions {
+                    let Some(import) = found
+                        .iter()
+                        .find(|import| import.source == *source && &import.tool == tool)
+                    else {
+                        continue;
+                    };
+                    steps.extend(
+                        import
+                            .commands()
+                            .into_iter()
+                            .map(|command| Job::Mise(client.clone(), command)),
+                    );
+                    if *make_default && let Some(version) = &import.default_version {
+                        steps.push(Job::Mise(
+                            client.clone(),
+                            MiseCommand::use_global(tool, version).map_err(message)?,
+                        ));
+                    }
+                }
+            }
+            if !tools.is_empty() {
+                steps.push(Job::Mise(
+                    client.clone(),
+                    MiseCommand::install_specs(tools, false).map_err(message)?,
+                ));
+            }
+            if !packages.is_empty() {
+                steps.push(Job::Mise(
+                    client,
+                    MiseCommand::packages_apply(packages, false).map_err(message)?,
+                ));
+            }
+            return match steps.len() {
+                0 => Err("nothing to import".into()),
+                1 => Ok(steps.remove(0)),
+                _ => Ok(Job::Steps(steps)),
+            };
         }
         if let Self::ImportVersions {
             source,
