@@ -5,6 +5,7 @@ import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { ExternalLinkButton } from "../../components/machine";
 import catalogData from "../../data/macos-defaults.json";
+import { prettyPath } from "../../mise";
 
 type Value = boolean | number | string;
 
@@ -134,7 +135,7 @@ export function MacosSettingsView({ context, query }: { context: AppContext; que
             <h1 className="page-title">macOS Settings</h1>
             <p className="page-subtitle">
               Choose settings and mise keeps this Mac set that way. Your choices are saved in{" "}
-              <span className="mono">{state.data ? state.data.fragmentPath.replace(/^\/(Users|home)\/[^/]+/, "~") : "conf.d/powermise-macos.toml"}</span>
+              <span className="mono">{state.data ? prettyPath(state.data.fragmentPath) : "conf.d/powermise-macos.toml"}</span>
               ; nothing changes until you apply them. Settings from{" "}
               <ExternalLinkButton url="https://macos-defaults.com">macos-defaults.com</ExternalLinkButton> (MIT).
             </p>

@@ -41,7 +41,7 @@ export function ProjectView({ context, path }: { context: AppContext; path: stri
   const overview = useAsync(() => api.projectOverview(path, environment), [path, environment, mise.revision]);
   const trusted = useAsync(() => api.trustedFolders(), [mise.revision]);
   const [tab, setTab] = useState<Tab>("tools");
-  const home = homeFrom(env.miseConfigDir);
+  const home = homeFrom(env);
   const data = overview.data;
   const pretty = (value: string) => (value.startsWith(home) ? `~${value.slice(home.length)}` : value);
 

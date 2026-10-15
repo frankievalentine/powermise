@@ -23,7 +23,7 @@ function securityLabel(check: { type: string } & Record<string, unknown>): strin
 
 export function ToolPage({ context, name }: { context: AppContext; name: string }) {
   const { mise, env, run } = context;
-  const home = homeFrom(env.miseConfigDir);
+  const home = homeFrom(env);
   const entry = mise.registryByName.get(name);
   const versions = mise.inventory?.[name] ?? [];
   const outdated = mise.outdated?.[name];

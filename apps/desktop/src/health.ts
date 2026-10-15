@@ -1,4 +1,4 @@
-import type { Doctor, MiseInfo } from "./api";
+import type { Doctor, MiseInfo, Platform } from "./api";
 
 export interface HealthSummary {
   /** Things that need attention: mise's own errors and warnings, an inactive
@@ -20,8 +20,10 @@ export function healthSummary(info: MiseInfo | null, doctor: Doctor | null): Hea
   return { count, severity: errors ? "error" : warnings ? "warning" : null };
 }
 
-/** The line that turns mise on in a shell, and the file it goes in. */
-export function activationCommand(shell: string): { file: string; line: string } {
+/** The line that turns mise on in a shell, and the file it goes in. With no
+ *  shell reported (apps on Windows don't get `SHELL`), the platform's default. */
+export function activationCommand(shell: string | undefined, platform: Platform): { file: string; line: string } {
+  shell ??= platform === "win32" ? "pwsh" : platform === "darwin" ? "zsh" : "bash";
   if (shell.includes("bash")) return { file: "~/.bashrc", line: 'eval "$(mise activate bash)"' };
   if (shell.includes("fish")) return { file: "~/.config/fish/config.fish", line: "mise activate fish | source" };
   if (shell.includes("pwsh") || shell.includes("powershell"))

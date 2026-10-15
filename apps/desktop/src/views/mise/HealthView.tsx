@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw } from "lucide-re
 import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { activationCommand, healthSummary } from "../../health";
+import { prettyPath } from "../../mise";
 import { useAsync } from "../../hooks";
 import { usePlatform } from "../../platform";
 import { CleanupSheet, GithubCard, ImportList, formatBytes } from "../../components/machine";
@@ -30,14 +31,14 @@ export function HealthView({ context, section }: { context: AppContext; section?
   };
   const info = mise.info;
   const problems = [...(doctor.data?.errors ?? []), ...(doctor.data?.warnings ?? [])];
-  const shell = activationCommand(doctor.data?.shell?.name ?? "zsh");
+  const shell = activationCommand(doctor.data?.shell?.name, context.env.hostTarget);
   const summary = healthSummary(info, doctor.data);
   const imports = useAsync(() => api.detectImports(), [mise.revision]);
   const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
   const disk = useAsync(() => api.diskUsage(), [mise.revision]);
   const trust = useAsync(() => api.trustedFolders(), [mise.revision]);
   const plugins = useAsync(() => api.plugins(), [mise.revision]);
-  const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
+  const pretty = (path: string) => prettyPath(path, context.env.home);
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const healthy = !!doctor.data && summary.count === 0;
 
@@ -253,7 +254,7 @@ export function HealthView({ context, section }: { context: AppContext; section?
                 <span>
                   powermise can’t see settings exported in your shell files (like <code>MISE_*</code>{" "}
                   variables), because apps opened from {launchedFrom} don’t load them. Put mise settings in{" "}
-                  <code>~/.config/mise/config.toml</code> to share them with powermise.
+                  <code>{pretty(`${context.env.miseConfigDir}${context.env.miseConfigDir.includes("\\") ? "\\" : "/"}config.toml`)}</code> to share them with powermise.
                 </span>
               </div>
             </Section>

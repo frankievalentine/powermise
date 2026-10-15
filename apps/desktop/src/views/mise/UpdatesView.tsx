@@ -23,7 +23,7 @@ const AUTO_UPDATES: { key: string; title: string; description: string }[] = [
 
 export function UpdatesView({ context }: { context: AppContext }) {
   const { mise, env, navigate, run } = context;
-  const home = homeFrom(env.miseConfigDir);
+  const home = homeFrom(env);
   const entries = Object.values(mise.outdated ?? {}).sort((a, b) => a.name.localeCompare(b.name));
   const projectUpdates = useAsync(() => api.projectUpdates(), [mise.revision]);
   const settings = useAsync(() => api.settings(), [mise.revision]);

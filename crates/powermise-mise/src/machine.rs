@@ -180,13 +180,17 @@ pub fn detect_imports(home: &Path) -> Vec<DetectedImport> {
                     .join("versions"),
             ),
             ImportSource::Uv => {
+                // uv's defaults: `%APPDATA%/uv/data/python` on Windows,
+                // `$XDG_DATA_HOME/uv/python` elsewhere.
                 let directory = env_dir("UV_PYTHON_INSTALL_DIR").unwrap_or_else(|| {
                     if cfg!(windows) {
                         env_dir("APPDATA")
                             .unwrap_or_else(|| home.join("AppData/Roaming"))
-                            .join("uv/python")
+                            .join("uv/data/python")
                     } else {
-                        home.join(".local/share/uv/python")
+                        env_dir("XDG_DATA_HOME")
+                            .unwrap_or_else(|| home.join(".local/share"))
+                            .join("uv/python")
                     }
                 });
                 // `cpython-3.12.4-macos-aarch64-none` → `3.12.4`.

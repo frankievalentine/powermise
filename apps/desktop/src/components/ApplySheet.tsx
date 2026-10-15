@@ -12,6 +12,7 @@ import {
 import { PROVIDER_LABEL, titleFor, type CatalogIndex } from "../catalog";
 import { CommandBlock, DiffView, Segmented } from "./ui";
 import { Sheet } from "./Sheet";
+import { prettyPath } from "../mise";
 
 type Tab = "changes" | "file" | "commands";
 
@@ -73,7 +74,7 @@ export function ApplySheet({
   }, [plan, preview]);
 
   const manual = preview ? [...preview.resolved.mcpServerIds, ...preview.resolved.integrationIds] : [];
-  const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
+  const pretty = (path: string) => prettyPath(path);
 
   // On Linux/WSL, the first Homebrew install needs `sudo` to create its
   // folder; the app has no terminal to ask for a password, so that first

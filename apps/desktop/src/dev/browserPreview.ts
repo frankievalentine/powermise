@@ -237,6 +237,7 @@ export async function browserPreview<T>(command: string, args: Record<string, un
     case "get_environment":
       return {
         hostTarget: "darwin",
+        home: HOME,
         powermiseDir: `${HOME}/.config/powermise`,
         miseConfigDir: MISE_CONFIG_DIR,
         misePath: demoHasMise ? `${HOME}/.local/bin/mise` : null,

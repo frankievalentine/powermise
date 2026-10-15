@@ -35,6 +35,8 @@ pub(crate) fn message(error: impl std::fmt::Display) -> String {
 #[serde(rename_all = "camelCase")]
 struct EnvironmentInfo {
     host_target: Platform,
+    /// The home directory, for showing paths as `~/…`.
+    home: Option<PathBuf>,
     powermise_dir: PathBuf,
     mise_config_dir: PathBuf,
     mise_path: Option<PathBuf>,
@@ -47,7 +49,9 @@ fn extra_path_dirs() -> Vec<PathBuf> {
     let mut directories = Vec::new();
     if let Some(home) = home_dir() {
         directories.push(home.join(".local/bin"));
-        directories.push(home.join(".local/share/mise/bin"));
+        if !cfg!(windows) {
+            directories.push(home.join(".local/share/mise/bin"));
+        }
         directories.push(home.join(".cargo/bin"));
     }
     if cfg!(windows) {
@@ -70,9 +74,7 @@ fn extra_path_dirs() -> Vec<PathBuf> {
 }
 
 pub(crate) fn home_dir() -> Option<PathBuf> {
-    env::var_os("HOME")
-        .or_else(|| env::var_os("USERPROFILE"))
-        .map(PathBuf::from)
+    powermise_setups::home_dir()
 }
 
 /// The inherited PATH plus the common tool directories it's missing.
@@ -120,6 +122,7 @@ pub(crate) fn mise_config_dir() -> CommandResult<PathBuf> {
 fn get_environment() -> CommandResult<EnvironmentInfo> {
     Ok(EnvironmentInfo {
         host_target: host_platform(),
+        home: home_dir(),
         powermise_dir: layout()?.root,
         mise_config_dir: mise_config_dir()?,
         mise_path: find_mise(),

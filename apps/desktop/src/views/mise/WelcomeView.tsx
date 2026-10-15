@@ -35,7 +35,7 @@ export function WelcomeView({ context }: { context: AppContext }) {
   const installers = useAsync(() => (hasMise ? Promise.resolve([]) : api.miseInstallers()), [hasMise]);
   const imports = useAsync(() => (hasMise ? api.detectImports() : Promise.resolve([])), [hasMise, mise.revision]);
   const activated = hasMise && !!mise.doctor?.activated;
-  const shell = activationCommand(mise.doctor?.shell?.name ?? "zsh");
+  const shell = activationCommand(mise.doctor?.shell?.name, context.env.hostTarget);
   const version = mise.info?.version?.split(" ")[0];
 
   const finish = () => {

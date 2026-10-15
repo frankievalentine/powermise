@@ -7,6 +7,7 @@ import { PROVIDER_HINT, PROVIDER_LABEL, titleFor } from "../catalog";
 import { ApplySheet } from "../components/ApplySheet";
 import { CommandBlock, Monogram, Section } from "../components/ui";
 import { Sheet } from "../components/Sheet";
+import { prettyPath } from "../mise";
 
 export function SetupView({ context, name }: { context: AppContext; name: string }) {
   const { catalog, env, selections, navigate, refreshSelections, run, mise } = context;
@@ -19,7 +20,7 @@ export function SetupView({ context, name }: { context: AppContext; name: string
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removed, setRemoved] = useState<RemovedSetup | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
+  const pretty = (path: string) => prettyPath(path);
 
   if (!selection && !removed) {
     return (

@@ -75,6 +75,8 @@ export interface CatalogBundle {
 
 export interface EnvironmentInfo {
   hostTarget: Platform;
+  /** The home directory, for showing paths as `~/…`. */
+  home: string | null;
   powermiseDir: string;
   miseConfigDir: string;
   misePath: string | null;

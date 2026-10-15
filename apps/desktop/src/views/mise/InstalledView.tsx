@@ -8,7 +8,7 @@ import { MyToolsTabs } from "../../components/SectionTabs";
 
 export function InstalledView({ context, query }: { context: AppContext; query: string }) {
   const { mise, env, navigate } = context;
-  const home = homeFrom(env.miseConfigDir);
+  const home = homeFrom(env);
 
   const tools = useMemo(() => {
     const needle = query.trim().toLowerCase();

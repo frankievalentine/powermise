@@ -6,6 +6,7 @@ import { useAsync } from "../../hooks";
 import { ExternalLinkButton } from "../../components/machine";
 import { Segmented, Switch } from "../../components/ui";
 import { CommonSettings } from "./CommonSettings";
+import { prettyPath } from "../../mise";
 
 const GROUP_TITLE: Record<string, string> = {
   "": "General",
@@ -66,7 +67,7 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
       // Remembering the tab is a convenience only.
     }
   };
-  const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
+  const pretty = (path: string) => prettyPath(path);
 
   const groups = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -173,7 +174,7 @@ function SettingRow({ setting, context, globalDir }: { setting: Setting; context
   const inGlobal =
     setting.source === `${globalDir}/config.toml` || setting.source === `${globalDir}\\config.toml`;
   const elsewhere = !!setting.source && !inGlobal;
-  const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
+  const pretty = (path: string) => prettyPath(path);
   const name = setting.key.includes(".") ? setting.key.slice(setting.key.indexOf(".") + 1) : setting.key;
 
   const set = (value: string) =>

@@ -57,11 +57,7 @@ impl PowermiseLayout {
                 .or_else(|| {
                     env::var_os("XDG_CONFIG_HOME").map(|path| PathBuf::from(path).join("powermise"))
                 })
-                .or_else(|| {
-                    env::var_os("HOME")
-                        .or_else(|| env::var_os("USERPROFILE"))
-                        .map(|path| PathBuf::from(path).join(".config/powermise"))
-                })
+                .or_else(|| home_dir().map(|home| home.join(".config/powermise")))
                 .ok_or(SetupsError::NoConfigDir)?,
         };
         Ok(Self {
@@ -76,17 +72,28 @@ impl PowermiseLayout {
     }
 }
 
+/// The home directory as mise sees it: the user profile on Windows (mise
+/// ignores `HOME` there, which Git Bash and MSYS set to other places), and
+/// `HOME` everywhere else.
+pub fn home_dir() -> Option<PathBuf> {
+    let (first, second) = if cfg!(windows) {
+        ("USERPROFILE", "HOME")
+    } else {
+        ("HOME", "USERPROFILE")
+    };
+    env::var_os(first)
+        .or_else(|| env::var_os(second))
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from)
+}
+
 /// The machine's mise config directory: an override, then `MISE_CONFIG_DIR`,
 /// `XDG_CONFIG_HOME/mise`, or `~/.config/mise` — the order mise uses.
 pub fn resolve_mise_config_dir(override_dir: Option<PathBuf>) -> Result<PathBuf, SetupsError> {
     override_dir
         .or_else(|| env::var_os("MISE_CONFIG_DIR").map(PathBuf::from))
         .or_else(|| env::var_os("XDG_CONFIG_HOME").map(|path| PathBuf::from(path).join("mise")))
-        .or_else(|| {
-            env::var_os("HOME")
-                .or_else(|| env::var_os("USERPROFILE"))
-                .map(|path| PathBuf::from(path).join(".config/mise"))
-        })
+        .or_else(|| home_dir().map(|home| home.join(".config/mise")))
         .ok_or(SetupsError::NoConfigDir)
 }
 
