@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   CheckCircle2,
+  ChevronRight,
   CircleAlert,
   Eye,
   GitCompare,
@@ -41,7 +42,21 @@ const PARTS: Record<string, { title: string; only?: string }> = {
   secrets: { title: "Secrets" },
 };
 
-const GOOD = ["installed", "applied", "present", "ok", "linked", "current", "up-to-date", "up_to_date", "configured", "running", "enabled", "true"];
+const GOOD = [
+  "installed",
+  "applied",
+  "present",
+  "set",
+  "ok",
+  "linked",
+  "current",
+  "up-to-date",
+  "up_to_date",
+  "configured",
+  "running",
+  "enabled",
+  "true",
+];
 
 const titleOf = (id: string) => PARTS[id]?.title ?? id.replace(/_/g, " ").replace(/^\w/, (letter) => letter.toUpperCase());
 
@@ -96,6 +111,19 @@ export function MachineView({ context }: { context: AppContext }) {
             </div>
           )}
         </div>
+
+        {context.env.hostTarget === "darwin" && (
+          <button className="list-row interactive install-spec macos-entry" onClick={() => context.navigate({ kind: "macos-settings" })}>
+            <MonitorCog size={18} />
+            <div className="row-main">
+              <div className="row-title">macOS Settings</div>
+              <div className="row-subtitle">
+                Dock, Finder, keyboard, trackpad, screenshots, and more — pick settings and mise keeps this Mac that way.
+              </div>
+            </div>
+            <ChevronRight size={16} />
+          </button>
+        )}
 
         {status.error && <div className="callout error selectable">{status.error}</div>}
         {status.loading && !data && (

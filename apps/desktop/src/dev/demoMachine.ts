@@ -73,6 +73,15 @@ const machineSections = [
 ];
 const dotHistory = { enabled: true, trackedFiles: 12, checkpoints: 4, latest: null, unsaved: true as unknown, pendingOperations: 0 };
 let dotOrigin: string | null = null;
+/** macOS preferences: what powermise's file manages, and what "macOS" has. */
+const macManaged = new Map<string, boolean | number | string>([["com.apple.dock tilesize", 36]]);
+const macCurrent = new Map<string, string>([
+  ["com.apple.dock tilesize", "48"],
+  ["com.apple.dock autohide", "0"],
+  ["com.apple.finder AppleShowAllFiles", "0"],
+]);
+const asDefaultsRead = (value: boolean | number | string) =>
+  typeof value === "boolean" ? (value ? "1" : "0") : String(value);
 const customAliases: Record<string, Record<string, string>> = {};
 const BUILTIN_ALIASES: Record<string, Record<string, string>> = {
   node: { lts: "24", "lts-iron": "20", "lts-jod": "22" },
@@ -156,6 +165,8 @@ export function describeMachineAction(action: MiseAction): string | null {
       return `mise dotfiles rollback --to ${action.checkpoint} --all ${action.dryRun ? "--dry-run" : "--yes"}`;
     case "dotfilesUndo":
       return "mise dotfiles undo --yes";
+    case "relaunchApp":
+      return `killall ${action.app.includes(" ") ? `'${action.app}'` : action.app}`;
     case "setToolAlias":
       return `mise tool-alias set ${action.tool} ${action.alias} ${action.version}`;
     case "unsetToolAlias":
@@ -216,8 +227,20 @@ export function performMachineAction(action: MiseAction): string[] | null {
         ...section.items.filter((item) => item.state === "missing").map((item) => `would apply ${item.name}`),
       ]);
     }
+    case "relaunchApp":
+      return [];
     case "bootstrapApply": {
       const lines: string[] = [];
+      if (!action.only || action.only === "macos-defaults") {
+        lines.push("mise bootstrap: system defaults");
+        for (const [key, value] of macManaged) {
+          if (macCurrent.get(key) === asDefaultsRead(value)) continue;
+          macCurrent.set(key, asDefaultsRead(value));
+          const [domain, name] = key.split(" ");
+          lines.push(`defaults write ${domain} ${name} -${typeof value === "boolean" ? "bool" : typeof value === "number" ? (Number.isInteger(value) ? "int" : "float") : "string"} ${value}`);
+        }
+        if (action.only) return lines;
+      }
       for (const section of machineSections.filter((entry) => !action.only || entry.id === action.only)) {
         lines.push(`mise bootstrap: ${section.id}`);
         for (const item of section.items.filter((entry) => entry.state === "missing")) {
@@ -314,6 +337,26 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
     }
     case "plugins":
       return [];
+    case "macos_settings": {
+      const keys = args.keys as { domain: string; key: string }[];
+      return {
+        managed: [...macManaged].map(([key, value]) => {
+          const [domain, name] = key.split(" ");
+          return { domain, key: name, value };
+        }),
+        current: keys.map((entry) => macCurrent.get(`${entry.domain} ${entry.key}`) ?? null),
+        fragmentPath: "/Users/demo/.config/mise/conf.d/powermise-macos.toml",
+      };
+    }
+    case "set_macos_default": {
+      const key = `${args.domain} ${args.key}`;
+      if (args.value === null) macManaged.delete(key);
+      else macManaged.set(key, args.value as boolean | number | string);
+      return [...macManaged].map(([entry, value]) => {
+        const [domain, name] = entry.split(" ");
+        return { domain, key: name, value };
+      });
+    }
     case "pick_folder":
       return "/Users/demo/src/node-v24.11.0";
     default:

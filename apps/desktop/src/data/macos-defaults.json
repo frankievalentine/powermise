@@ -1,0 +1,2301 @@
+{
+ "source": "https://macos-defaults.com",
+ "license": "MIT License, Copyright (c) 2020 Yann Bertrand — https://github.com/yannbertrand/macos-defaults",
+ "settings": [
+  {
+   "id": "activity-monitor/icontype",
+   "category": "Activity Monitor",
+   "title": "Dock Icon type",
+   "description": "Choose what information should be shown in the app's Dock icon, if any.",
+   "domain": "com.apple.ActivityMonitor",
+   "key": "IconType",
+   "type": "int",
+   "relaunch": "Activity Monitor",
+   "testedOn": [
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "0",
+     "value": 0,
+     "isDefault": true,
+     "note": "Just show the App's regular icon."
+    },
+    {
+     "label": "2",
+     "value": 2,
+     "isDefault": false,
+     "note": "Show Network usage over time, as two mirrored line graphs. The top (blue) chart shows down-stream traffic. The bottom (red) chart shows up-stream traffic."
+    },
+    {
+     "label": "3",
+     "value": 3,
+     "isDefault": false,
+     "note": "Show Disk usage over time, as two mirrored line graphs. The top (blue) chart shows disk read traffic. The bottom (red) chart shows disk write traffic."
+    },
+    {
+     "label": "5",
+     "value": 5,
+     "isDefault": false,
+     "note": "Show the current CPU usages, as a verticle meter."
+    },
+    {
+     "label": "6",
+     "value": 6,
+     "isDefault": false,
+     "note": "Show CPU usage history, graphed over time. If your device has 4 threads or less, it'll show one graph per thread, all stacked vertically. If you have more than 4 threads, then only one bar graph will be shown, for the total CPU usage."
+    }
+   ],
+   "source": "https://macos-defaults.com/activity-monitor/icontype.html"
+  },
+  {
+   "id": "activity-monitor/updateperiod",
+   "category": "Activity Monitor",
+   "title": "Update Frequency",
+   "description": "How frequently Activity Monitor should update its data, in seconds.",
+   "domain": "com.apple.ActivityMonitor",
+   "key": "UpdatePeriod",
+   "type": "int",
+   "relaunch": "Activity Monitor",
+   "testedOn": [
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "1",
+     "value": 1,
+     "isDefault": false,
+     "note": "Very often (1s)"
+    },
+    {
+     "label": "2",
+     "value": 2,
+     "isDefault": false,
+     "note": "Often (2s)"
+    },
+    {
+     "label": "5",
+     "value": 5,
+     "isDefault": true,
+     "note": "Normally (5s)"
+    }
+   ],
+   "source": "https://macos-defaults.com/activity-monitor/updateperiod.html"
+  },
+  {
+   "id": "desktop/_fxsortfoldersfirstondesktop",
+   "category": "Desktop",
+   "title": "Keep folders on top",
+   "description": "Keep folders on top when sorting",
+   "domain": "com.apple.finder",
+   "key": "_FXSortFoldersFirstOnDesktop",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Keep folders on top"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Don't keep folders on top"
+    }
+   ],
+   "source": "https://macos-defaults.com/desktop/_fxsortfoldersfirstondesktop.html"
+  },
+  {
+   "id": "desktop/createdesktop",
+   "category": "Desktop",
+   "title": "All icons",
+   "description": "Hide all icons on desktop",
+   "domain": "com.apple.finder",
+   "key": "CreateDesktop",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Hide all icons"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Show all icons"
+    }
+   ],
+   "source": "https://macos-defaults.com/desktop/createdesktop.html"
+  },
+  {
+   "id": "desktop/showexternalharddrivesondesktop",
+   "category": "Desktop",
+   "title": "External disks",
+   "description": "Hide external disks on desktop",
+   "domain": "com.apple.finder",
+   "key": "ShowExternalHardDrivesOnDesktop",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Hide external disks"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Show external disks"
+    }
+   ],
+   "source": "https://macos-defaults.com/desktop/showexternalharddrivesondesktop.html"
+  },
+  {
+   "id": "desktop/showharddrivesondesktop",
+   "category": "Desktop",
+   "title": "Disks",
+   "description": "Show hard disks on desktop",
+   "domain": "com.apple.finder",
+   "key": "ShowHardDrivesOnDesktop",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show hard disks"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Hide hard disks"
+    }
+   ],
+   "source": "https://macos-defaults.com/desktop/showharddrivesondesktop.html"
+  },
+  {
+   "id": "desktop/showmountedserversondesktop",
+   "category": "Desktop",
+   "title": "Connected servers",
+   "description": "Show connected servers on desktop",
+   "domain": "com.apple.finder",
+   "key": "ShowMountedServersOnDesktop",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show connected servers"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Hide connected servers"
+    }
+   ],
+   "source": "https://macos-defaults.com/desktop/showmountedserversondesktop.html"
+  },
+  {
+   "id": "desktop/showremovablemediaondesktop",
+   "category": "Desktop",
+   "title": "Removable media",
+   "description": "Hide removable media (CDs, DVDs and iPods) on desktop",
+   "domain": "com.apple.finder",
+   "key": "ShowRemovableMediaOnDesktop",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Hide removable media"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Show removable media"
+    }
+   ],
+   "source": "https://macos-defaults.com/desktop/showremovablemediaondesktop.html"
+  },
+  {
+   "id": "dock/autohide-delay",
+   "category": "Dock",
+   "title": "Autohide delay",
+   "description": "Change the Dock opening delay.",
+   "domain": "com.apple.dock",
+   "key": "autohide-delay",
+   "type": "float",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "0.2",
+     "value": 0.2,
+     "isDefault": true,
+     "note": "By default, the Dock only opens if the mouse doesn't move for 0.2 seconds"
+    },
+    {
+     "label": "0",
+     "value": 0.0,
+     "isDefault": false,
+     "note": "Remove the autohide delay, the Dock appears instantly"
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/autohide-delay.html"
+  },
+  {
+   "id": "dock/autohide-time-modifier",
+   "category": "Dock",
+   "title": "Autohide animation time",
+   "description": "Change the Dock opening and closing animation times.",
+   "domain": "com.apple.dock",
+   "key": "autohide-time-modifier",
+   "type": "float",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "0.5",
+     "value": 0.5,
+     "isDefault": true,
+     "note": "By default, the Dock opening and closing animations take 0.5 seconds"
+    },
+    {
+     "label": "2",
+     "value": 2.0,
+     "isDefault": false,
+     "note": "Increase the Dock animation time"
+    },
+    {
+     "label": "0",
+     "value": 0.0,
+     "isDefault": false,
+     "note": "Remove the Dock autohide animation"
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/autohide-time-modifier.html"
+  },
+  {
+   "id": "dock/autohide",
+   "category": "Dock",
+   "title": "Autohide",
+   "description": "Autohides the Dock. You can toggle the Dock using `⌥ alt`+`⌘ cmd`+`d`.",
+   "domain": "com.apple.dock",
+   "key": "autohide",
+   "type": "bool",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Always display the Dock"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Autohide the Dock when the mouse is out"
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/autohide.html"
+  },
+  {
+   "id": "dock/mineffect",
+   "category": "Dock",
+   "title": "Minimize animation effect",
+   "description": "Change the Dock minimize animation.",
+   "domain": "com.apple.dock",
+   "key": "mineffect",
+   "type": "string",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "genie",
+     "value": "genie",
+     "isDefault": true,
+     "note": ""
+    },
+    {
+     "label": "scale",
+     "value": "scale",
+     "isDefault": false,
+     "note": ""
+    },
+    {
+     "label": "suck",
+     "value": "suck",
+     "isDefault": false,
+     "note": "Suck is an secret value you can't find inside the System Preferences"
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/mineffect.html"
+  },
+  {
+   "id": "dock/orientation",
+   "category": "Dock",
+   "title": "Position",
+   "description": "Set the Dock position",
+   "domain": "com.apple.dock",
+   "key": "orientation",
+   "type": "string",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "left",
+     "value": "left",
+     "isDefault": false,
+     "note": "Put the Dock on the left of the screen"
+    },
+    {
+     "label": "bottom",
+     "value": "bottom",
+     "isDefault": true,
+     "note": "Put the Dock on the bottom of the screen"
+    },
+    {
+     "label": "right",
+     "value": "right",
+     "isDefault": false,
+     "note": "Put the Dock on the right of the screen"
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/orientation.html"
+  },
+  {
+   "id": "dock/scroll-to-open",
+   "category": "Dock",
+   "title": "Scroll to Exposé app",
+   "description": "Scroll up on a Dock icon to show all Space's opened windows for an app, or open stack.",
+   "domain": "com.apple.dock",
+   "key": "scroll-to-open",
+   "type": "bool",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Enable"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Disable"
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/scroll-to-open.html"
+  },
+  {
+   "id": "dock/show-recents",
+   "category": "Dock",
+   "title": "Show recents",
+   "description": "Show recently used apps in a separate section of the Dock.",
+   "domain": "com.apple.dock",
+   "key": "show-recents",
+   "type": "bool",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Display recent apps in the Dock"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Do not display recent apps in the Dock"
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/show-recents.html"
+  },
+  {
+   "id": "dock/static-only",
+   "category": "Dock",
+   "title": "Active applications only",
+   "description": "Only show opened apps in Dock.",
+   "domain": "com.apple.dock",
+   "key": "static-only",
+   "type": "bool",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Monterey",
+    "Sequoia",
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Only show active apps"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Show apps pinned to the dock"
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/static-only.html"
+  },
+  {
+   "id": "dock/tilesize",
+   "category": "Dock",
+   "title": "Icon size",
+   "description": "Set the icon size of Dock items in pixels.",
+   "domain": "com.apple.dock",
+   "key": "tilesize",
+   "type": "int",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "36",
+     "value": 36,
+     "isDefault": false,
+     "note": "Dock icon size of 36 pixels."
+    },
+    {
+     "label": "48",
+     "value": 48,
+     "isDefault": true,
+     "note": "Dock icon size of 48 pixels."
+    }
+   ],
+   "source": "https://macos-defaults.com/dock/tilesize.html"
+  },
+  {
+   "id": "feedback-assistant/autogather",
+   "category": "Feedback Assistant",
+   "title": "Autogather",
+   "description": "Choose whether to autogather large files when submitting a feedback report. Can result in a slow Mac and important upload metrics.",
+   "domain": "com.apple.appleseed.FeedbackAssistant",
+   "key": "Autogather",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Monterey"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Feedback Assistant gathers large files when submitting a report"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Do not autogather large files when submitting a report"
+    }
+   ],
+   "source": "https://macos-defaults.com/feedback-assistant/autogather.html"
+  },
+  {
+   "id": "finder/_fxenablecolumnautosizing",
+   "category": "Finder",
+   "title": "Column auto sizing",
+   "description": "Automatically adjust column widths in column view to fit content.",
+   "domain": "com.apple.finder",
+   "key": "_FXEnableColumnAutoSizing",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Tahoe"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Columns automatically resize to fit content"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Columns use fixed width"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/_fxenablecolumnautosizing.html"
+  },
+  {
+   "id": "finder/_fxsortfoldersfirst",
+   "category": "Finder",
+   "title": "Keep folders on top",
+   "description": "Keep folders on top when sorting by name",
+   "domain": "com.apple.finder",
+   "key": "_FXSortFoldersFirst",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Keep folders on top"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Do not keep folders on top"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/_fxsortfoldersfirst.html"
+  },
+  {
+   "id": "finder/appleshowallextensions",
+   "category": "Finder",
+   "title": "Show extensions",
+   "description": "Show all file extensions in the Finder.",
+   "domain": "NSGlobalDomain",
+   "key": "AppleShowAllExtensions",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Do not show all file extensions inside the Finder"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show all file extensions inside the Finder"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/appleshowallextensions.html"
+  },
+  {
+   "id": "finder/appleshowallfiles",
+   "category": "Finder",
+   "title": "Show hidden files",
+   "description": "Show hidden files in the Finder. You can toggle the value using `⌘ cmd`+`⇧ shift`+`.`.",
+   "domain": "com.apple.finder",
+   "key": "AppleShowAllFiles",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Do not show hidden files inside the Finder"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show hidden files inside the Finder"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/appleshowallfiles.html"
+  },
+  {
+   "id": "finder/finderspawntab",
+   "category": "Finder",
+   "title": "Open folders destination",
+   "description": "Set whether folders open in a new tab or a new window",
+   "domain": "com.apple.finder",
+   "key": "FinderSpawnTab",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Open folders in a new tab"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Open folders in a new window"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/finderspawntab.html"
+  },
+  {
+   "id": "finder/fxdefaultsearchscope",
+   "category": "Finder",
+   "title": "Default search scope",
+   "description": "Set the default search scope when performing a search",
+   "domain": "com.apple.finder",
+   "key": "FXDefaultSearchScope",
+   "type": "string",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "SCcf",
+     "value": "SCcf",
+     "isDefault": false,
+     "note": "Search the current folder"
+    },
+    {
+     "label": "SCsp",
+     "value": "SCsp",
+     "isDefault": false,
+     "note": "Use the previous search scope"
+    },
+    {
+     "label": "SCev",
+     "value": "SCev",
+     "isDefault": true,
+     "note": "Search this Mac"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/fxdefaultsearchscope.html"
+  },
+  {
+   "id": "finder/fxenableextensionchangewarning",
+   "category": "Finder",
+   "title": "Changing file extension warning",
+   "description": "Choose whether to display a warning when changing a file extension.",
+   "domain": "com.apple.finder",
+   "key": "FXEnableExtensionChangeWarning",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Display a warning when changing a file extension in the Finder"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Do not display the warning"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/fxenableextensionchangewarning.html"
+  },
+  {
+   "id": "finder/fxpreferredviewstyle",
+   "category": "Finder",
+   "title": "Default view style",
+   "description": "Set the default view style for folders without custom setting",
+   "domain": "com.apple.finder",
+   "key": "FXPreferredViewStyle",
+   "type": "string",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "clmv",
+     "value": "clmv",
+     "isDefault": false,
+     "note": "Column view"
+    },
+    {
+     "label": "Nlsv",
+     "value": "Nlsv",
+     "isDefault": false,
+     "note": "List view"
+    },
+    {
+     "label": "glyv",
+     "value": "glyv",
+     "isDefault": false,
+     "note": "Gallery View"
+    },
+    {
+     "label": "icnv",
+     "value": "icnv",
+     "isDefault": true,
+     "note": "Icon view"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/fxpreferredviewstyle.html"
+  },
+  {
+   "id": "finder/fxremoveoldtrashitems",
+   "category": "Finder",
+   "title": "Empty bin items after 30 days",
+   "description": "Remove items in the bin after 30 days",
+   "domain": "com.apple.finder",
+   "key": "FXRemoveOldTrashItems",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Automatically empty bin after 30 days"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Keep bin as is"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/fxremoveoldtrashitems.html"
+  },
+  {
+   "id": "finder/nsdocumentsavenewdocumentstocloud",
+   "category": "Finder",
+   "title": "Save to disk location",
+   "description": "Choose whether the default file save location is on disk or iCloud",
+   "domain": "NSGlobalDomain",
+   "key": "NSDocumentSaveNewDocumentsToCloud",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Catalina"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "iCloud Documents is the default directory opened in the fileviewer dialog when saving a new document"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "home directory is opened in the fileviewer dialog when saving a new document"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/nsdocumentsavenewdocumentstocloud.html"
+  },
+  {
+   "id": "finder/nstableviewdefaultsizemode",
+   "category": "Finder",
+   "title": "Sidebar icon size",
+   "description": "Choose the size of Finder sidebar icons",
+   "domain": "NSGlobalDomain",
+   "key": "NSTableViewDefaultSizeMode",
+   "type": "int",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "1",
+     "value": 1,
+     "isDefault": false,
+     "note": "Small"
+    },
+    {
+     "label": "2",
+     "value": 2,
+     "isDefault": true,
+     "note": "Medium"
+    },
+    {
+     "label": "3",
+     "value": 3,
+     "isDefault": false,
+     "note": "Large"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/nstableviewdefaultsizemode.html"
+  },
+  {
+   "id": "finder/nstoolbartitleviewrolloverdelay",
+   "category": "Finder",
+   "title": "Toolbar title rollover delay",
+   "description": "Choose the delay of the auto-hidden document-proxy icon.",
+   "domain": "NSGlobalDomain",
+   "key": "NSToolbarTitleViewRolloverDelay",
+   "type": "float",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "0.5",
+     "value": 0.5,
+     "isDefault": true,
+     "note": "By default, the toolbar title hovering delay takes 0.5 seconds"
+    },
+    {
+     "label": "0",
+     "value": 0.0,
+     "isDefault": false,
+     "note": "Remove the delay when hovering the toolbar title"
+    },
+    {
+     "label": "1",
+     "value": 1.0,
+     "isDefault": false,
+     "note": "Increase the delay when hovering the toolbar title"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/nstoolbartitleviewrolloverdelay.html"
+  },
+  {
+   "id": "finder/quitmenuitem",
+   "category": "Finder",
+   "title": "Quit",
+   "description": "Add a quit option to the Finder. Behaves strangely when activated, would not recommend.",
+   "domain": "com.apple.finder",
+   "key": "QuitMenuItem",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Hide the Finder \"Quit\" option"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Display the Finder \"Quit\" option"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/quitmenuitem.html"
+  },
+  {
+   "id": "finder/showpathbar",
+   "category": "Finder",
+   "title": "Path bar",
+   "description": "Show path bar in the bottom of the Finder windows",
+   "domain": "com.apple.finder",
+   "key": "ShowPathbar",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show path bar"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Hide path bar"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/showpathbar.html"
+  },
+  {
+   "id": "finder/showstatusbar",
+   "category": "Finder",
+   "title": "Status bar",
+   "description": "Show status bar in the bottom of the Finder windows",
+   "domain": "com.apple.finder",
+   "key": "ShowStatusBar",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Sequoia"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show path bar"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Hide path bar"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/showstatusbar.html"
+  },
+  {
+   "id": "finder/showwindowtitlebaricons",
+   "category": "Finder",
+   "title": "Title bar icons",
+   "description": "Always show folder icon before title in the title bar",
+   "domain": "com.apple.universalaccess",
+   "key": "showWindowTitlebarIcons",
+   "type": "bool",
+   "relaunch": "Finder",
+   "testedOn": [
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show icon in the title bar"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Hide icon from the title bar"
+    }
+   ],
+   "source": "https://macos-defaults.com/finder/showwindowtitlebaricons.html"
+  },
+  {
+   "id": "keyboard/applefnusagetype",
+   "category": "Keyboard",
+   "title": "Fn/🌐 key usage",
+   "description": "Choose what happens when you press the Fn or 🌐︎ key on the keyboard.",
+   "domain": "com.apple.HIToolbox",
+   "key": "AppleFnUsageType",
+   "type": "int",
+   "relaunch": null,
+   "testedOn": [
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "Do Nothing",
+     "value": 0,
+     "isDefault": true,
+     "note": "Nothing happens."
+    },
+    {
+     "label": "Change input source",
+     "value": 1,
+     "isDefault": false,
+     "note": "Switches between keyboard layouts for writing in other languages (known as input sources)."
+    },
+    {
+     "label": "Show Emoji & Symbols",
+     "value": 2,
+     "isDefault": false,
+     "note": "Opens the Character Viewer for entering emoji, symbols, and more."
+    },
+    {
+     "label": "Start Dictation",
+     "value": 3,
+     "isDefault": false,
+     "note": "Starts dictation when you press the key twice (you may be asked to enable dictation first)."
+    }
+   ],
+   "source": "https://macos-defaults.com/keyboard/applefnusagetype.html"
+  },
+  {
+   "id": "keyboard/applekeyboardaddperiodwithdoublespace",
+   "category": "Keyboard",
+   "title": "Add period with double-space",
+   "description": "Allows you to type a period by pressing space twice.",
+   "domain": "NSGlobalDomain",
+   "key": "NSAutomaticPeriodSubstitutionEnabled",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "When on, pressing space twice will insert a period and a space."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "When off, pressing space twice will insert two spaces."
+    }
+   ],
+   "source": "https://macos-defaults.com/keyboard/applekeyboardaddperiodwithdoublespace.html"
+  },
+  {
+   "id": "keyboard/applekeyboardfnstate",
+   "category": "Keyboard",
+   "title": "Function keys behavior",
+   "description": "Allows you to change the behavior of the function keys.",
+   "domain": "NSGlobalDomain",
+   "key": "com.apple.keyboard.fnState",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "By default, pressing a function key will perform the special feature printed on that key."
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "`F1`, `F2`, etc. behave as standard function keys. Press the `fn` key to use the special features printed on the key."
+    }
+   ],
+   "source": "https://macos-defaults.com/keyboard/applekeyboardfnstate.html"
+  },
+  {
+   "id": "keyboard/applekeyboarduimode",
+   "category": "Keyboard",
+   "title": "Keyboard navigation",
+   "description": "Choose whether to enable moving focus with Tab and Shift Tab.",
+   "domain": "NSGlobalDomain",
+   "key": "AppleKeyboardUIMode",
+   "type": "int",
+   "relaunch": null,
+   "testedOn": [
+    "Sequoia",
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "Disabled",
+     "value": 0,
+     "isDefault": true,
+     "note": ""
+    },
+    {
+     "label": "Enabled",
+     "value": 2,
+     "isDefault": false,
+     "note": ""
+    }
+   ],
+   "source": "https://macos-defaults.com/keyboard/applekeyboarduimode.html"
+  },
+  {
+   "id": "keyboard/applepressandholdenabled",
+   "category": "Keyboard",
+   "title": "Key held down behavior",
+   "description": "Allows you to select the behavior when a key is held down for a long time.",
+   "domain": "NSGlobalDomain",
+   "key": "ApplePressAndHoldEnabled",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "By default, when a key is held down, the accents menu is displayed."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Repeats the key as long as it is held down."
+    }
+   ],
+   "source": "https://macos-defaults.com/keyboard/applepressandholdenabled.html"
+  },
+  {
+   "id": "keyboard/toggle-language-indicator",
+   "category": "Keyboard",
+   "title": "Toggle language indicator",
+   "description": "Toggle the language indicator visibility while switching input sources.",
+   "domain": "kCFPreferencesAnyApplication",
+   "key": "TSMLanguageIndicatorEnabled",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Turn on the language indicator while switching input sources."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Turn off the language indicator while switching input sources."
+    }
+   ],
+   "source": "https://macos-defaults.com/keyboard/toggle-language-indicator.html"
+  },
+  {
+   "id": "menubar/dateformat",
+   "category": "Menu Bar",
+   "title": "Digital clock format",
+   "description": "This setting configures the time and date format for the Menu Bar digital clock.",
+   "domain": "com.apple.menuextra.clock",
+   "key": "DateFormat",
+   "type": "string",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Monterey"
+   ],
+   "options": [
+    {
+     "label": "\"EEE d MMM HH:mm:ss\"",
+     "value": "\"EEE d MMM HH:mm:ss\"",
+     "isDefault": false,
+     "note": "Thu 18 Aug 21:46:18"
+    },
+    {
+     "label": "\"EEE h:mm:ss\"",
+     "value": "\"EEE h:mm:ss\"",
+     "isDefault": false,
+     "note": "Thu 9:46:18"
+    },
+    {
+     "label": "\"EEE HH:mm:ss\"",
+     "value": "\"EEE HH:mm:ss\"",
+     "isDefault": false,
+     "note": "Thu 21:46:18"
+    }
+   ],
+   "source": "https://macos-defaults.com/menubar/dateformat.html"
+  },
+  {
+   "id": "menubar/flashdateseparators",
+   "category": "Menu Bar",
+   "title": "Flash clock time separators",
+   "description": "When enabled, the clock indicator (which by default is the colon) will flash on and off each second.",
+   "domain": "com.apple.menuextra.clock",
+   "key": "FlashDateSeparators",
+   "type": "bool",
+   "relaunch": "SystemUIServer",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "The time separator stays solid continuously."
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "The time separator flashes every second."
+    }
+   ],
+   "source": "https://macos-defaults.com/menubar/flashdateseparators.html"
+  },
+  {
+   "id": "messages/show-subject-field",
+   "category": "Messages",
+   "title": "Show Subject Field",
+   "description": "Show the subject field which appears above the iMessage/Text Message field in Messages. Text entered in the subject field will be sent in bold (unless there is no text in the iMessage/Text Message field; in this case, the text in the subject field will be sent without the bold effect).",
+   "domain": "com.apple.MobileSMS",
+   "key": "MMSShowSubject",
+   "type": "bool",
+   "relaunch": "Messages",
+   "testedOn": [
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show the subject field in Messages"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Hide the subject field in Messages"
+    }
+   ],
+   "source": "https://macos-defaults.com/messages/show-subject-field.html"
+  },
+  {
+   "id": "misc/apple-intelligence",
+   "category": "Miscellaneous",
+   "title": "Toggle Apple Intelligence",
+   "description": "Toggle Apple Intelligence from command line interface.",
+   "domain": "com.apple.CloudSubscriptionFeatures.optIn",
+   "key": "545129924",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Sequoia"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Deactivate Apple Intelligence."
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Activate Apple Intelligence."
+    }
+   ],
+   "source": "https://macos-defaults.com/misc/apple-intelligence.html"
+  },
+  {
+   "id": "misc/devmode",
+   "category": "Miscellaneous",
+   "title": "Help Menu position",
+   "description": "Choose whether the Help Menu should be always-on-top.",
+   "domain": "com.apple.helpviewer",
+   "key": "DevMode",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "By default, the Help Menu is always-on-top"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "The Help Menu can go behind other windows"
+    }
+   ],
+   "source": "https://macos-defaults.com/misc/devmode.html"
+  },
+  {
+   "id": "misc/enable-spring-load-actions-on-all-items",
+   "category": "Miscellaneous",
+   "title": "Spring loading for all Dock items",
+   "description": "Drag a file over an icon in the Dock, hover, and the application will open. The behaviour is unchanged if the app is already open. This behaviour has been observed with Preview, Quicktime, and iWork (Keynote, Pages, Numbers).",
+   "domain": "com.apple.dock",
+   "key": "enable-spring-load-actions-on-all-items",
+   "type": "bool",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Monterey"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Spring loading is disabled for Dock items."
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Spring loading is enabled for Dock items."
+    }
+   ],
+   "source": "https://macos-defaults.com/misc/enable-spring-load-actions-on-all-items.html"
+  },
+  {
+   "id": "misc/lsquarantine",
+   "category": "Miscellaneous",
+   "title": "Disable application quarantine message",
+   "description": "Turn off the “Application Downloaded from Internet” quarantine warning.",
+   "domain": "com.apple.LaunchServices",
+   "key": "LSQuarantine",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Catalina"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "\"Application Downloaded from Internet\" popup will display"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "\"Application Downloaded from Internet\" popup will not display"
+    }
+   ],
+   "source": "https://macos-defaults.com/misc/lsquarantine.html"
+  },
+  {
+   "id": "misc/nsclosealwaysconfirmschanges",
+   "category": "Miscellaneous",
+   "title": "Close confirm changes popup",
+   "description": "Should you be asked to keep changes when closing documents or just have changes saved automatically.",
+   "domain": "NSGlobalDomain",
+   "key": "NSCloseAlwaysConfirmsChanges",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Auto saving is enabled, you are not prompted to save changes."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Auto saving is disabled, you are prompted if you want to save changes."
+    }
+   ],
+   "source": "https://macos-defaults.com/misc/nsclosealwaysconfirmschanges.html"
+  },
+  {
+   "id": "misc/nsquitalwayskeepwindows",
+   "category": "Miscellaneous",
+   "title": "Keep windows when quitting an application",
+   "description": "When enabled, open documents and windows will be restored when you re-open an application.",
+   "domain": "NSGlobalDomain",
+   "key": "NSQuitAlwaysKeepsWindows",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Sequoia"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Keep windows when quitting an application. Open documents and windows will be restored when you re-open an application."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Close windows when quitting an application. Open documents and windows will not be restored when you re-open an application."
+    }
+   ],
+   "source": "https://macos-defaults.com/misc/nsquitalwayskeepwindows.html"
+  },
+  {
+   "id": "misc/userwantsplaybacknotifications",
+   "category": "Miscellaneous",
+   "title": "Show Music song notifications",
+   "description": "Display a notification when a new song starts in the Music app.",
+   "domain": "com.apple.Music",
+   "key": "userWantsPlaybackNotifications",
+   "type": "bool",
+   "relaunch": "Music",
+   "testedOn": [
+    "Catalina",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Notifications will not be displayed."
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Notifications will be displayed."
+    }
+   ],
+   "source": "https://macos-defaults.com/misc/userwantsplaybacknotifications.html"
+  },
+  {
+   "id": "mission-control/applespacesswitchonactivate",
+   "category": "Mission Control",
+   "title": "Switch to Space with open windows",
+   "description": "When switching to an app, switch to a space with open windows for this app.",
+   "domain": "NSGlobalDomain",
+   "key": "AppleSpacesSwitchOnActivate",
+   "type": "bool",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Switch to a Space with open windows for the application."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Do not switch to a Space with open windows for the application."
+    }
+   ],
+   "source": "https://macos-defaults.com/mission-control/applespacesswitchonactivate.html"
+  },
+  {
+   "id": "mission-control/expose-group-apps",
+   "category": "Mission Control",
+   "title": "Group windows by application",
+   "description": "If you have several windows from multiple apps open simultaneously, have the windows organised by app in Mission Control.",
+   "domain": "com.apple.dock",
+   "key": "expose-group-apps",
+   "type": "bool",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Group windows by application."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Do not group windows by application."
+    }
+   ],
+   "source": "https://macos-defaults.com/mission-control/expose-group-apps.html"
+  },
+  {
+   "id": "mission-control/mru-spaces",
+   "category": "Mission Control",
+   "title": "Rearrange automatically",
+   "description": "Choose whether to rearrange Spaces automatically.",
+   "domain": "com.apple.dock",
+   "key": "mru-spaces",
+   "type": "bool",
+   "relaunch": "Dock",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sequoia",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Do reorder Spaces based on most recent use"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Keep the Spaces arrangement"
+    }
+   ],
+   "source": "https://macos-defaults.com/mission-control/mru-spaces.html"
+  },
+  {
+   "id": "mission-control/spans-displays",
+   "category": "Mission Control",
+   "title": "Displays have separate Spaces",
+   "description": "Set up separate spaces for each display (if you use Spaces and have multiple displays).",
+   "domain": "com.apple.spaces",
+   "key": "spans-displays",
+   "type": "bool",
+   "relaunch": "SystemUIServer",
+   "testedOn": [
+    "Big Sur",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Spaces span all displays."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Displays have separate Spaces."
+    }
+   ],
+   "source": "https://macos-defaults.com/mission-control/spans-displays.html"
+  },
+  {
+   "id": "mouse/focusfollowsmouse",
+   "category": "Mouse",
+   "title": "Focus Follows Mouse",
+   "description": "Focus of the Terminal windows when the mouse cursor hovers over them. The focus change only works between the Terminal windows.",
+   "domain": "com.apple.Terminal",
+   "key": "FocusFollowsMouse",
+   "type": "bool",
+   "relaunch": "Terminal",
+   "testedOn": [
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "By default, to switch between Terminal windows you should click on it or press on <code>cmd + `</code>."
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Focus follows the mouse cursor to any Terminal windows."
+    }
+   ],
+   "source": "https://macos-defaults.com/mouse/focusfollowsmouse.html"
+  },
+  {
+   "id": "mouse/linear",
+   "category": "Mouse",
+   "title": "Acceleration",
+   "description": "Disable mouse acceleration.",
+   "domain": "NSGlobalDomain",
+   "key": "com.apple.mouse.linear",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Sonoma"
+   ],
+   "options": [
+    {
+     "label": "Disable mouse acceleration",
+     "value": true,
+     "isDefault": false,
+     "note": "Disabling mouse acceleration can be preferable for gaming, because it's more amenable to building muscle-memory."
+    },
+    {
+     "label": "Enable mouse acceleration",
+     "value": false,
+     "isDefault": true,
+     "note": "Turning on mouse acceleration can be preferable if you have limited desk space for mouse movements, and need to cover a large screen area."
+    }
+   ],
+   "source": "https://macos-defaults.com/mouse/linear.html"
+  },
+  {
+   "id": "mouse/scaling",
+   "category": "Mouse",
+   "title": "Speed",
+   "description": "Set movement speed of the mouse cursor.",
+   "domain": "NSGlobalDomain",
+   "key": "com.apple.mouse.scaling",
+   "type": "float",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "El Capitan",
+    "High Sierra",
+    "Leopard",
+    "Lion",
+    "Mavericks",
+    "Mojave",
+    "Monterey",
+    "Mountain Lion",
+    "Sierra",
+    "Snow Leopard",
+    "Sonoma",
+    "Ventura",
+    "Yosemite"
+   ],
+   "options": [
+    {
+     "label": "1",
+     "value": 1.0,
+     "isDefault": true,
+     "note": "By default, the mouse movement scale factor is 1x."
+    }
+   ],
+   "source": "https://macos-defaults.com/mouse/scaling.html"
+  },
+  {
+   "id": "safari/showfullurlinsmartsearchfield",
+   "category": "Safari",
+   "title": "Show full URL",
+   "description": "Show full website address.",
+   "domain": "com.apple.Safari",
+   "key": "ShowFullURLInSmartSearchField",
+   "type": "bool",
+   "relaunch": "Safari",
+   "testedOn": [
+    "Monterey"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show full website URL"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Don't show full website URL"
+    }
+   ],
+   "source": "https://macos-defaults.com/safari/showfullurlinsmartsearchfield.html"
+  },
+  {
+   "id": "screenshots/disable-shadow",
+   "category": "Screenshots",
+   "title": "Disable shadow",
+   "description": "Disable screenshot shadow when capturing an app (`⌘ cmd`+`⇧ shift`+`4` then `space`).",
+   "domain": "com.apple.screencapture",
+   "key": "disable-shadow",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Add a shadow to screenshots"
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Remove the default shadow from screenshots"
+    }
+   ],
+   "source": "https://macos-defaults.com/screenshots/disable-shadow.html"
+  },
+  {
+   "id": "screenshots/include-date",
+   "category": "Screenshots",
+   "title": "Include date",
+   "description": "Include date and time in screenshot filenames.",
+   "domain": "com.apple.screencapture",
+   "key": "include-date",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Screenshot 2020-01-09 at 13.27.20.png"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "- Screenshot.png - Screenshot 1.png"
+    }
+   ],
+   "source": "https://macos-defaults.com/screenshots/include-date.html"
+  },
+  {
+   "id": "screenshots/location",
+   "category": "Screenshots",
+   "title": "Location",
+   "description": "Set default screenshot location.",
+   "domain": "com.apple.screencapture",
+   "key": "location",
+   "type": "string",
+   "relaunch": "SystemUIServer",
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "~/Desktop",
+     "value": "~/Desktop",
+     "isDefault": true,
+     "note": ""
+    },
+    {
+     "label": "~/Pictures",
+     "value": "~/Pictures",
+     "isDefault": false,
+     "note": ""
+    }
+   ],
+   "source": "https://macos-defaults.com/screenshots/location.html"
+  },
+  {
+   "id": "screenshots/show-thumbnail",
+   "category": "Screenshots",
+   "title": "Display thumbnail",
+   "description": "Choose whether to display a thumbnail after taking a screenshot.",
+   "domain": "com.apple.screencapture",
+   "key": "show-thumbnail",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Display the thumbnail after taking a screenshot"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Do not display the thumbnail"
+    }
+   ],
+   "source": "https://macos-defaults.com/screenshots/show-thumbnail.html"
+  },
+  {
+   "id": "screenshots/type",
+   "category": "Screenshots",
+   "title": "Choose screenshot format",
+   "description": "Choose the screenshots image format.",
+   "domain": "com.apple.screencapture",
+   "key": "type",
+   "type": "string",
+   "relaunch": null,
+   "testedOn": [
+    "Big Sur",
+    "Catalina",
+    "Mojave",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "png",
+     "value": "png",
+     "isDefault": true,
+     "note": "The generated image is a png"
+    },
+    {
+     "label": "jpg",
+     "value": "jpg",
+     "isDefault": false,
+     "note": "The generated image is a jpg"
+    },
+    {
+     "label": "heic",
+     "value": "heic",
+     "isDefault": false,
+     "note": "The generated image is a HEIF image (.heic)"
+    }
+   ],
+   "source": "https://macos-defaults.com/screenshots/type.html"
+  },
+  {
+   "id": "simulator/screenshotsavelocation",
+   "category": "Simulator",
+   "title": "Screenshot location",
+   "description": "Set default location for Simulator screenshots. Note that the folder has to exist in the filesystem.",
+   "domain": "com.apple.iphonesimulator",
+   "key": "ScreenShotSaveLocation",
+   "type": "string",
+   "relaunch": null,
+   "testedOn": [
+    "Catalina"
+   ],
+   "options": [
+    {
+     "label": "~/Pictures/Screenshots",
+     "value": "~/Pictures/Screenshots",
+     "isDefault": true,
+     "note": ""
+    },
+    {
+     "label": "~/Pictures/Simulator Screenshots",
+     "value": "~/Pictures/Simulator Screenshots",
+     "isDefault": false,
+     "note": ""
+    }
+   ],
+   "source": "https://macos-defaults.com/simulator/screenshotsavelocation.html"
+  },
+  {
+   "id": "textedit/richtext",
+   "category": "TextEdit",
+   "title": "Default document format",
+   "description": "Set default document format as rich text (.rtf) or plain text (.txt).",
+   "domain": "com.apple.TextEdit",
+   "key": "RichText",
+   "type": "bool",
+   "relaunch": "TextEdit",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Rich text is enabled."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Rich text is disabled."
+    }
+   ],
+   "source": "https://macos-defaults.com/textedit/richtext.html"
+  },
+  {
+   "id": "textedit/smartquotes",
+   "category": "TextEdit",
+   "title": "Smart quotes",
+   "description": "Set if quotation marks should be converted from neutral form to opening/closing variants.",
+   "domain": "com.apple.TextEdit",
+   "key": "SmartQuotes",
+   "type": "bool",
+   "relaunch": "TextEdit",
+   "testedOn": [
+    "Big Sur",
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": true,
+     "note": "Quotes will be converted to opening/closing variants."
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": false,
+     "note": "Quotes will remain in the form they are typed."
+    }
+   ],
+   "source": "https://macos-defaults.com/textedit/smartquotes.html"
+  },
+  {
+   "id": "timemachine/donotoffernewdisksforbackup",
+   "category": "Time Machine",
+   "title": "Don't offer new disks for Time Machine backup",
+   "description": "Prevent Time Machine from prompting to use newly connected storage as backup volumes.",
+   "domain": "com.apple.TimeMachine",
+   "key": "DoNotOfferNewDisksForBackup",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Catalina"
+   ],
+   "options": [
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "When a new disk is connected, system prompts to ask if you want to use it as a backup volume."
+    },
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "When a new disk is connected, system does not prompt to ask if you want to use it as a backup volume."
+    }
+   ],
+   "source": "https://macos-defaults.com/timemachine/donotoffernewdisksforbackup.html"
+  },
+  {
+   "id": "trackpad/dragging",
+   "category": "Trackpad",
+   "title": "Dragging without drag lock",
+   "description": "Mutually exclusive with `DragLock` and `TrackpadThreeFingerDrag`.",
+   "domain": "com.apple.AppleMultitouchTrackpad",
+   "key": "Dragging",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": ""
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": ""
+    }
+   ],
+   "source": "https://macos-defaults.com/trackpad/dragging.html"
+  },
+  {
+   "id": "trackpad/draglock",
+   "category": "Trackpad",
+   "title": "Dragging with drag lock",
+   "description": "Mutually exclusive with `Dragging` and `TrackpadThreeFingerDrag`.",
+   "domain": "com.apple.AppleMultitouchTrackpad",
+   "key": "DragLock",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": ""
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": ""
+    }
+   ],
+   "source": "https://macos-defaults.com/trackpad/draglock.html"
+  },
+  {
+   "id": "trackpad/firstclickthreshold",
+   "category": "Trackpad",
+   "title": "Click weight (threshold)",
+   "description": "Choose between Light/Medium/Firm.",
+   "domain": "com.apple.AppleMultitouchTrackpad",
+   "key": "FirstClickThreshold",
+   "type": "int",
+   "relaunch": null,
+   "testedOn": [
+    "Monterey",
+    "Sonoma",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "0",
+     "value": 0,
+     "isDefault": false,
+     "note": "Light"
+    },
+    {
+     "label": "1",
+     "value": 1,
+     "isDefault": true,
+     "note": "Medium"
+    },
+    {
+     "label": "2",
+     "value": 2,
+     "isDefault": false,
+     "note": "Firm"
+    }
+   ],
+   "source": "https://macos-defaults.com/trackpad/firstclickthreshold.html"
+  },
+  {
+   "id": "trackpad/trackpadthreefingerdrag",
+   "category": "Trackpad",
+   "title": "Dragging with three finger drag",
+   "description": "Mutually exclusive with `Dragging` and `DragLock`.",
+   "domain": "com.apple.AppleMultitouchTrackpad",
+   "key": "TrackpadThreeFingerDrag",
+   "type": "bool",
+   "relaunch": null,
+   "testedOn": [
+    "Monterey",
+    "Ventura"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": ""
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": ""
+    }
+   ],
+   "source": "https://macos-defaults.com/trackpad/trackpadthreefingerdrag.html"
+  },
+  {
+   "id": "xcode/showbuildoperationduration",
+   "category": "Xcode",
+   "title": "Show Build Durations",
+   "description": "Show build durations in the Activity Viewer in Xcode's toolbar at the top of the workspace window.",
+   "domain": "com.apple.dt.Xcode",
+   "key": "ShowBuildOperationDuration",
+   "type": "bool",
+   "relaunch": "Xcode",
+   "testedOn": [
+    "Catalina"
+   ],
+   "options": [
+    {
+     "label": "true",
+     "value": true,
+     "isDefault": false,
+     "note": "Show the build duration in the Xcode's toolbar"
+    },
+    {
+     "label": "false",
+     "value": false,
+     "isDefault": true,
+     "note": "Do not show the build duration in the Xcode's toolbar"
+    }
+   ],
+   "source": "https://macos-defaults.com/xcode/showbuildoperationduration.html"
+  }
+ ]
+}

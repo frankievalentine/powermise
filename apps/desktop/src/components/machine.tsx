@@ -19,7 +19,7 @@ export function formatBytes(bytes: number): string {
 }
 
 /** Hosts the app opens links to (the backend enforces the same list). */
-const LINK_HOSTS = ["mise.jdx.dev", "github.com"];
+const LINK_HOSTS = ["mise.jdx.dev", "github.com", "macos-defaults.com"];
 
 /** Whether `url` is a link the app can open in the browser. */
 export function canOpen(url: string | null | undefined): url is string {

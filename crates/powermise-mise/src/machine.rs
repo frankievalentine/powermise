@@ -303,6 +303,14 @@ mod tests {
         assert_eq!(sections[1].items[0].name, "brew:hello");
         assert_eq!(sections[1].items[0].state.as_deref(), Some("missing"));
         assert_eq!(sections[2].items[0].detail.as_deref(), Some("1.7.1"));
+
+        let macos = parse_machine_status(
+            &serde_json::json!({"macos_defaults": {"available": true, "entries": [
+                {"domain": "com.apple.dock", "key": "autohide", "value": true, "current": "", "state": "unset"}
+            ]}}),
+        );
+        assert_eq!(macos[0].items[0].name, "com.apple.dock autohide");
+        assert_eq!(macos[0].items[0].detail.as_deref(), Some("true"));
     }
 
     #[test]
@@ -446,6 +454,17 @@ pub fn parse_machine_status(json: &serde_json::Value) -> Vec<MachineSection> {
         })
     };
     let generic = |entry: &serde_json::Value| -> MachineItem {
+        // macOS preferences: `domain` alone repeats on every row.
+        if let (Some(domain), Some(key)) = (text(entry, &["domain"]), text(entry, &["key"])) {
+            return MachineItem {
+                name: format!("{domain} {key}"),
+                state: text(entry, &["state", "status"]),
+                detail: entry.get("value").map(|value| match value {
+                    serde_json::Value::String(text) => text.clone(),
+                    other => other.to_string(),
+                }),
+            };
+        }
         MachineItem {
             name: text(
                 entry,

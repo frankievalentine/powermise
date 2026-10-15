@@ -218,6 +218,26 @@ its `[bootstrap]` and `[dotfiles]` sections, with the state of each item.
 Steps that need an administrator password (like apt packages) are best run from
 a terminal: `mise bootstrap --yes`.
 
+### macOS Settings
+
+On a Mac, **macOS Settings** offers the settings catalogued at
+[macos-defaults.com](https://macos-defaults.com) — Dock, Finder, Desktop,
+keyboard, trackpad, mouse, Mission Control, menu bar clock, screenshots, and
+apps like Safari, TextEdit, and Activity Monitor — each with its current value
+and the documented choices (or a custom value). Your choices go into one file,
+`~/.config/mise/conf.d/powermise-macos.toml`:
+
+```toml
+[bootstrap.macos.defaults."com.apple.dock"]
+autohide = true
+tilesize = 36
+```
+
+**Apply** runs `mise bootstrap --yes --only macos-defaults`, which writes them
+with `defaults write`. Apps like the Dock and Finder show a change only after
+they relaunch; **Relaunch** runs `killall Dock` (or the app named). Choosing
+**Leave as is** stops managing a setting — its value stays. Needs mise 2026.10.
+
 Reads: `mise bootstrap status --json`, `mise dotfiles status --json`
 
 ## Settings

@@ -9,6 +9,7 @@
 //!   fragment, `conf.d/powermise-<name>.toml`, that mise then applies.
 //! - This module: shared environment helpers and app startup.
 mod machine;
+mod macos;
 mod mise_commands;
 mod projects;
 mod setups;
@@ -148,7 +149,7 @@ fn reveal_path(path: PathBuf) -> CommandResult<()> {
 }
 
 /// Hosts the app links to: mise's docs and GitHub (tokens, releases).
-const LINK_HOSTS: &[&str] = &["mise.jdx.dev", "github.com"];
+const LINK_HOSTS: &[&str] = &["mise.jdx.dev", "github.com", "macos-defaults.com"];
 
 /// Opens a link in the default browser. Only https links to [`LINK_HOSTS`],
 /// so nothing a page shows can make the app open arbitrary programs or files.
@@ -231,6 +232,8 @@ pub fn run() {
             machine::resolve_dotfile_conflicts,
             machine::tool_aliases,
             machine::plugins,
+            macos::macos_settings,
+            macos::set_macos_default,
         ])
         .run(tauri::generate_context!())
         .expect("error while running the powermise desktop app");

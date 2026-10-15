@@ -51,6 +51,7 @@ import { UpdatesView } from "./views/mise/UpdatesView";
 import { HealthView } from "./views/mise/HealthView";
 import { SettingsView } from "./views/mise/SettingsView";
 import { MachineView } from "./views/mise/MachineView";
+import { MacosSettingsView } from "./views/mise/MacosSettingsView";
 import { WelcomeView, hasBeenWelcomed } from "./views/mise/WelcomeView";
 import { ActivityView } from "./views/mise/ActivityView";
 import { ProjectView } from "./views/mise/ProjectView";
@@ -65,6 +66,7 @@ export type Route =
   | { kind: "health" }
   | { kind: "settings" }
   | { kind: "machine" }
+  | { kind: "macos-settings" }
   | { kind: "welcome" }
   | { kind: "project"; path: string }
   // AI Setups
@@ -127,7 +129,7 @@ const TOP_LEVEL: Route["kind"][] = [
   "setup",
 ];
 
-const SEARCHABLE: Route["kind"][] = ["installed", "discover", "settings", "harnesses", "tools", "mcp", "integrations"];
+const SEARCHABLE: Route["kind"][] = ["installed", "discover", "settings", "macos-settings", "harnesses", "tools", "mcp", "integrations"];
 
 const routeKey = (route: Route) =>
   route.kind === "harness"
@@ -402,6 +404,8 @@ function toolbarTitle(route: Route, context: AppContext): string {
       return "Settings";
     case "machine":
       return "Machine";
+    case "macos-settings":
+      return "macOS Settings";
     case "welcome":
       return "Welcome";
     case "project":
@@ -432,6 +436,7 @@ const NEEDS_MISE: Route["kind"][] = [
   "health",
   "settings",
   "machine",
+  "macos-settings",
   "project",
 ];
 
@@ -454,6 +459,8 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
       return <SettingsView context={context} query={query} />;
     case "machine":
       return <MachineView context={context} />;
+    case "macos-settings":
+      return <MacosSettingsView context={context} query={query} />;
     case "welcome":
       return <WelcomeView context={context} />;
     case "project":

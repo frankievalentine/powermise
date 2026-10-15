@@ -361,6 +361,11 @@ pub enum MiseAction {
     FormatConfig {
         project: PathBuf,
     },
+    /// Relaunches an app so it picks up changed macOS settings
+    /// (`killall <app>`). Only apps the settings catalog names.
+    RelaunchApp {
+        app: String,
+    },
     DotfilesOriginSet {
         url: String,
     },
@@ -487,14 +492,34 @@ impl MiseAction {
                 version,
                 path,
             } => MiseCommand::link(tool, version, path),
-            Self::InstallMise { .. } => {
-                return Err("installing mise doesn't run mise".into());
+            Self::InstallMise { .. } | Self::RelaunchApp { .. } => {
+                return Err("this action doesn't run mise".into());
             }
         }
         .map_err(message)
     }
 
     fn job(&self) -> CommandResult<Job> {
+        if let Self::RelaunchApp { app } = self {
+            if !crate::macos::RELAUNCHABLE.contains(&app.as_str()) {
+                return Err(format!("powermise doesn't relaunch {app}"));
+            }
+            let program = crate::find_program("killall")
+                .or_else(|| Some(PathBuf::from("/usr/bin/killall")).filter(|path| path.is_file()))
+                .ok_or("killall isn't available on this computer")?;
+            return Ok(Job::Program {
+                program,
+                arguments: vec![app.clone()],
+                display: format!(
+                    "killall {}",
+                    if app.contains(' ') {
+                        format!("'{app}'")
+                    } else {
+                        app.clone()
+                    }
+                ),
+            });
+        }
         if let Self::InstallMise { installer } = self {
             let program = installer.program().ok_or_else(|| {
                 format!("{} isn't available on this computer", installer.display())
@@ -514,6 +539,9 @@ impl MiseAction {
 pub fn describe_action(action: MiseAction) -> CommandResult<String> {
     if let MiseAction::InstallMise { installer } = action {
         return Ok(installer.display());
+    }
+    if matches!(action, MiseAction::RelaunchApp { .. }) {
+        return Ok(action.job()?.display());
     }
     Ok(action.command()?.display())
 }

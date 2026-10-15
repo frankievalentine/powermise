@@ -276,6 +276,7 @@ export type MiseAction =
   | { kind: "setToolAlias"; tool: string; alias: string; version: string }
   | { kind: "unsetToolAlias"; tool: string; alias: string }
   | { kind: "formatConfig"; project: string }
+  | { kind: "relaunchApp"; app: string }
   | { kind: "cachePrune" }
   | { kind: "cacheClear" }
   | { kind: "reshim" }
@@ -360,6 +361,14 @@ export interface MachineStatus {
     machine: string | null;
     changed: string[];
   }[];
+}
+
+export interface MacosState {
+  /** What powermise's file asks mise to set. */
+  managed: { domain: string; key: string; value: boolean | number | string }[];
+  /** `defaults read` output per requested key; null when macOS's default applies. */
+  current: (string | null)[];
+  fragmentPath: string;
 }
 
 export interface DiskUsage {
@@ -562,6 +571,9 @@ export const api = {
   miseInstallers: () => call<InstallerOption[]>("mise_installers"),
   openUrl: (url: string) => call<void>("open_url", { url }),
   diskUsage: () => call<DiskUsage>("disk_usage"),
+  macosSettings: (keys: { domain: string; key: string }[]) => call<MacosState>("macos_settings", { keys }),
+  setMacosDefault: (domain: string, key: string, value: boolean | number | string | null) =>
+    call<MacosState["managed"]>("set_macos_default", { domain, key, value }),
   machineStatus: () => call<MachineStatus>("machine_status"),
   resolveDotfileConflicts: () => call<void>("resolve_dotfile_conflicts"),
   toolAliases: (tool: string) =>
