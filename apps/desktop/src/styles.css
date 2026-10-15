@@ -1044,6 +1044,10 @@ button {
   margin-bottom: 10px;
 }
 
+.section-heading-row .detail-actions {
+  margin-left: 0;
+}
+
 .section-heading-row .section-title {
   display: flex;
   align-items: center;

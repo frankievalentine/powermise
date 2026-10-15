@@ -284,6 +284,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn machine_status_flattens_every_part() {
+        let json = serde_json::json!({
+            "packages": {"brew": {"available": true, "packages": [
+                {"package": "hello", "requested_version": "latest", "state": "missing", "installed_version": ""}
+            ]}},
+            "tools": [{"tool": "jq", "requested_version": "1.7.1", "resolved_version": "1.7.1", "state": "installed", "installed": true}],
+            "dotfiles": {"files": [{"target": "~/.gitconfig", "source": "/c/gitconfig", "mode": "symlink", "state": "missing"}], "edits": []},
+            "repos": [],
+            "login_shell": null,
+            "macos_defaults": {"entries": []}
+        });
+        let sections = parse_machine_status(&json);
+        let ids: Vec<_> = sections.iter().map(|section| section.id.as_str()).collect();
+        assert_eq!(ids, ["dotfiles", "packages", "tools"]);
+        assert_eq!(sections[0].items[0].name, "~/.gitconfig");
+        assert_eq!(sections[0].items[0].detail.as_deref(), Some("symlink"));
+        assert_eq!(sections[1].items[0].name, "brew:hello");
+        assert_eq!(sections[1].items[0].state.as_deref(), Some("missing"));
+        assert_eq!(sections[2].items[0].detail.as_deref(), Some("1.7.1"));
+    }
+
+    #[test]
     fn token_lines_parse() {
         assert_eq!(
             parse_token_status("github.com: (none)\n"),
@@ -346,4 +368,128 @@ mod tests {
         }
         let _ = fs::remove_dir_all(home);
     }
+}
+
+/// One part of `mise bootstrap status --json` (packages, tools, dotfiles,
+/// repos, services, macOS defaults, …), flattened to rows the app can show
+/// without knowing every part's shape — mise adds parts between releases.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MachineSection {
+    /// The status key, for example `packages` or `macos_defaults`.
+    pub id: String,
+    pub items: Vec<MachineItem>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MachineItem {
+    pub name: String,
+    /// mise's state word: `installed`, `missing`, `applied`, `changed`, …
+    pub state: Option<String>,
+    /// A version, mode, or similar extra.
+    pub detail: Option<String>,
+}
+
+/// Flattens `mise bootstrap status --json` into sections, skipping empty ones.
+pub fn parse_machine_status(json: &serde_json::Value) -> Vec<MachineSection> {
+    let Some(object) = json.as_object() else {
+        return Vec::new();
+    };
+    let text = |value: &serde_json::Value, keys: &[&str]| {
+        keys.iter().find_map(|key| match value.get(*key) {
+            Some(serde_json::Value::String(text)) if !text.is_empty() => Some(text.clone()),
+            Some(serde_json::Value::Bool(flag)) => Some(flag.to_string()),
+            Some(serde_json::Value::Number(number)) => Some(number.to_string()),
+            _ => None,
+        })
+    };
+    let generic = |entry: &serde_json::Value| -> MachineItem {
+        MachineItem {
+            name: text(
+                entry,
+                &[
+                    "name", "target", "path", "tool", "package", "repo", "url", "service", "unit",
+                    "label", "domain", "key", "shell", "id", "file",
+                ],
+            )
+            .unwrap_or_else(|| entry.to_string()),
+            state: text(entry, &["state", "status"]),
+            detail: text(
+                entry,
+                &[
+                    "resolved_version",
+                    "installed_version",
+                    "version",
+                    "requested_version",
+                    "mode",
+                    "value",
+                    "detail",
+                    "message",
+                ],
+            ),
+        }
+    };
+    let mut sections = Vec::new();
+    for (id, value) in object {
+        let items: Vec<MachineItem> = match (id.as_str(), value) {
+            // `{ "<manager>": { "available": bool, "packages": [...] } }`
+            ("packages", serde_json::Value::Object(managers)) => managers
+                .iter()
+                .flat_map(|(manager, status)| {
+                    status
+                        .get("packages")
+                        .and_then(serde_json::Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .map(move |package| {
+                            let mut item = generic(package);
+                            item.name = format!("{manager}:{}", item.name);
+                            item
+                        })
+                })
+                .collect(),
+            (_, serde_json::Value::Array(entries)) => entries.iter().map(generic).collect(),
+            // `{ "files": [...], "edits": [...] }`, `{ "entries": [...] }`, …
+            (_, serde_json::Value::Object(parts)) => parts
+                .values()
+                .filter_map(serde_json::Value::as_array)
+                .flatten()
+                .map(generic)
+                .collect(),
+            // `login_shell`: an object when configured.
+            (_, serde_json::Value::Null) => Vec::new(),
+            (_, other) => vec![MachineItem {
+                name: other.to_string(),
+                state: None,
+                detail: None,
+            }],
+        };
+        if !items.is_empty() {
+            sections.push(MachineSection {
+                id: id.clone(),
+                items,
+            });
+        }
+    }
+    sections
+}
+
+/// The `history` part of `mise dotfiles status --json` (2026.10+): saved
+/// checkpoints of tracked files.
+#[derive(Clone, Debug, Default, serde::Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DotfilesHistory {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default, alias = "tracked_files")]
+    pub tracked_files: u64,
+    #[serde(default)]
+    pub checkpoints: u64,
+    #[serde(default)]
+    pub latest: Option<serde_json::Value>,
+    #[serde(default)]
+    pub unsaved: Option<serde_json::Value>,
+    #[serde(default, alias = "pending_operations")]
+    pub pending_operations: u64,
 }

@@ -179,6 +179,18 @@ export function UpdatesView({ context }: { context: AppContext }) {
           </section>
         ))}
 
+        {settings.data && autoSettings.length === 0 && (
+          <section className="section">
+            <h2 className="section-title">Automatic updates</h2>
+            <p className="section-note">
+              Updating tools and mise in the background needs mise 2026.10 or newer.{" "}
+              <button className="link-button" onClick={() => navigate({ kind: "health" })}>
+                Update mise in Health
+              </button>
+            </p>
+          </section>
+        )}
+
         {autoSettings.length > 0 && (
           <section className="section">
             <h2 className="section-title">Automatic updates</h2>

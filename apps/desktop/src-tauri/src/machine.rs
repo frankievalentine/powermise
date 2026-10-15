@@ -200,6 +200,48 @@ pub async fn pick_folder(app: AppHandle) -> CommandResult<Option<PathBuf>> {
     .await
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MachineStatus {
+    sections: Vec<powermise_mise::MachineSection>,
+    /// Dotfile checkpoints (mise 2026.10+), when history is on.
+    history: Option<powermise_mise::DotfilesHistory>,
+    /// The repository checkpoints sync with, if connected (2026.10+).
+    origin: Option<String>,
+    /// Whether this mise has dotfile history at all (2026.10+).
+    supports_history: bool,
+}
+
+/// What the global config's `[bootstrap]` and `[dotfiles]` set up on this
+/// computer, and the state of each part.
+#[tauri::command]
+pub async fn machine_status() -> CommandResult<MachineStatus> {
+    blocking(|| {
+        let client = client()?;
+        let sections = client.machine_status().map_err(message)?;
+        let supports_history = crate::mise_commands::mise_version(&client)
+            .is_some_and(|version| version >= powermise_mise::MiseVersion::RECOMMENDED);
+        let (history, origin) = if supports_history {
+            (
+                client
+                    .dotfiles_history()
+                    .ok()
+                    .filter(|history| history.enabled),
+                client.dotfiles_origin().ok().flatten(),
+            )
+        } else {
+            (None, None)
+        };
+        Ok(MachineStatus {
+            sections,
+            history,
+            origin,
+            supports_history,
+        })
+    })
+    .await
+}
+
 /// Ways to install mise on this computer, best first.
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]

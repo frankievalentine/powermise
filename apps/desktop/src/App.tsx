@@ -16,6 +16,7 @@ import {
   Plus,
   Search,
   Server,
+  MonitorCog,
   SlidersHorizontal,
 } from "lucide-react";
 import {
@@ -49,6 +50,7 @@ import { ToolPage } from "./views/mise/ToolPage";
 import { UpdatesView } from "./views/mise/UpdatesView";
 import { HealthView } from "./views/mise/HealthView";
 import { SettingsView } from "./views/mise/SettingsView";
+import { MachineView } from "./views/mise/MachineView";
 import { WelcomeView, hasBeenWelcomed } from "./views/mise/WelcomeView";
 import { ActivityView } from "./views/mise/ActivityView";
 import { ProjectView } from "./views/mise/ProjectView";
@@ -62,6 +64,7 @@ export type Route =
   | { kind: "activity" }
   | { kind: "health" }
   | { kind: "settings" }
+  | { kind: "machine" }
   | { kind: "welcome" }
   | { kind: "project"; path: string }
   // AI Setups
@@ -114,6 +117,7 @@ const TOP_LEVEL: Route["kind"][] = [
   "activity",
   "health",
   "settings",
+  "machine",
   "welcome",
   "project",
   "harnesses",
@@ -396,6 +400,8 @@ function toolbarTitle(route: Route, context: AppContext): string {
       return "Health";
     case "settings":
       return "Settings";
+    case "machine":
+      return "Machine";
     case "welcome":
       return "Welcome";
     case "project":
@@ -418,7 +424,16 @@ function toolbarTitle(route: Route, context: AppContext): string {
 }
 
 /** Screens that need mise; without it they show the install step instead. */
-const NEEDS_MISE: Route["kind"][] = ["installed", "discover", "tool", "updates", "health", "settings", "project"];
+const NEEDS_MISE: Route["kind"][] = [
+  "installed",
+  "discover",
+  "tool",
+  "updates",
+  "health",
+  "settings",
+  "machine",
+  "project",
+];
 
 function RouteView({ route, context, query }: { route: Route; context: AppContext; query: string }) {
   if (!context.env.misePath && NEEDS_MISE.includes(route.kind)) return <WelcomeView context={context} />;
@@ -437,6 +452,8 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
       return <HealthView context={context} />;
     case "settings":
       return <SettingsView context={context} query={query} />;
+    case "machine":
+      return <MachineView context={context} />;
     case "welcome":
       return <WelcomeView context={context} />;
     case "project":
@@ -488,6 +505,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
         </span>
       ) : null,
     },
+    { kind: "machine" as const, label: "Machine", icon: MonitorCog, trailing: null },
     { kind: "settings" as const, label: "Settings", icon: SlidersHorizontal, trailing: null },
   ];
   const aiItems = [

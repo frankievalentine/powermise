@@ -51,6 +51,28 @@ const settings: Setting[] = [
 ];
 
 let cacheBytes = 412_000_000;
+
+/** `mise bootstrap status`, as the demo machine has it. */
+const machineSections = [
+  {
+    id: "packages",
+    items: [
+      { name: "brew:git", state: "installed", detail: "2.51.0" },
+      { name: "brew:wget", state: "missing", detail: "latest" },
+    ],
+  },
+  {
+    id: "dotfiles",
+    items: [
+      { name: "~/.gitconfig", state: "applied", detail: "symlink" },
+      { name: "~/.zshrc", state: "missing", detail: "symlink" },
+    ],
+  },
+  { id: "repos", items: [{ name: "~/code/dotfiles", state: "missing", detail: "github.com/demo/dotfiles" }] },
+  { id: "macos_defaults", items: [{ name: "com.apple.dock autohide", state: "applied", detail: "true" }] },
+];
+const dotHistory = { enabled: true, trackedFiles: 12, checkpoints: 4, latest: null, unsaved: true as unknown, pendingOperations: 0 };
+let dotOrigin: string | null = null;
 const trusted = ["/Users/demo/code/web-app", "/Users/demo/code/old-prototype"];
 
 const imports: DetectedImport[] = [
@@ -110,6 +132,16 @@ export function describeMachineAction(action: MiseAction): string | null {
       return `mise link ${action.tool}@${action.version} ${action.path}`;
     case "addSetting":
       return `mise settings add ${action.key} ${action.value}`;
+    case "bootstrapPreview":
+      return `mise bootstrap --dry-run${action.only ? ` --only ${action.only}` : ""}`;
+    case "bootstrapApply":
+      return `mise bootstrap --yes${action.only ? ` --only ${action.only}` : ""}`;
+    case "dotfilesSave":
+      return "mise dotfiles save";
+    case "dotfilesSync":
+      return "mise dotfiles sync";
+    case "dotfilesOriginSet":
+      return `mise dotfiles origin set ${action.url}`;
     default:
       return null;
   }
@@ -159,6 +191,33 @@ export function performMachineAction(action: MiseAction): string[] | null {
       return [];
     case "link":
       return [`mise linked ${action.tool}@${action.version} → ${action.path}`];
+    case "bootstrapPreview": {
+      const parts = action.only ? machineSections.filter((section) => section.id === action.only) : machineSections;
+      return parts.flatMap((section) => [
+        `mise bootstrap: ${section.id}`,
+        ...section.items.filter((item) => item.state === "missing").map((item) => `would apply ${item.name}`),
+      ]);
+    }
+    case "bootstrapApply": {
+      const lines: string[] = [];
+      for (const section of machineSections.filter((entry) => !action.only || entry.id === action.only)) {
+        lines.push(`mise bootstrap: ${section.id}`);
+        for (const item of section.items.filter((entry) => entry.state === "missing")) {
+          item.state = section.id === "packages" ? "installed" : "applied";
+          lines.push(`mise ${section.id}: applied ${item.name}`);
+        }
+      }
+      return lines;
+    }
+    case "dotfilesSave":
+      dotHistory.checkpoints += 1;
+      dotHistory.unsaved = null;
+      return ["mise history: saved checkpoint 5 (12 files)"];
+    case "dotfilesSync":
+      return ["mise history: pushed 1 checkpoint", "mise history: nothing to fetch"];
+    case "dotfilesOriginSet":
+      dotOrigin = action.url;
+      return [`mise history: origin set to ${action.url}`];
     case "addSetting": {
       const entry = settings.find((candidate) => candidate.key === action.key);
       if (entry && Array.isArray(entry.value)) {
@@ -205,6 +264,13 @@ export function demoMachine(command: string): unknown {
       return {
         trusted: trusted.map((path) => ({ path, exists: !path.endsWith("old-prototype") })),
         ignored: [],
+      };
+    case "machine_status":
+      return {
+        sections: machineSections.map((section) => ({ ...section, items: section.items.map((item) => ({ ...item })) })),
+        history: { ...dotHistory },
+        origin: dotOrigin,
+        supportsHistory: true,
       };
     case "pick_folder":
       return "/Users/demo/src/node-v24.11.0";

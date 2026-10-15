@@ -296,3 +296,21 @@ fn lock_changes_and_vars_parse() {
     );
     assert_eq!(vars[1].value, "http://localhost");
 }
+
+#[test]
+fn machine_status_flattens_captured_bootstrap_status() {
+    let json: serde_json::Value = fixture("2026.10.10", "bootstrap-status.json");
+    let sections = powermise_mise::parse_machine_status(&json);
+    let packages = sections
+        .iter()
+        .find(|section| section.id == "packages")
+        .unwrap();
+    assert_eq!(packages.items[0].name, "brew:hello");
+    let tools = sections
+        .iter()
+        .find(|section| section.id == "tools")
+        .unwrap();
+    assert!(tools.items.iter().any(|item| item.name == "jq"));
+    // Parts with nothing configured are left out.
+    assert!(!sections.iter().any(|section| section.id == "repos"));
+}

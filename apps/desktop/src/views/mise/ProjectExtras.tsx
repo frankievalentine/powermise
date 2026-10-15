@@ -145,7 +145,15 @@ export function DependencyTree({ tasks }: { tasks: Task[] }) {
 export function VarsSection({ data, context, pretty }: { data: ProjectOverview; context: AppContext; pretty: Pretty }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  if (data.vars === null) return null;
+  if (data.vars === null) {
+    return (
+      <Section title="Vars">
+        <p className="section-note">
+          Showing and saving a project’s <code>[vars]</code> needs mise 2026.10.6 or newer. Update mise from Health.
+        </p>
+      </Section>
+    );
+  }
   return (
     <Section
       title="Vars"

@@ -18,7 +18,10 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     MiseAdapterError,
-    machine::{ImportSource, Setting, TokenStatus, parse_settings, parse_token_status},
+    machine::{
+        DotfilesHistory, ImportSource, MachineSection, Setting, TokenStatus, parse_machine_status,
+        parse_settings, parse_token_status,
+    },
     models::{
         BootstrapPlan, BootstrapStatus, ConfigFile, Doctor, OutdatedReport, RegistryEntry,
         RemoteVersion, Task, ToolInfo, ToolInventory, VersionInfo,
@@ -323,6 +326,34 @@ impl MiseClient {
     /// `mise bootstrap status --json`: the state of every declared package and tool.
     pub fn bootstrap_status(&self) -> Result<BootstrapStatus, MiseAdapterError> {
         self.read_json(&["bootstrap", "status", "--json"], None)
+    }
+
+    /// `mise bootstrap status --json`, flattened into sections.
+    pub fn machine_status(&self) -> Result<Vec<MachineSection>, MiseAdapterError> {
+        let json: serde_json::Value = self.read_json(&["bootstrap", "status", "--json"], None)?;
+        Ok(parse_machine_status(&json))
+    }
+
+    /// The checkpoint history from `mise dotfiles status --json` (2026.10+).
+    pub fn dotfiles_history(&self) -> Result<DotfilesHistory, MiseAdapterError> {
+        let json: serde_json::Value = self.read_json(&["dotfiles", "status", "--json"], None)?;
+        Ok(json
+            .get("history")
+            .cloned()
+            .and_then(|history| serde_json::from_value(history).ok())
+            .unwrap_or_default())
+    }
+
+    /// The repository dotfile checkpoints sync with (`mise dotfiles origin`,
+    /// 2026.10+), or `None` when none is connected.
+    pub fn dotfiles_origin(&self) -> Result<Option<String>, MiseAdapterError> {
+        let output = self.read_text(&["dotfiles", "origin"], None)?;
+        let line = output
+            .lines()
+            .map(str::trim)
+            .find(|line| !line.is_empty())
+            .unwrap_or_default();
+        Ok((!line.is_empty() && !line.starts_with("no setup repository")).then(|| line.to_owned()))
     }
 
     /// `mise doctor --json`.
@@ -738,6 +769,45 @@ impl MiseCommand {
         ]))
     }
 
+    /// `mise bootstrap --dry-run [--only <part>]`: what applying would do.
+    pub fn bootstrap_preview(only: Option<&str>) -> Result<Self, MiseAdapterError> {
+        bootstrap_with("--dry-run", only)
+    }
+
+    /// `mise bootstrap --yes [--only <part>]`: set the machine up as the
+    /// config describes. `--yes` because the person confirmed in the app.
+    pub fn bootstrap_apply(only: Option<&str>) -> Result<Self, MiseAdapterError> {
+        bootstrap_with("--yes", only)
+    }
+
+    /// `mise dotfiles save`: checkpoint the tracked files now.
+    pub fn dotfiles_save() -> Self {
+        Self::new(vec!["dotfiles".into(), "save".into()])
+    }
+
+    /// `mise dotfiles sync`: push checkpoints and fetch other machines' changes.
+    pub fn dotfiles_sync() -> Self {
+        Self::new(vec!["dotfiles".into(), "sync".into()])
+    }
+
+    /// `mise dotfiles origin set <url>`: connect the repository to sync with.
+    pub fn dotfiles_origin_set(url: &str) -> Result<Self, MiseAdapterError> {
+        let valid =
+            (url.starts_with("https://") || url.starts_with("git@") || url.starts_with("ssh://"))
+                && !url
+                    .chars()
+                    .any(|character| character.is_whitespace() || character.is_control());
+        if !valid {
+            return Err(MiseAdapterError::InvalidArgument { value: url.into() });
+        }
+        Ok(Self::new(vec![
+            "dotfiles".into(),
+            "origin".into(),
+            "set".into(),
+            url.into(),
+        ]))
+    }
+
     /// `mise lock` in a project: write or refresh its lockfile.
     pub fn lock(project: impl Into<PathBuf>) -> Self {
         Self::new(vec!["lock".into()]).in_project(project)
@@ -945,6 +1015,36 @@ fn tool_spec(tool: &str, version: &str) -> Result<String, MiseAdapterError> {
     Ok(format!("{tool}@{version}"))
 }
 
+/// Bootstrap parts `--only` accepts (2026.7.18 and 2026.10).
+const BOOTSTRAP_PARTS: &[&str] = &[
+    "plugins",
+    "packages",
+    "accounts",
+    "files",
+    "services",
+    "firewall",
+    "compose",
+    "repos",
+    "dotfiles",
+    "mise-shell-activate",
+    "macos-defaults",
+    "macos-launchd-agents",
+    "linux-systemd-units",
+    "user",
+    "tools",
+];
+
+fn bootstrap_with(mode: &str, only: Option<&str>) -> Result<MiseCommand, MiseAdapterError> {
+    let mut arguments = vec!["bootstrap".into(), mode.into()];
+    if let Some(part) = only {
+        if !BOOTSTRAP_PARTS.contains(&part) {
+            return Err(MiseAdapterError::InvalidArgument { value: part.into() });
+        }
+        arguments.extend(["--only".into(), part.into()]);
+    }
+    Ok(MiseCommand::new(arguments))
+}
+
 /// A path passed to mise: absolute, so it can't be read as a flag.
 fn absolute_path(path: &Path) -> Result<String, MiseAdapterError> {
     let text = path.to_string_lossy();
@@ -1127,6 +1227,18 @@ mod tests {
         );
         assert!(MiseCommand::link("node", "20", Path::new("relative")).is_err());
         assert!(MiseCommand::untrust(Path::new("-rf")).is_err());
+        assert_eq!(
+            MiseCommand::bootstrap_apply(Some("dotfiles"))
+                .unwrap()
+                .display(),
+            "mise bootstrap --yes --only dotfiles"
+        );
+        assert_eq!(
+            MiseCommand::bootstrap_preview(None).unwrap().display(),
+            "mise bootstrap --dry-run"
+        );
+        assert!(MiseCommand::bootstrap_apply(Some("task")).is_err());
+        assert!(MiseCommand::dotfiles_origin_set("file:///etc").is_err());
         assert_eq!(
             MiseCommand::tool_auto_update("jq", true).unwrap().display(),
             "mise config set --global tools.jq.auto_update true"

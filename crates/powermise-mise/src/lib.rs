@@ -10,8 +10,9 @@ mod project;
 
 pub use client::{MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program};
 pub use machine::{
-    DetectedImport, ImportSource, Setting, TokenStatus, detect_imports, directory_size,
-    parse_settings, parse_token_status, trusted_configs,
+    DetectedImport, DotfilesHistory, ImportSource, MachineItem, MachineSection, Setting,
+    TokenStatus, detect_imports, directory_size, parse_machine_status, parse_settings,
+    parse_token_status, trusted_configs,
 };
 pub use models::{
     BootstrapPlan, BootstrapStatus, ConfigFile, ConfigSource, Doctor, MiseDirs, MiseVersion,

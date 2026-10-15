@@ -151,9 +151,10 @@ apps/web (Astro)          marketing site + docs; hosts the interactive app demo
       versions from nvm, nodenv, pyenv, uv, or Homebrew (`mise sync`), and GitHub.
 - [x] `mise link` from tool pages, with a folder picker.
 - [x] Edit list settings (comma-separated, as `mise settings set` takes them).
-- [ ] Gate features by mise version (several above need 2026.10.x) and explain why a
-      control is disabled. Capture a second fixture set from 2026.10 so both ends of
-      the supported range stay tested.
+- [x] Gate features by mise version and say why when one is unavailable: AI Setups
+      (2026.10), `--global` updates (2026.10.7), `[vars]` (2026.10.6), automatic
+      updates and dotfile history (2026.10). Fixture sets for 2026.7.18 and
+      2026.10.10 keep both ends of the supported range tested.
 
 ### M5 — Marketing site & docs
 
@@ -201,11 +202,16 @@ packages (Homebrew, apt, dnf, snap), repositories, dotfiles, macOS defaults and
 login items, and launchd/systemd services. AI Setups already compiles to
 `[bootstrap.packages]`.
 
-- [ ] Machine view from `mise bootstrap status --json`: what's applied, missing, or
-      drifted, by section.
-- [ ] Apply with a preview (`mise bootstrap --dry-run`, then `mise bootstrap --yes`).
-- [ ] Dotfiles: status (`mise dot status --json`), save, and sync.
-- [ ] Rebuild AI Setups on top of this view, so a setup is a bootstrap template.
+- [x] Machine view from `mise bootstrap status --json`: every part, flattened so
+      parts newer mise adds still show, with what isn't applied yet.
+- [x] Preview (`mise bootstrap --dry-run`) and apply (`mise bootstrap --yes`), for
+      everything or one part (`--only <part>`).
+- [x] Dotfiles: their state comes with bootstrap status; on 2026.10, checkpoint
+      history (`mise dotfiles status --json`), save, sync, and connecting an origin.
+- [x] AI Setups are bootstrap templates: each compiles to a `conf.d` file whose
+      `[bootstrap.packages]` show up in the Machine view.
+- [ ] Dotfile history browsing, rollback, and conflict resolution (`mise dot
+      history|rollback|conflicts`) — interactive today; revisit when they gain JSON.
 
 ## mise coverage
 
@@ -222,7 +228,7 @@ What the GUI does with each area of mise. "Planned" items are in the milestones 
 | Shell | `activate`, `doctor`, `reshim`, `en`, `exec` | ✅ activation guidance · planned: open terminal, reshim |
 | Settings | `settings ls/get/set/unset` | planned (M4) |
 | Updating mise | `version`, `self-update` | ✅ |
-| Machine setup | `bootstrap`, `dotfiles` | ✅ AI Setups (`bootstrap plan/status`, `bootstrap --only packages,tools`) · planned: machine view (M7) |
+| Machine setup | `bootstrap`, `dotfiles` | ✅ Machine view (`bootstrap status`, `--dry-run`, `--yes [--only]`), dotfile checkpoints, save, sync, origin; AI Setups |
 | Migration | `sync`, `link` | planned (M4 onboarding) |
 | Generators | `generate github-action/git-pre-commit/devcontainer/bootstrap` | planned (M3) |
 | Auth | `token` | planned (M4) |

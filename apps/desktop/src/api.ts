@@ -266,6 +266,11 @@ export type MiseAction =
   | { kind: "unsetVar"; project: string; name: string }
   | { kind: "addSetting"; key: string; value: string }
   | { kind: "toolAutoUpdate"; tool: string; on: boolean }
+  | { kind: "bootstrapPreview"; only: string | null }
+  | { kind: "bootstrapApply"; only: string | null }
+  | { kind: "dotfilesSave" }
+  | { kind: "dotfilesSync" }
+  | { kind: "dotfilesOriginSet"; url: string }
   | { kind: "cachePrune" }
   | { kind: "cacheClear" }
   | { kind: "reshim" }
@@ -328,6 +333,20 @@ export interface ProjectUpdates {
   path: string;
   name: string;
   outdated: OutdatedReport;
+}
+
+export interface MachineStatus {
+  sections: { id: string; items: { name: string; state: string | null; detail: string | null }[] }[];
+  history: {
+    enabled: boolean;
+    trackedFiles: number;
+    checkpoints: number;
+    latest: unknown;
+    unsaved: unknown;
+    pendingOperations: number;
+  } | null;
+  origin: string | null;
+  supportsHistory: boolean;
 }
 
 export interface DiskUsage {
@@ -530,6 +549,7 @@ export const api = {
   miseInstallers: () => call<InstallerOption[]>("mise_installers"),
   openUrl: (url: string) => call<void>("open_url", { url }),
   diskUsage: () => call<DiskUsage>("disk_usage"),
+  machineStatus: () => call<MachineStatus>("machine_status"),
   toolInfo: (tool: string) => call<ToolInfo>("tool_info", { tool }),
   backends: () => call<string[]>("backends"),
   projectUpdates: () => call<ProjectUpdates[]>("project_updates"),

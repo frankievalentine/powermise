@@ -193,6 +193,24 @@ warnings, red when something is broken.
 
 Reads: `mise doctor --json`, `mise version --json`, `mise token github`
 
+## Machine
+
+What your global mise config sets up on this computer beyond tools — system
+packages, dotfiles, Git repositories, services, macOS settings, and more — from
+its `[bootstrap]` and `[dotfiles]` sections, with the state of each item.
+
+- **Preview** shows what applying would change, without changing anything
+  (`mise bootstrap --dry-run`); **Apply** sets it up (`mise bootstrap --yes`).
+  Both work for everything or for one part (`--only dotfiles`, for example).
+- **Dotfile history** (mise 2026.10+) — checkpoints of the files mise tracks,
+  **Save Checkpoint** (`mise dotfiles save`), and syncing with a Git repository
+  (`mise dotfiles origin set <url>`, then `mise dotfiles sync`).
+
+Steps that need an administrator password (like apt packages) are best run from
+a terminal: `mise bootstrap --yes`.
+
+Reads: `mise bootstrap status --json`, `mise dotfiles status --json`
+
 ## Settings
 
 Every mise setting, grouped (General, GitHub, Node, Python, …) with its
