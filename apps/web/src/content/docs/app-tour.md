@@ -7,17 +7,6 @@ Every action in powermise opens a sheet that shows the mise command it will run.
 Confirm it, and the sheet streams mise's output live; you can stop it at any
 time. When it finishes, every screen refreshes from mise.
 
-## Home
-
-Where the app opens. A **Get started** checklist ticks itself off as you go —
-turn mise on in your terminal, install your first tool, add a project, bring over
-versions from other managers, sign in GitHub downloads, set up AI agents — and
-**At a glance** shows your tools and updates, health, projects, and AI setups,
-with recent changes below. Press **⌘K** (Ctrl+K) anywhere to search pages, tools,
-projects, setups, and settings at once.
-
-![Home, with the getting-started checklist and an at-a-glance summary of tools, health, projects, and AI agents](../../assets/app-tour/home.png)
-
 ## Welcome
 
 The first time powermise opens, it walks through four steps, each checked off
@@ -38,6 +27,17 @@ when it's already true:
 4. **Sign in GitHub downloads** (optional) — see [Health](#health).
 
 ![The Welcome steps: mise installed, turned on in the terminal, versions to bring over, and GitHub downloads](../../assets/app-tour/welcome.png)
+
+## Home
+
+Where the app opens once Welcome is done. A **Get started** checklist ticks itself off as you go —
+turn mise on in your terminal, install your first tool, add a project, bring over
+versions from other managers, sign in GitHub downloads, set up AI agents — and
+**At a glance** shows your tools and updates, health, projects, and AI setups,
+with recent changes below. Press **⌘K** (Ctrl+K) anywhere to search pages, tools,
+projects, setups, and settings at once.
+
+![Home, with the getting-started checklist and an at-a-glance summary of tools, health, projects, and AI agents](../../assets/app-tour/home.png)
 
 ## My Tools
 
