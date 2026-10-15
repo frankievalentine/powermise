@@ -25,6 +25,7 @@ include_desktop_apps = false
 | `name` | string | yes | Lowercase letters, numbers, and single hyphens. Must match the file name, and names the mise file: `conf.d/powermise-<name>.toml`. |
 | `catalog` | string | yes | The catalog this selection resolves against: `powermise-profiles`. |
 | `harnesses` | list of strings | yes | Curated harness IDs, for example `claude`, `codex`, `gemini`. |
+| `mcp_servers` | list of strings | no | MCP server IDs to add to the setup's agents, for example `context7`. Leave it out to use the harnesses' recommendations. |
 | `preferences.include_desktop_apps` | bool | no | Default `false`. Adds each harness's desktop companion apps where the platform has a provider. |
 
 ## Version 1 files

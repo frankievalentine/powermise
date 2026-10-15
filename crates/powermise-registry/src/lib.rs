@@ -1,7 +1,7 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
 use powermise_domain::{
-    AppCatalog, Catalog, ConfigProvider, IntegrationCatalog, McpServerCatalog, Platform,
+    AppCatalog, Catalog, ConfigProvider, IntegrationCatalog, McpClient, McpServerCatalog, Platform,
     SELECTION_SCHEMA_VERSION, Selection, ToolCatalog, ToolProvider, ToolProviderKind,
 };
 use thiserror::Error;
@@ -35,6 +35,8 @@ pub struct ResolvedSelection {
     pub unavailable_desktop_ids: Vec<String>,
     pub integration_ids: Vec<String>,
     pub mcp_server_ids: Vec<String>,
+    /// The agent config files the MCP servers are added to.
+    pub mcp_clients: Vec<McpClient>,
 }
 
 pub fn load_catalog(path: &Path) -> Result<Catalog, RegistryError> {
@@ -510,13 +512,30 @@ pub fn validate_mcp_catalog(
                 server.id
             )));
         }
-        validate_provided_or_rejected(
-            &format!("mcp server `{}`", server.id),
-            !server.providers.is_empty(),
-            server.unsupported_reason.as_ref(),
-        )?;
-        for provider in &server.providers {
-            validate_config_provider(&format!("mcp server `{}`", server.id), provider)?;
+        let filled =
+            |field: &Option<String>| field.as_deref().is_some_and(|text| !text.trim().is_empty());
+        let program = filled(&server.tool) && filled(&server.version) && filled(&server.command);
+        let remote = server
+            .url
+            .as_deref()
+            .is_some_and(|url| url.starts_with("https://"));
+        let mixed =
+            (server.url.is_some() && server.tool.is_some()) || (remote && !server.args.is_empty());
+        if mixed || program == remote {
+            return Err(RegistryError::Validation(format!(
+                "mcp server `{}` needs either a tool, version, and command, or an https url",
+                server.id
+            )));
+        }
+        if server
+            .version
+            .as_deref()
+            .is_some_and(|version| version.eq_ignore_ascii_case("latest"))
+        {
+            return Err(RegistryError::Validation(format!(
+                "mcp server `{}` must pin a version",
+                server.id
+            )));
         }
     }
     Ok(())
@@ -661,24 +680,45 @@ pub fn resolve_selection(
             .collect::<Vec<_>>(),
         target,
     )?;
-    let mcp_server_ids = resolve_config_ids(
-        "mcp server",
-        harnesses
+    // The setup's own MCP picks, or else its harnesses' recommendations.
+    let mcp_server_ids: Vec<String> = match &selection.mcp_servers {
+        Some(ids) => ids
             .iter()
-            .flat_map(|harness| harness.mcp_server_ids.iter())
-            .cloned(),
-        &mcp.mcp_servers
+            .cloned()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
+        None => harnesses
             .iter()
-            .map(|entry| {
-                (
-                    &entry.id,
-                    &entry.providers[..],
-                    entry.unsupported_reason.as_deref(),
-                )
-            })
-            .collect::<Vec<_>>(),
-        target,
-    )?;
+            .flat_map(|harness| harness.mcp_server_ids.iter().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
+    };
+    for id in &mcp_server_ids {
+        if !mcp.mcp_servers.iter().any(|server| &server.id == id) {
+            return Err(RegistryError::Validation(format!(
+                "mcp server `{id}` is not defined in the registry"
+            )));
+        }
+    }
+    // Where those servers go: each harness's agent, plus its desktop app's
+    // own config when that app is part of the setup.
+    let mcp_clients = harnesses
+        .iter()
+        .flat_map(|harness| {
+            let desktop = harness
+                .desktop_tool_ids
+                .iter()
+                .any(|id| desktop_app_ids.contains(id));
+            harness
+                .mcp_client
+                .into_iter()
+                .chain(harness.desktop_mcp_client.filter(|_| desktop))
+        })
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
     Ok(ResolvedSelection {
         harness_ids: harness_ids.into_iter().collect(),
         tool_ids,
@@ -686,6 +726,7 @@ pub fn resolve_selection(
         unavailable_desktop_ids,
         integration_ids,
         mcp_server_ids,
+        mcp_clients,
     })
 }
 
@@ -883,15 +924,13 @@ harnesses = ["conductor"]
                 "gemini-workspace"
             ]
         );
+        assert_eq!(resolved.mcp_server_ids, ["context7", "sequential-thinking"]);
         assert_eq!(
-            resolved.mcp_server_ids,
+            resolved.mcp_clients,
             [
-                "claude-context7",
-                "claude-sequential-thinking",
-                "codex-context7",
-                "codex-sequential-thinking",
-                "gemini-context7",
-                "gemini-sequential-thinking",
+                McpClient::ClaudeCode,
+                McpClient::Codex,
+                McpClient::GeminiCli
             ]
         );
     }
@@ -1086,14 +1125,14 @@ harnesses = ["conductor"]
         let catalog = catalog();
         let mut mcp = mcp();
         mcp.mcp_servers
-            .retain(|entry| entry.id != "codex-sequential-thinking");
+            .retain(|entry| entry.id != "sequential-thinking");
 
         let error = validate_harness_mcp_references(&catalog, &mcp).unwrap_err();
 
         assert!(
             error
                 .to_string()
-                .contains("unknown mcp server `codex-sequential-thinking`")
+                .contains("unknown mcp server `sequential-thinking`")
         );
     }
 

@@ -16,7 +16,9 @@ offline and every setup compiles the same way on every machine.
   per platform: a mise tool, or a Homebrew, apt, winget, or Scoop package.
 - **Apps** — curated desktop applications a setup can include.
 - **Integrations** — editor and shell integrations a harness works with.
-- **MCP servers** — MCP server definitions attached to a harness.
+- **MCP servers** — servers an agent can use: a program mise installs and runs
+  (`tool`, `version`, `command`), or a remote server (`url`). Each harness
+  recommends a few.
 
 You choose *which* harnesses to include; you don't redefine how they're
 installed. The catalog is the single source of truth for what a harness needs
@@ -33,8 +35,9 @@ A setup is eligible to apply only when powermise can:
 powermise then writes that file into mise's `conf.d` folder, and
 `mise bootstrap` installs it. The catalog never changes your machine on its
 own — only **Apply** does, after you've reviewed the file and the command.
-Integrations and MCP servers are listed for reference and marked **Manual
-setup**.
+MCP servers go into the agents' own settings through mise (see
+[MCP servers](/ai-setups/terminal/#mcp-servers)); integrations are listed for
+reference and marked **Manual setup**.
 
 The catalog is validated in powermise's test suite (`cargo test --workspace`),
 which checks the structure and that every reference resolves. See

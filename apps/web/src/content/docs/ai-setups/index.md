@@ -33,8 +33,10 @@ own config. Applying it runs `mise bootstrap`; removing it deletes the file.
 That's the whole contract, so you can do all of it from a terminal too:
 [From the terminal: it's just mise](/ai-setups/terminal/).
 
-MCP servers and integrations are listed but not configured yet; a setup marks
-them **Manual setup** instead of pretending they're done.
+A setup also adds the MCP servers you pick to each agent's own settings, with
+a mise dotfiles merge that owns only those servers. Integrations are listed but
+not configured yet; a setup marks them **Manual setup** instead of pretending
+they're done.
 
 ## Reference
 

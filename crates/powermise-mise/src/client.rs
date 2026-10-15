@@ -345,6 +345,33 @@ impl MiseClient {
             .unwrap_or_default())
     }
 
+    /// Each `[dotfiles]` edit entry and its state (`applied`, `differs`, …)
+    /// from `mise dotfiles status --json`: `(target, edit, state)`, such as
+    /// `("~/.claude.json", "merge:powermise-work", "applied")`.
+    pub fn dotfile_edits(&self) -> Result<Vec<(String, String, String)>, MiseAdapterError> {
+        let json: serde_json::Value = self.read_json(&["dotfiles", "status", "--json"], None)?;
+        let text = |entry: &serde_json::Value, key: &str| {
+            entry
+                .get(key)
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_owned()
+        };
+        Ok(json
+            .get("edits")
+            .and_then(serde_json::Value::as_array)
+            .into_iter()
+            .flatten()
+            .map(|entry| {
+                (
+                    text(entry, "path"),
+                    text(entry, "edit"),
+                    text(entry, "state"),
+                )
+            })
+            .collect())
+    }
+
     /// The repository dotfile checkpoints sync with (`mise dotfiles origin`,
     /// 2026.10+), or `None` when none is connected.
     pub fn dotfiles_origin(&self) -> Result<Option<String>, MiseAdapterError> {
@@ -1058,6 +1085,14 @@ impl MiseCommand {
             source.tool().into(),
             format!("--{}", source.flag()),
         ])
+    }
+
+    /// `mise dotfiles apply --yes <targets>`: apply only the `[dotfiles]`
+    /// entries for these files (2026.10+).
+    pub fn dotfiles_apply(targets: &[PathBuf]) -> Self {
+        let mut arguments = vec!["dotfiles".into(), "apply".into(), "--yes".into()];
+        arguments.extend(targets.iter().map(|target| target.display().to_string()));
+        Self::new(arguments)
     }
 
     /// `mise self-update --yes`: update mise itself (the person already

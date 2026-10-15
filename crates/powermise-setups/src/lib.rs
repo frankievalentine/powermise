@@ -6,8 +6,10 @@
 //! the fragment removes the setup from mise's config. powermise keeps only
 //! the setup files themselves (`<powermise>/selections/<name>.toml`).
 mod catalog;
+mod mcp_files;
 mod selection;
 
+pub use mcp_files::{RemovedServer, expand_home, files_dir, remove_mcp_files, write_mcp_files};
 pub use selection::SelectionStore;
 
 use std::{
@@ -15,7 +17,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use powermise_compiler::{CompileOptions, Compiled, compile_with};
+use powermise_compiler::{CompileOptions, Compiled, compile_mcp, compile_with};
 use powermise_domain::{MacArch, Platform};
 use powermise_registry::{
     ResolvedSelection, load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog,
@@ -155,11 +157,13 @@ pub struct CompiledSetup {
 }
 
 /// Loads and validates the catalog, resolves the setup at `selection_path`,
-/// and compiles its mise fragment for `target`.
+/// and compiles its mise fragment for `target`. MCP servers run through the
+/// mise at `mise` (by name when it's unknown).
 pub fn compile_setup(
     paths: &CatalogPaths,
     selection_path: &Path,
     target: Platform,
+    mise: Option<&Path>,
 ) -> Result<CompiledSetup, SetupsError> {
     let catalog = load_catalog(&paths.harnesses)?;
     validate_catalog(&catalog)?;
@@ -171,7 +175,17 @@ pub fn compile_setup(
     let selection = load_selection(selection_path)?;
     validate_selection(&selection, &catalog, target)?;
     let resolved = resolve_selection(&selection, &catalog, &tools, &integrations, &mcp, target)?;
-    let compiled = compile_with(&resolved, &tools, target, compile_options(target))?;
+    let mut compiled = compile_with(&resolved, &tools, target, compile_options(target))?;
+    let mise_command = mise.map_or_else(|| "mise".to_owned(), |path| path.display().to_string());
+    compile_mcp(
+        &mut compiled,
+        &selection.name,
+        &resolved.mcp_server_ids,
+        &resolved.mcp_clients,
+        &mcp,
+        target,
+        &mise_command,
+    )?;
     let toml = compiled.config.to_toml()?;
     let read = |path: &Path| {
         fs::read(path).map_err(|source| SetupsError::Io {
@@ -284,7 +298,7 @@ mod tests {
     fn the_engineering_agents_fixture_compiles_to_a_conf_d_fragment() {
         let selection = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../selections/engineering-agents.toml");
-        let setup = compile_setup(&repo_catalog(), &selection, Platform::Darwin).unwrap();
+        let setup = compile_setup(&repo_catalog(), &selection, Platform::Darwin, None).unwrap();
         let mise = scratch("mise");
         assert!(
             setup
@@ -310,7 +324,7 @@ mod tests {
     fn windows_tools_compile_to_winget_or_scoop_packages() {
         let selection =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../selections/windows-fixture.toml");
-        let setup = compile_setup(&repo_catalog(), &selection, Platform::Win32).unwrap();
+        let setup = compile_setup(&repo_catalog(), &selection, Platform::Win32, None).unwrap();
         assert!(
             setup.fragment.contents().contains("\"winget:"),
             "{}",
@@ -322,7 +336,7 @@ mod tests {
     fn writing_inspecting_and_removing_a_fragment() {
         let selection = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../selections/engineering-agents.toml");
-        let setup = compile_setup(&repo_catalog(), &selection, Platform::Darwin).unwrap();
+        let setup = compile_setup(&repo_catalog(), &selection, Platform::Darwin, None).unwrap();
         let mise = scratch("roundtrip");
         // A user's own config is never touched.
         fs::write(mise.join("config.toml"), "[tools]\nnode = \"24\"\n").unwrap();

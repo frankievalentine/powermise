@@ -9,10 +9,13 @@ import toolsToml from "../../../../catalog/profiles/tools.toml?raw";
 import appsToml from "../../../../catalog/profiles/apps.toml?raw";
 import integrationsToml from "../../../../catalog/profiles/integrations.toml?raw";
 import mcpToml from "../../../../catalog/profiles/mcp.toml?raw";
+import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED } from "../catalog";
 import { demoMise, NOT_HANDLED, setBootstrapHook } from "./demoMise";
 import { demoHasMise } from "./demoMachine";
 export { browserEvents } from "./demoMise";
 import type {
+  McpClientId,
+  McpTarget,
   BootstrapPlan,
   CatalogBundle,
   EnvironmentInfo,
@@ -58,7 +61,10 @@ const APPLY_COMMAND = "mise bootstrap --yes --only packages,tools";
 interface DemoSetup {
   name: string;
   harnesses: string[];
+  mcpServers: string[] | null;
   includeDesktopApps: boolean;
+  /** Whether the demo applied its MCP servers. */
+  mcpApplied?: boolean;
   /** The fragment mise currently reads, once applied. */
   applied: string | null;
   /** Keys the demo bootstrap has installed. */
@@ -69,6 +75,7 @@ const setups: DemoSetup[] = [
   {
     name: "engineering-agents",
     harnesses: ["claude", "codex", "gemini"],
+    mcpServers: null,
     includeDesktopApps: false,
     applied: null,
     installed: new Set(),
@@ -105,6 +112,7 @@ function compile(draft: SelectionDraft, target: Platform) {
   const unavailable = new Set<string>();
   const integrations = new Set<string>();
   const mcp = new Set<string>();
+  const clients = new Set<McpClientId>();
   for (const id of ids) {
     const harness = byId.get(id);
     if (!harness) continue;
@@ -124,8 +132,13 @@ function compile(draft: SelectionDraft, target: Platform) {
       }
     }
     harness.integration_ids.forEach((entry) => integrations.add(entry));
-    harness.mcp_server_ids.forEach((entry) => mcp.add(entry));
+    if (!draft.mcpServers) harness.mcp_server_ids.forEach((entry) => mcp.add(entry));
+    if (harness.mcp_client) clients.add(harness.mcp_client);
+    if (harness.desktop_mcp_client && harness.desktop_tool_ids.some((tool) => desktop.has(tool))) {
+      clients.add(harness.desktop_mcp_client);
+    }
   }
+  draft.mcpServers?.forEach((entry) => mcp.add(entry));
 
   const installs: Install[] = [];
   for (const id of [...tools].sort()) {
@@ -146,10 +159,53 @@ function compile(draft: SelectionDraft, target: Platform) {
       version: homebrew ? "latest" : provider.version,
     });
   }
-  return { ids, tools, desktop, unavailable, integrations, mcp, installs };
+  // MCP servers: their tools install with mise, and each agent gets a merge.
+  const servers = [...mcp].sort().flatMap((id) => catalog.mcp.mcp_servers.find((server) => server.id === id) ?? []);
+  const mcpTargets: McpTarget[] = [];
+  const skipped: { id: string; reason: string }[] = [];
+  if (clients.size) {
+    for (const server of servers) {
+      if (server.tool && server.version) {
+        installs.push({ toolId: server.id, kind: "mise-tool", key: server.tool, version: server.version });
+      }
+    }
+    for (const client of [...clients].sort()) {
+      const path = MCP_PATHS[client]?.(target);
+      if (!path) {
+        skipped.push({ id: client, reason: `MCP servers for ${MCP_CLIENT_TITLE[client]}: ${MCP_CLIENT_UNSUPPORTED[client] ?? "not on this system"}` });
+        continue;
+      }
+      const usable = servers.filter((server) => !(server.url && client === "claude-desktop"));
+      if (usable.length) {
+        mcpTargets.push({ client, title: MCP_CLIENT_TITLE[client], target: path, servers: usable.map((server) => server.id) });
+      }
+    }
+  }
+  return { ids, tools, desktop, unavailable, integrations, mcp, installs, mcpTargets, skipped };
 }
 
-function fragment(name: string, installs: Install[]): string {
+/** Mirrors `McpClient::config_path` in powermise-domain. */
+const MCP_PATHS: Partial<Record<McpClientId, (platform: Platform) => string | null>> = {
+  "claude-code": () => "~/.claude.json",
+  "claude-desktop": (platform) =>
+    platform === "darwin"
+      ? "~/Library/Application Support/Claude/claude_desktop_config.json"
+      : platform === "win32"
+        ? "~/AppData/Roaming/Claude/claude_desktop_config.json"
+        : null,
+  codex: () => "~/.codex/config.toml",
+  "gemini-cli": () => "~/.gemini/settings.json",
+  opencode: () => "~/.config/opencode/opencode.json",
+  cursor: () => "~/.cursor/mcp.json",
+  vscode: (platform) =>
+    `${platform === "darwin" ? "~/Library/Application Support/Code/User" : platform === "win32" ? "~/AppData/Roaming/Code/User" : "~/.config/Code/User"}/mcp.json`,
+  "copilot-cli": () => "~/.copilot/mcp-config.json",
+  cline: (platform) =>
+    `${platform === "darwin" ? "~/Library/Application Support/Code/User" : platform === "win32" ? "~/AppData/Roaming/Code/User" : "~/.config/Code/User"}/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`,
+  antigravity: () => "~/.gemini/antigravity/mcp_config.json",
+};
+
+function fragment(name: string, installs: Install[], mcpTargets: McpTarget[] = []): string {
   const tools = installs.filter((install) => install.kind === "mise-tool");
   const packages = installs.filter((install) => install.kind !== "mise-tool" && install.kind !== "system");
   const quote = (key: string) => (/^[A-Za-z0-9_-]+$/.test(key) ? key : `"${key}"`);
@@ -162,6 +218,12 @@ function fragment(name: string, installs: Install[]): string {
     ...(packages.length
       ? ["[bootstrap.packages]", ...packages.map((install) => `"${install.key}" = "${install.version}"`), ""]
       : []),
+    ...mcpTargets.flatMap((entry) => [
+      `[dotfiles."${entry.target}/powermise-${name}"]`,
+      `source = "powermise-${name}.files/${entry.client}.${entry.client === "codex" ? "toml" : "json"}"`,
+      "merge = true",
+      "",
+    ]),
   ].join("\n");
 }
 
@@ -181,7 +243,7 @@ function change(path: string, current: string | null, desired: string): FileChan
 function preview(draft: SelectionDraft, target: Platform): Preview {
   const name = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(draft.name) ? draft.name : "untitled";
   const compiled = compile(draft, target);
-  const contents = fragment(name, compiled.installs);
+  const contents = fragment(name, compiled.installs, compiled.mcpTargets);
   const existing = setups.find((setup) => setup.name === name)?.applied ?? null;
   return {
     installs: compiled.installs,
@@ -196,9 +258,10 @@ function preview(draft: SelectionDraft, target: Platform): Preview {
     fragmentPath: fragmentPath(name),
     fragmentContents: contents,
     change: change(fragmentPath(name), existing, contents),
-    applyCommand: APPLY_COMMAND,
-    skipped: [],
+    applyCommand: applyCommand(compiled.mcpTargets),
+    skipped: compiled.skipped,
     homebrewSetup: null,
+    mcp: compiled.mcpTargets,
   };
 }
 
@@ -207,6 +270,7 @@ function saved(setup: DemoSetup): SavedSelection {
     name: setup.name,
     path: `${HOME}/.config/powermise/selections/${setup.name}.toml`,
     harnesses: setup.harnesses,
+    mcpServers: setup.mcpServers,
     includeDesktopApps: setup.includeDesktopApps,
     fragmentPath: fragmentPath(setup.name),
     applied: setup.applied !== null,
@@ -229,7 +293,28 @@ function demoBootstrap(): string[] {
   }
   return lines.length ? lines : ["mise all packages and tools are installed"];
 }
-setBootstrapHook(demoBootstrap);
+const demoTargets = (name: string) => {
+  const setup = setups.find((entry) => entry.name === name);
+  return setup ? compile(setup, "darwin").mcpTargets.map((entry) => entry.target) : [];
+};
+setBootstrapHook(
+  demoBootstrap,
+  (name) => {
+    const setup = setups.find((entry) => entry.name === name);
+    if (!setup) return [];
+    setup.mcpApplied = true;
+    return compile(setup, "darwin").mcpTargets.map(
+      (entry) => `mise edits: applied ${entry.target} (merge:powermise-${name})`,
+    );
+  },
+  demoTargets,
+);
+
+function applyCommand(targets: McpTarget[]): string {
+  return targets.length
+    ? `${APPLY_COMMAND} && mise dotfiles apply --yes ${targets.map((entry) => entry.target).join(" ")}`
+    : APPLY_COMMAND;
+}
 
 export async function browserPreview<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
   await sleep(command === "setup_status" || command === "bootstrap_plan" ? 500 : 60);
@@ -251,7 +336,13 @@ export async function browserPreview<T>(command: string, args: Record<string, un
     case "save_selection": {
       const draft = args.draft as SelectionDraft;
       const existing = setups.find((setup) => setup.name === draft.name);
-      if (existing) Object.assign(existing, { harnesses: draft.harnesses, includeDesktopApps: draft.includeDesktopApps });
+      if (existing) {
+        Object.assign(existing, {
+          harnesses: draft.harnesses,
+          mcpServers: draft.mcpServers,
+          includeDesktopApps: draft.includeDesktopApps,
+        });
+      }
       else setups.push({ ...draft, applied: null, installed: new Set() });
       return `${HOME}/.config/powermise/selections/${draft.name}.toml` as T;
     }
@@ -262,7 +353,7 @@ export async function browserPreview<T>(command: string, args: Record<string, un
       if (!setup) throw new Error(`setup \`${args.name}\` does not exist`);
       const next = preview(setup, args.target as Platform);
       setup.applied = next.fragmentContents;
-      return { path: next.fragmentPath, change: next.change } satisfies WrittenSetup as T;
+      return { path: next.fragmentPath, change: next.change, removedServers: [] } satisfies WrittenSetup as T;
     }
     case "bootstrap_plan": {
       const pending = setups
@@ -295,7 +386,8 @@ export async function browserPreview<T>(command: string, args: Record<string, un
         name: setup.name,
         fragmentPath: next.fragmentPath,
         change: next.change,
-        applyCommand: APPLY_COMMAND,
+        applyCommand: next.applyCommand,
+        mcp: next.mcp.map((entry) => ({ ...entry, state: setup.mcpApplied ? "applied" : "not applied" })),
         items: next.installs.map((install) => {
           const system = install.kind === "system";
           const installed = system || setup.installed.has(install.key);
@@ -316,6 +408,7 @@ export async function browserPreview<T>(command: string, args: Record<string, un
       if (index >= 0) setups.splice(index, 1);
       return {
         removed: [fragmentPath(name), `${HOME}/.config/powermise/selections/${name}.toml`],
+        removedServers: [],
         cleanupCommand: "mise prune --tools",
       } satisfies RemovedSetup as T;
     }

@@ -301,12 +301,13 @@ mod tests {
         });
         let sections = parse_machine_status(&json);
         let ids: Vec<_> = sections.iter().map(|section| section.id.as_str()).collect();
-        assert_eq!(ids, ["dotfiles", "packages", "tools"]);
-        assert_eq!(sections[0].items[0].name, "~/.gitconfig");
-        assert_eq!(sections[0].items[0].detail.as_deref(), Some("symlink"));
-        assert_eq!(sections[1].items[0].name, "brew:hello");
-        assert_eq!(sections[1].items[0].state.as_deref(), Some("missing"));
-        assert_eq!(sections[2].items[0].detail.as_deref(), Some("1.7.1"));
+        // In mise's order.
+        assert_eq!(ids, ["packages", "tools", "dotfiles"]);
+        assert_eq!(sections[0].items[0].name, "brew:hello");
+        assert_eq!(sections[0].items[0].state.as_deref(), Some("missing"));
+        assert_eq!(sections[1].items[0].detail.as_deref(), Some("1.7.1"));
+        assert_eq!(sections[2].items[0].name, "~/.gitconfig");
+        assert_eq!(sections[2].items[0].detail.as_deref(), Some("symlink"));
 
         let macos = parse_machine_status(
             &serde_json::json!({"macos_defaults": {"available": true, "entries": [

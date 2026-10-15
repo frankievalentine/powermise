@@ -7,10 +7,6 @@ import { Section } from "../components/ui";
 import { AgentsTabs } from "../components/SectionTabs";
 
 const COPY = {
-  mcp: {
-    title: "MCP Servers",
-    subtitle: "Model Context Protocol servers give an agent extra abilities, like reading current library docs.",
-  },
   integrations: {
     title: "Integrations",
     subtitle: "Connections between an agent and the services you already use.",
@@ -24,10 +20,10 @@ export function ConfigView({
 }: {
   context: AppContext;
   query: string;
-  kind: "mcp" | "integrations";
+  kind: "integrations";
 }) {
   const { catalog } = context;
-  const entries = kind === "mcp" ? catalog.mcpServers : catalog.integrations;
+  const entries = catalog.integrations;
 
   const groups = useMemo(() => {
     const needle = query.trim().toLowerCase();

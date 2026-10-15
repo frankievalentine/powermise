@@ -22,42 +22,49 @@ generated from it by compiling every harness for every platform.
    `mise bootstrap` installs. See
    [From the terminal](/ai-setups/terminal/).
 
-Integrations and MCP servers are listed for each harness but not configured:
-they show as **Manual setup**.
+5. MCP servers the setup picks (each harness recommends a few) are added to
+   every agent in the setup through mise: see
+   [MCP servers](/ai-setups/terminal/#mcp-servers). Integrations are listed but
+   not configured yet: they show as **Manual setup**.
 
 ## What each harness installs
 
 "Works on" is every platform the harness compiles for today. Installs are the
-macOS keys as they appear in the generated file.
+macOS keys as they appear in the generated file, including the tools for the
+harness's recommended MCP servers.
 
 | Harness | Works on | Installs on macOS, beyond the basics | Desktop apps (opt-in) | MCP servers |
 | --- | --- | --- | --- | --- |
-| `antigravity` | darwin, linux | — | — | — |
-| `claude` | darwin, linux, win32, wsl | `claude-code` | `brew-cask:claude` | `claude-context7`, `claude-sequential-thinking` |
-| `cline` | darwin, win32 | `node`, `npm:cline`, `brew-cask:visual-studio-code` | — | `cline-context7` |
-| `codex` | darwin, linux, win32, wsl | `node`, `npm:@openai/codex` | `brew-cask:codex-app` | `codex-context7`, `codex-sequential-thinking` |
+| `antigravity` | darwin, win32 | `npm:@upstash/context7-mcp`, `brew-cask:antigravity` | — | `context7` |
+| `claude` | darwin, linux, win32, wsl | `claude-code`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp` | `brew-cask:claude` | `context7`, `sequential-thinking` |
+| `cline` | darwin, win32 | `node`, `npm:@upstash/context7-mcp`, `npm:cline`, `brew-cask:visual-studio-code` | — | `context7` |
+| `codex` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@openai/codex`, `npm:@upstash/context7-mcp` | `brew-cask:codex-app` | `context7`, `sequential-thinking` |
 | `conductor` | darwin | `brew-cask:conductor` | — | — |
-| `cursor` | darwin | `brew-cask:cursor` | — | `cursor-context7`, `cursor-sequential-thinking` |
+| `cursor` | darwin, win32 | `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp`, `brew-cask:cursor` | — | `context7`, `sequential-thinking` |
 | `fx` | darwin, linux, wsl | `github:vercel-labs/fx` | — | — |
-| `gemini` | darwin, linux, win32, wsl | `node`, `npm:@google/gemini-cli` | — | `gemini-context7`, `gemini-sequential-thinking` |
-| `github-copilot` | darwin, win32 | `brew-cask:visual-studio-code` | — | — |
+| `gemini` | darwin, linux, win32, wsl | `node`, `npm:@google/gemini-cli`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp` | — | `context7`, `sequential-thinking` |
+| `github-copilot` | darwin, linux, win32, wsl | `copilot`, `npm:@upstash/context7-mcp` | `brew-cask:visual-studio-code` | `context7` |
 | `goose` | darwin, linux, win32, wsl | `github:aaif-goose/goose` | — | — |
-| `hermes` | none yet | — | — | — |
+| `hermes` | darwin, linux, wsl | `brew:hermes-agent` | — | — |
 | `openclaw` | darwin, linux, win32, wsl | `node`, `npm:openclaw` | — | — |
-| `opencode` | darwin, linux, win32, wsl | `node`, `npm:opencode-ai` | — | `opencode-context7`, `opencode-sequential-thinking` |
+| `opencode` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp`, `npm:opencode-ai` | — | `context7`, `sequential-thinking` |
+| `orca` | darwin, win32 | `macos-app:orca` | — | — |
 | `paseo` | darwin, linux, win32, wsl | `npm:@getpaseo/cli` | — | — |
 | `pi` | darwin, linux, win32, wsl | `npm:@earendil-works/pi-coding-agent` | — | — |
 | `superset` | darwin | `brew-cask:superset` | — | — |
 | `t3code` | darwin | `brew-cask:t3-code` | — | — |
-| `zed` | darwin | `brew-cask:zed` | — | `zed-context7`, `zed-sequential-thinking` |
+| `zed` | darwin, win32 | `brew-cask:zed` | — | — |
 
 ## Known gaps
 
-- **`hermes` can't be installed anywhere yet.** Its vendor publishes only
-  install scripts, with no package-manager or mise identifier.
-- **Desktop apps are macOS-only.** They come from Homebrew casks. None of the
-  catalog's apps has a Flathub listing verified by its developer, so there's no
-  official Linux route yet.
+- **`hermes` has no Windows build.** It installs from Homebrew on macOS and
+  Linux.
+- **Desktop apps install on macOS and Windows only.** They come from Homebrew
+  casks (or the vendor's checksummed download, for Orca) and winget. None of
+  the catalog's apps has a Flathub listing verified by its developer, so
+  there's no official Linux route yet.
+- **Zed's MCP servers aren't configured.** Zed's settings file can hold
+  comments, which mise won't merge into; add servers in Zed's Agent Panel.
 - **`cline` and `github-copilot` need VS Code**, which has no Linux provider.
 - **`antigravity` covers macOS and Linux only.**
 

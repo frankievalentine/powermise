@@ -2,6 +2,8 @@ import type {
   CatalogBundle,
   ConfigEntry,
   Harness,
+  McpClientId,
+  McpServer,
   Platform,
   Tool,
   ToolProvider,
@@ -17,7 +19,8 @@ export interface CatalogIndex {
   tools: Tool[];
   toolById: Map<string, Tool>;
   integrations: ConfigEntry[];
-  mcpServers: ConfigEntry[];
+  mcpServers: McpServer[];
+  mcpById: Map<string, McpServer>;
   configById: Map<string, ConfigEntry>;
 }
 
@@ -37,7 +40,8 @@ export function indexCatalog(bundle: CatalogBundle): CatalogIndex {
     toolById: new Map(tools.map((tool) => [tool.id, tool])),
     integrations,
     mcpServers,
-    configById: new Map([...integrations, ...mcpServers].map((entry) => [entry.id, entry])),
+    mcpById: new Map(mcpServers.map((server) => [server.id, server])),
+    configById: new Map(integrations.map((entry) => [entry.id, entry])),
   };
 }
 
@@ -118,9 +122,37 @@ export function titleFor(index: CatalogIndex, id: string): string {
   return (
     index.toolById.get(id)?.title ??
     index.configById.get(id)?.title ??
+    index.mcpById.get(id)?.title ??
     index.harnessById.get(id)?.title ??
     id
   );
+}
+
+export const MCP_CLIENT_TITLE: Record<McpClientId, string> = {
+  "claude-code": "Claude Code",
+  "claude-desktop": "Claude desktop app",
+  codex: "Codex",
+  "gemini-cli": "Gemini CLI",
+  opencode: "OpenCode",
+  cursor: "Cursor",
+  vscode: "VS Code",
+  "copilot-cli": "Copilot CLI",
+  cline: "Cline",
+  antigravity: "Antigravity",
+  zed: "Zed",
+};
+
+/** Agents powermise can't add MCP servers to, and why. */
+export const MCP_CLIENT_UNSUPPORTED: Partial<Record<McpClientId, string>> = {
+  zed: "Zed’s settings file can hold comments, which mise won’t merge into. Add servers in Zed’s Agent Panel settings.",
+};
+
+/** How an MCP server runs, in words. */
+export function mcpRunsAs(server: McpServer): string {
+  if (server.url) return "Remote server · nothing to install";
+  const backend = server.tool?.split(":")[0];
+  const kind = backend === "npm" ? "npm package" : backend === "pipx" ? "Python package" : `${backend} tool`;
+  return `${kind} · mise installs and runs it`;
 }
 
 /** Agent names for config targets such as `claude` or `codex`. */

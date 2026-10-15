@@ -7,6 +7,9 @@
 //! removes it from the config.
 use std::collections::{BTreeMap, BTreeSet};
 
+mod mcp;
+pub use mcp::{DotfileMerge, McpFile, compile_mcp, edit_id, files_dir_name};
+
 use powermise_domain::{MacArch, Platform, ToolCatalog, ToolProvider, ToolProviderKind};
 use powermise_registry::ResolvedSelection;
 use serde::Serialize;
@@ -19,6 +22,9 @@ pub struct CompiledMiseConfig {
     pub tools: BTreeMap<String, String>,
     #[serde(skip_serializing_if = "BootstrapConfig::is_empty")]
     pub bootstrap: BootstrapConfig,
+    /// Merge entries for agents' MCP configs, keyed `"<target>/<id>"`.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub dotfiles: BTreeMap<String, DotfileMerge>,
 }
 
 impl CompiledMiseConfig {
@@ -82,6 +88,8 @@ pub struct Compiled {
     /// Tools left out on this machine, with why (for example Homebrew
     /// formulas on an Intel Mac). Reported, never fatal.
     pub skipped: Vec<Skipped>,
+    /// MCP config sources to write beside the fragment.
+    pub mcp_files: Vec<McpFile>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -131,6 +139,8 @@ pub enum CompilerError {
     },
     #[error("could not serialize mise configuration: {0}")]
     Serialize(#[source] toml::ser::Error),
+    #[error("could not render an MCP config: {0}")]
+    Render(String),
 }
 
 fn format_unsupported_reason(unsupported_reason: &Option<String>) -> String {
@@ -402,6 +412,7 @@ mod tests {
             unavailable_desktop_ids: vec![],
             integration_ids: vec![],
             mcp_server_ids: vec![],
+            mcp_clients: vec![],
         }
     }
 

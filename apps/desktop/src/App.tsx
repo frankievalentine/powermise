@@ -40,6 +40,7 @@ import { HarnessesView } from "./views/HarnessesView";
 import { HarnessDetail } from "./views/HarnessDetail";
 import { ToolsView } from "./views/ToolsView";
 import { ConfigView } from "./views/ConfigView";
+import { McpServersView } from "./views/McpServersView";
 import { SetupEditor } from "./views/SetupEditor";
 import { SetupView } from "./views/SetupView";
 import { InstalledView } from "./views/mise/InstalledView";
@@ -504,7 +505,7 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
     case "tools":
       return <ToolsView context={context} query={query} />;
     case "mcp":
-      return <ConfigView context={context} query={query} kind="mcp" />;
+      return <McpServersView context={context} query={query} />;
     case "integrations":
       return <ConfigView context={context} query={query} kind="integrations" />;
     case "setup":

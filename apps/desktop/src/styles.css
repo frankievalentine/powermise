@@ -2465,3 +2465,8 @@ button {
 .activation-steps .field-hint {
   margin: 0;
 }
+
+.plain-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}

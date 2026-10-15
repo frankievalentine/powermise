@@ -2,132 +2,68 @@ schema_version = 1
 catalog = "powermise-profiles"
 catalog_revision = "2"
 
-[[mcp_servers]]
-id = "claude-context7"
-title = "Context7 for Claude"
-description = "Context7 MCP server that resolves current library documentation for Claude Code."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "claude"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+# MCP servers powermise can add to an agent. A server is a program mise
+# installs and runs (`tool`, `version`, `command`) or a remote server (`url`).
+# powermise writes them into each agent's own config file with a mise
+# dotfiles merge entry, so mise owns only those keys.
 
 [[mcp_servers]]
-id = "claude-sequential-thinking"
-title = "Sequential Thinking for Claude"
-description = "Sequential Thinking MCP server that structures multi-step reasoning for Claude Code."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "claude"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
-
-[[mcp_servers]]
-id = "cline-context7"
-title = "Context7 for Cline"
-description = "Context7 MCP server that resolves current library documentation inside Cline."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "cline"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+id = "context7"
+title = "Context7"
+description = "Up-to-date, version-specific documentation and code examples for the libraries you use."
+homepage = "https://github.com/upstash/context7"
+tool = "npm:@upstash/context7-mcp"
+version = "4.4.2"
+command = "context7-mcp"
 
 [[mcp_servers]]
-id = "codex-context7"
-title = "Context7 for Codex"
-description = "Context7 MCP server that resolves current library documentation for Codex."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "codex"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
-
-[[mcp_servers]]
-id = "codex-sequential-thinking"
-title = "Sequential Thinking for Codex"
-description = "Sequential Thinking MCP server that structures multi-step reasoning for Codex."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "codex"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+id = "sequential-thinking"
+title = "Sequential Thinking"
+description = "Helps the agent work through hard problems step by step, revising as it goes."
+homepage = "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking"
+tool = "npm:@modelcontextprotocol/server-sequential-thinking"
+version = "1.0.0"
+command = "mcp-server-sequential-thinking"
 
 [[mcp_servers]]
-id = "cursor-context7"
-title = "Context7 for Cursor"
-description = "Context7 MCP server that resolves current library documentation inside Cursor."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "cursor"
-supported_platforms = ["darwin", "linux", "wsl"]
-
-[[mcp_servers]]
-id = "cursor-sequential-thinking"
-title = "Sequential Thinking for Cursor"
-description = "Sequential Thinking MCP server that structures multi-step reasoning inside Cursor."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "cursor"
-supported_platforms = ["darwin", "linux", "wsl"]
+id = "playwright"
+title = "Playwright"
+description = "Lets the agent open web pages, click, type, and read them in a real browser."
+homepage = "https://github.com/microsoft/playwright-mcp"
+tool = "npm:@playwright/mcp"
+version = "0.0.83"
+command = "playwright-mcp"
 
 [[mcp_servers]]
-id = "gemini-context7"
-title = "Context7 for Gemini"
-description = "Context7 MCP server that resolves current library documentation for the Gemini CLI."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "gemini"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
-
-[[mcp_servers]]
-id = "gemini-sequential-thinking"
-title = "Sequential Thinking for Gemini"
-description = "Sequential Thinking MCP server that structures multi-step reasoning for the Gemini CLI."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "gemini"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+id = "chrome-devtools"
+title = "Chrome DevTools"
+description = "Lets the agent inspect, debug, and measure performance in Chrome."
+homepage = "https://github.com/ChromeDevTools/chrome-devtools-mcp"
+tool = "npm:chrome-devtools-mcp"
+version = "1.11.0"
+command = "chrome-devtools-mcp"
 
 [[mcp_servers]]
-id = "opencode-context7"
-title = "Context7 for OpenCode"
-description = "Context7 MCP server that resolves current library documentation for OpenCode."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "opencode"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
-
-[[mcp_servers]]
-id = "opencode-sequential-thinking"
-title = "Sequential Thinking for OpenCode"
-description = "Sequential Thinking MCP server that structures multi-step reasoning for OpenCode."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "opencode"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
+id = "memory"
+title = "Memory"
+description = "A knowledge graph the agent can save facts to and recall across sessions."
+homepage = "https://github.com/modelcontextprotocol/servers/tree/main/src/memory"
+tool = "npm:@modelcontextprotocol/server-memory"
+version = "1.0.0"
+command = "mcp-server-memory"
 
 [[mcp_servers]]
-id = "zed-context7"
-title = "Context7 for Zed"
-description = "Context7 MCP server that resolves current library documentation inside Zed."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "zed"
-supported_platforms = ["darwin", "linux"]
+id = "fetch"
+title = "Fetch"
+description = "Fetches web pages and turns them into Markdown the agent can read."
+homepage = "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch"
+tool = "pipx:mcp-server-fetch"
+version = "2026.10.10"
+command = "mcp-server-fetch"
 
 [[mcp_servers]]
-id = "zed-sequential-thinking"
-title = "Sequential Thinking for Zed"
-description = "Sequential Thinking MCP server that structures multi-step reasoning inside Zed."
-
-[[mcp_servers.providers]]
-kind = "config-adapter"
-config_target = "zed"
-supported_platforms = ["darwin", "linux"]
+id = "deepwiki"
+title = "DeepWiki"
+description = "Answers questions about public GitHub repositories from their generated documentation. Runs remotely; nothing to install."
+homepage = "https://docs.devin.ai/work-with-devin/deepwiki-mcp"
+url = "https://mcp.deepwiki.com/mcp"

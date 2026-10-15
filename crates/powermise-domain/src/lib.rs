@@ -43,7 +43,15 @@ pub struct Harness {
     #[serde(default)]
     pub desktop_required: bool,
     pub integration_ids: Vec<String>,
+    /// MCP servers a new setup with this harness starts with; the setup can
+    /// add or remove any (`Selection::mcp_servers`).
     pub mcp_server_ids: Vec<String>,
+    /// Where the agent reads its MCP servers, if powermise can configure it.
+    #[serde(default)]
+    pub mcp_client: Option<McpClient>,
+    /// The desktop companion's MCP config, used when the desktop apps are in.
+    #[serde(default)]
+    pub desktop_mcp_client: Option<McpClient>,
     pub source_file: String,
 }
 
@@ -175,14 +183,134 @@ pub struct McpServerCatalog {
     pub mcp_servers: Vec<McpServer>,
 }
 
+/// An MCP server: either a program mise installs and runs (`tool`,
+/// `version`, `command`), or a remote server at `url`.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct McpServer {
     pub id: String,
     pub title: String,
     pub description: String,
-    pub providers: Vec<ConfigProvider>,
     #[serde(default)]
-    pub unsupported_reason: Option<String>,
+    pub homepage: Option<String>,
+    /// The mise tool that provides the server, such as `npm:@upstash/context7-mcp`.
+    #[serde(default)]
+    pub tool: Option<String>,
+    #[serde(default)]
+    pub version: Option<String>,
+    /// The executable the tool puts on `PATH`.
+    #[serde(default)]
+    pub command: Option<String>,
+    #[serde(default)]
+    pub args: Vec<String>,
+    /// A remote (streamable HTTP) server.
+    #[serde(default)]
+    pub url: Option<String>,
+}
+
+/// An agent's MCP configuration file. powermise adds servers to it with a
+/// mise dotfiles merge entry, which owns only those keys.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum McpClient {
+    ClaudeCode,
+    ClaudeDesktop,
+    Codex,
+    GeminiCli,
+    Opencode,
+    Cursor,
+    Vscode,
+    CopilotCli,
+    Cline,
+    Antigravity,
+    Zed,
+}
+
+impl McpClient {
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::ClaudeCode => "claude-code",
+            Self::ClaudeDesktop => "claude-desktop",
+            Self::Codex => "codex",
+            Self::GeminiCli => "gemini-cli",
+            Self::Opencode => "opencode",
+            Self::Cursor => "cursor",
+            Self::Vscode => "vscode",
+            Self::CopilotCli => "copilot-cli",
+            Self::Cline => "cline",
+            Self::Antigravity => "antigravity",
+            Self::Zed => "zed",
+        }
+    }
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::ClaudeCode => "Claude Code",
+            Self::ClaudeDesktop => "Claude desktop app",
+            Self::Codex => "Codex",
+            Self::GeminiCli => "Gemini CLI",
+            Self::Opencode => "OpenCode",
+            Self::Cursor => "Cursor",
+            Self::Vscode => "VS Code",
+            Self::CopilotCli => "Copilot CLI",
+            Self::Cline => "Cline",
+            Self::Antigravity => "Antigravity",
+            Self::Zed => "Zed",
+        }
+    }
+
+    /// The config file on `target`, from the home directory, or why
+    /// powermise can't configure this client there.
+    pub fn config_path(self, target: Platform) -> Result<String, &'static str> {
+        // VS Code's user folder, which Cline's settings also live under.
+        let vscode = match target {
+            Platform::Darwin => "~/Library/Application Support/Code/User",
+            Platform::Win32 => "~/AppData/Roaming/Code/User",
+            Platform::Linux | Platform::Wsl => "~/.config/Code/User",
+        };
+        Ok(match self {
+            Self::ClaudeCode => "~/.claude.json".into(),
+            Self::ClaudeDesktop => match target {
+                Platform::Darwin => {
+                    "~/Library/Application Support/Claude/claude_desktop_config.json".into()
+                }
+                Platform::Win32 => "~/AppData/Roaming/Claude/claude_desktop_config.json".into(),
+                Platform::Linux | Platform::Wsl => {
+                    return Err("Claude's desktop app isn't available on Linux");
+                }
+            },
+            Self::Codex => "~/.codex/config.toml".into(),
+            Self::GeminiCli => "~/.gemini/settings.json".into(),
+            Self::Opencode => "~/.config/opencode/opencode.json".into(),
+            Self::Cursor => "~/.cursor/mcp.json".into(),
+            Self::Vscode => format!("{vscode}/mcp.json"),
+            Self::CopilotCli => "~/.copilot/mcp-config.json".into(),
+            Self::Cline => format!(
+                "{vscode}/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+            ),
+            Self::Antigravity => "~/.gemini/antigravity/mcp_config.json".into(),
+            Self::Zed => {
+                return Err(
+                    "Zed's settings file can hold comments, which mise won't merge into; add servers in Zed's Agent Panel settings",
+                );
+            }
+        })
+    }
+
+    /// The key that holds the servers, by name.
+    pub fn servers_key(self) -> &'static str {
+        match self {
+            Self::Codex => "mcp_servers",
+            Self::Opencode => "mcp",
+            Self::Vscode => "servers",
+            Self::Zed => "context_servers",
+            _ => "mcpServers",
+        }
+    }
+
+    /// Whether the config file is TOML (Codex); the rest are JSON.
+    pub fn is_toml(self) -> bool {
+        self == Self::Codex
+    }
 }
 
 /// The selection file format powermise writes.
@@ -200,6 +328,9 @@ pub struct Selection {
     pub name: String,
     pub catalog: String,
     pub harnesses: Vec<String>,
+    /// MCP servers to configure. Unset means the harnesses' own picks.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mcp_servers: Option<Vec<String>>,
     #[serde(default)]
     pub preferences: Preferences,
 }

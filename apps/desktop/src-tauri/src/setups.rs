@@ -17,7 +17,8 @@ use powermise_registry::{
     load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog, load_tool_catalog,
 };
 use powermise_setups::{
-    CatalogPaths, SelectionStore, compile_setup, inspect_fragment, remove_fragment,
+    CatalogPaths, RemovedServer, SelectionStore, compile_setup, expand_home, inspect_fragment,
+    remove_fragment, remove_mcp_files, write_mcp_files,
 };
 use powermise_state::{GeneratedFileChange, fragment_path};
 use serde::{Deserialize, Serialize};
@@ -29,8 +30,64 @@ fn catalog_paths() -> CommandResult<CatalogPaths> {
 }
 
 /// The command that applies setups, shown to people and run by the app.
-fn apply_command() -> String {
-    MiseCommand::bootstrap_packages_and_tools().display()
+/// When the setup adds MCP servers, `mise dotfiles apply` for those agents'
+/// config files follows.
+fn apply_command(mcp: &[McpView]) -> String {
+    let mut command = MiseCommand::bootstrap_packages_and_tools().display();
+    if !mcp.is_empty() {
+        let targets: Vec<PathBuf> = mcp.iter().map(|file| PathBuf::from(&file.target)).collect();
+        command.push_str(" && ");
+        command.push_str(&MiseCommand::dotfiles_apply(&targets).display());
+    }
+    command
+}
+
+/// One agent config a setup adds MCP servers to.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct McpView {
+    client: String,
+    title: String,
+    /// The agent's config file, from home (`~/.claude.json`).
+    target: String,
+    servers: Vec<String>,
+    /// From `mise dotfiles status`: `applied`, `differs`, … (status only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    state: Option<String>,
+}
+
+fn mcp_views(files: &[powermise_compiler::McpFile]) -> Vec<McpView> {
+    files
+        .iter()
+        .map(|file| McpView {
+            client: file.client.id().into(),
+            title: file.client.title().into(),
+            target: file.target.clone(),
+            servers: file.servers.clone(),
+            state: None,
+        })
+        .collect()
+}
+
+/// The agent config files (absolute) that applying setup `name` merges MCP
+/// servers into on this computer.
+pub(crate) fn mcp_targets(name: &str) -> CommandResult<Vec<PathBuf>> {
+    let layout = layout()?;
+    let target = powermise_setups::host_platform();
+    let setup = compile_setup(
+        &catalog_paths()?,
+        &layout.selection_path(name),
+        target,
+        crate::find_mise().as_deref(),
+    )
+    .map_err(message)?;
+    let home = crate::home_dir().ok_or("could not determine your home directory")?;
+    Ok(setup
+        .compiled
+        .mcp_files
+        .iter()
+        .map(|file| expand_home(&file.target, &home))
+        .collect())
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +129,9 @@ pub fn get_catalog() -> CommandResult<CatalogBundle> {
 pub struct SelectionDraft {
     name: String,
     harnesses: Vec<String>,
+    /// The MCP servers picked; `None` keeps the harnesses' recommendations.
+    #[serde(default)]
+    mcp_servers: Option<Vec<String>>,
     include_desktop_apps: bool,
 }
 
@@ -82,6 +142,7 @@ impl SelectionDraft {
             name: self.name,
             catalog: catalog.into(),
             harnesses: self.harnesses,
+            mcp_servers: self.mcp_servers,
             preferences: Preferences {
                 include_desktop_apps: self.include_desktop_apps,
             },
@@ -95,6 +156,8 @@ pub struct SavedSelection {
     name: String,
     path: PathBuf,
     harnesses: Vec<String>,
+    /// The MCP servers picked, or `None` for the harnesses' recommendations.
+    mcp_servers: Option<Vec<String>>,
     include_desktop_apps: bool,
     /// The mise fragment this setup writes.
     fragment_path: PathBuf,
@@ -119,6 +182,7 @@ pub fn list_selections() -> CommandResult<Vec<SavedSelection>> {
             applied: fragment.is_file(),
             fragment_path: fragment,
             harnesses: selection.harnesses,
+            mcp_servers: selection.mcp_servers,
             include_desktop_apps: selection.preferences.include_desktop_apps,
             name,
         });
@@ -183,6 +247,8 @@ pub struct PreviewView {
     fragment_contents: String,
     change: GeneratedFileChange,
     apply_command: String,
+    /// The agents' config files the setup adds MCP servers to.
+    mcp: Vec<McpView>,
     /// Tools left out on this machine, with why (Homebrew formulas on an
     /// Intel Mac).
     skipped: Vec<powermise_compiler::Skipped>,
@@ -256,10 +322,12 @@ pub fn preview_selection(draft: SelectionDraft, target: Platform) -> CommandResu
     let draft_path = scratch.join(format!("{}.toml", selection.name));
     fs::write(&draft_path, toml::to_string(&selection).map_err(message)?).map_err(message)?;
 
-    let setup = compile_setup(&paths, &draft_path, target).map_err(message)?;
+    let setup = compile_setup(&paths, &draft_path, target, crate::find_mise().as_deref())
+        .map_err(message)?;
     let mise = mise_config_dir()?;
     let change = inspect_fragment(&setup.fragment, &mise).map_err(message)?;
     let resolved = setup.resolved;
+    let mcp = mcp_views(&setup.compiled.mcp_files);
     Ok(PreviewView {
         resolved: ResolvedView {
             harness_ids: resolved.harness_ids,
@@ -280,7 +348,8 @@ pub fn preview_selection(draft: SelectionDraft, target: Platform) -> CommandResu
         fragment_path: setup.fragment.path(&mise),
         fragment_contents: setup.fragment.contents().to_owned(),
         change,
-        apply_command: apply_command(),
+        apply_command: apply_command(&mcp),
+        mcp,
     })
 }
 
@@ -289,6 +358,8 @@ pub fn preview_selection(draft: SelectionDraft, target: Platform) -> CommandResu
 pub struct WrittenSetup {
     path: PathBuf,
     change: GeneratedFileChange,
+    /// MCP servers the setup no longer has, taken out of agents' configs.
+    removed_servers: Vec<RemovedServer>,
 }
 
 /// Writes a saved setup's fragment into mise's `conf.d`. Installing it is a
@@ -297,14 +368,27 @@ pub struct WrittenSetup {
 pub fn write_setup(name: String, target: Platform) -> CommandResult<WrittenSetup> {
     let layout = layout()?;
     SelectionStore::new(&layout).read(&name).map_err(message)?;
-    let setup =
-        compile_setup(&catalog_paths()?, &layout.selection_path(&name), target).map_err(message)?;
+    let setup = compile_setup(
+        &catalog_paths()?,
+        &layout.selection_path(&name),
+        target,
+        crate::find_mise().as_deref(),
+    )
+    .map_err(message)?;
     let mise = mise_config_dir()?;
     let change = inspect_fragment(&setup.fragment, &mise).map_err(message)?;
     setup.fragment.write(&mise).map_err(message)?;
+    // The MCP sources only matter on the computer the setup is applied to.
+    let removed_servers = if target == powermise_setups::host_platform() {
+        let home = crate::home_dir().ok_or("could not determine your home directory")?;
+        write_mcp_files(&mise, &name, &setup.compiled.mcp_files, &home, target).map_err(message)?
+    } else {
+        Vec::new()
+    };
     Ok(WrittenSetup {
         path: setup.fragment.path(&mise),
         change,
+        removed_servers,
     })
 }
 
@@ -344,6 +428,8 @@ pub struct SetupStatus {
     change: GeneratedFileChange,
     items: Vec<ItemStatus>,
     apply_command: String,
+    /// Each agent config the setup adds MCP servers to, with mise's state.
+    mcp: Vec<McpView>,
 }
 
 /// What mise reports for each thing a setup installs.
@@ -351,8 +437,13 @@ pub struct SetupStatus {
 pub async fn setup_status(name: String, target: Platform) -> CommandResult<SetupStatus> {
     tauri::async_runtime::spawn_blocking(move || {
         let layout = layout()?;
-        let setup = compile_setup(&catalog_paths()?, &layout.selection_path(&name), target)
-            .map_err(message)?;
+        let setup = compile_setup(
+            &catalog_paths()?,
+            &layout.selection_path(&name),
+            target,
+            crate::find_mise().as_deref(),
+        )
+        .map_err(message)?;
         let mise = mise_config_dir()?;
         let change = inspect_fragment(&setup.fragment, &mise).map_err(message)?;
         let client = client()?;
@@ -411,12 +502,24 @@ pub async fn setup_status(name: String, target: Platform) -> CommandResult<Setup
                 }
             })
             .collect();
+        let edit = format!("merge:{}", powermise_compiler::edit_id(&name));
+        let edits = client.dotfile_edits().unwrap_or_default();
+        let mut mcp = mcp_views(&setup.compiled.mcp_files);
+        for view in &mut mcp {
+            view.state = Some(
+                edits
+                    .iter()
+                    .find(|(path, id, _)| path == &view.target && id == &edit)
+                    .map_or_else(|| "not applied".to_owned(), |(_, _, state)| state.clone()),
+            );
+        }
         Ok(SetupStatus {
             name,
             fragment_path: fragment,
             change,
             items,
-            apply_command: apply_command(),
+            apply_command: apply_command(&mcp),
+            mcp,
         })
     })
     .await
@@ -431,6 +534,8 @@ pub async fn setup_status(name: String, target: Platform) -> CommandResult<Setup
 #[serde(rename_all = "camelCase")]
 pub struct RemovedSetup {
     removed: Vec<PathBuf>,
+    /// MCP servers the setup had added, taken out of agents' configs.
+    removed_servers: Vec<RemovedServer>,
     /// Suggested follow-up: delete tool versions nothing uses anymore.
     cleanup_command: String,
 }
@@ -443,6 +548,9 @@ pub fn remove_setup(name: String) -> CommandResult<RemovedSetup> {
     let layout = layout()?;
     let mise = mise_config_dir()?;
     let mut removed = Vec::new();
+    let home = crate::home_dir().ok_or("could not determine your home directory")?;
+    let removed_servers = remove_mcp_files(&mise, &name, &home, powermise_setups::host_platform())
+        .map_err(message)?;
     if remove_fragment(&mise, &name).map_err(message)? {
         removed.push(fragment_path(&mise, &name));
     }
@@ -453,6 +561,7 @@ pub fn remove_setup(name: String) -> CommandResult<RemovedSetup> {
     );
     Ok(RemovedSetup {
         removed,
+        removed_servers,
         cleanup_command: MiseCommand::prune_tools().display(),
     })
 }

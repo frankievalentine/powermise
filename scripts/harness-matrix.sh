@@ -40,9 +40,16 @@ def compile(harness, target, desktop):
     run = subprocess.run([fragment, str(selection), target], capture_output=True, text=True)
     if run.returncode != 0:
         return None
-    keys = []
+    # Keys under [tools] and [bootstrap.packages], plus table-form packages
+    # ([bootstrap.packages."macos-app:orca"]); [dotfiles] entries are MCP.
+    keys, section = [], None
     for line in run.stdout.splitlines():
-        if "=" in line and not line.startswith("#"):
+        if line.startswith("["):
+            section = line.strip("[]")
+            if section.startswith('bootstrap.packages."'):
+                keys.append(section.split('"')[1])
+            continue
+        if section in ("tools", "bootstrap.packages") and "=" in line and not line.startswith("#"):
             keys.append(line.split("=")[0].strip().strip('"'))
     return keys
 

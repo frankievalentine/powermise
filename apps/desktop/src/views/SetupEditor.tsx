@@ -31,6 +31,8 @@ export function SetupEditor({
   const [name, setName] = useState(existing?.name ?? "");
   const [harnesses, setHarnesses] = useState<string[]>(existing?.harnesses ?? seed ?? []);
   const [includeDesktopApps, setIncludeDesktopApps] = useState(existing?.includeDesktopApps ?? false);
+  // `null` follows the agents' recommendations until you change the list.
+  const [mcpPicks, setMcpPicks] = useState<string[] | null>(existing?.mcpServers ?? null);
   const [target, setTarget] = useState<Platform>(env.hostTarget);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -40,9 +42,17 @@ export function SetupEditor({
   const request = useRef(0);
 
   const draft: SelectionDraft = useMemo(
-    () => ({ name, harnesses, includeDesktopApps }),
-    [name, harnesses, includeDesktopApps],
+    () => ({ name, harnesses, mcpServers: mcpPicks, includeDesktopApps }),
+    [name, harnesses, mcpPicks, includeDesktopApps],
   );
+  const recommendedMcp = useMemo(
+    () => [...new Set(harnesses.flatMap((id) => catalog.harnessById.get(id)?.mcp_server_ids ?? []))],
+    [harnesses, catalog.harnessById],
+  );
+  const mcpSelected = mcpPicks ?? recommendedMcp;
+  const toggleMcp = (id: string) =>
+    setMcpPicks(mcpSelected.includes(id) ? mcpSelected.filter((entry) => entry !== id) : [...mcpSelected, id]);
+  const takesMcp = harnesses.some((id) => catalog.harnessById.get(id)?.mcp_client);
 
   // Live preview: recompile on every change, ignoring stale responses.
   useEffect(() => {
@@ -115,7 +125,7 @@ export function SetupEditor({
   const cliTools = resolved
     ? resolved.toolIds.filter((id) => !resolved.desktopAppIds.includes(id))
     : [];
-  const manual = resolved ? [...resolved.mcpServerIds, ...resolved.integrationIds] : [];
+  const manual = resolved ? resolved.integrationIds : [];
   const installs = new Map(preview?.installs.map((install) => [install.toolId, install]));
   const hasOptionalDesktop = harnesses.some((id) => {
     const harness = catalog.harnessById.get(id);
@@ -197,6 +207,50 @@ export function SetupEditor({
           ))}
 
           <section className="section">
+            <div className="section-heading-row">
+              <h2 className="section-title">MCP servers</h2>
+              {mcpPicks && (
+                <button className="link-button" onClick={() => setMcpPicks(null)}>
+                  Use recommended
+                </button>
+              )}
+            </div>
+            <p className="section-note">
+              {takesMcp
+                ? "mise installs each one and adds it to every agent in this setup. Your own servers in those agents stay as they are."
+                : harnesses.length
+                  ? "None of the agents you picked take MCP servers from powermise."
+                  : "Pick an agent first; its recommended servers are checked for you."}
+            </p>
+            <div className="list">
+              {catalog.mcpServers.map((server) => {
+                const checked = mcpSelected.includes(server.id);
+                return (
+                  <button
+                    key={server.id}
+                    className="list-row interactive"
+                    disabled={!takesMcp && !checked}
+                    onClick={() => toggleMcp(server.id)}
+                    role="checkbox"
+                    aria-checked={checked}
+                  >
+                    <Checkbox checked={checked} />
+                    <Monogram id={server.id} title={server.title} size={28} />
+                    <div className="row-main">
+                      <div className="row-title">{server.title}</div>
+                      <div className="row-subtitle">{server.description}</div>
+                    </div>
+                    <div className="row-trailing">
+                      {recommendedMcp.includes(server.id) && <span className="badge">Recommended</span>}
+                      {server.url && <span className="badge">Remote</span>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="section">
             <h2 className="section-title">Options</h2>
             <div className="option-row">
               <div className="row-main">
@@ -228,8 +282,8 @@ export function SetupEditor({
               <div className="label">Apps</div>
             </div>
             <div className="stat">
-              <div className="value">{manual.length}</div>
-              <div className="label">Manual steps</div>
+              <div className="value">{resolved?.mcpServerIds.length ?? 0}</div>
+              <div className="label">MCP servers</div>
             </div>
           </div>
 
@@ -280,6 +334,37 @@ export function SetupEditor({
                     {resolved.unavailableDesktopIds.map((id) => (
                       <div className="side-item" key={id}>
                         <span className="name">{titleFor(catalog, id)}</span>
+                        <span className="badge">Skipped</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {preview && preview.mcp.length > 0 && (
+                <>
+                  <div className="side-heading">MCP servers</div>
+                  <div className="side-list">
+                    {preview.mcp.map((entry) => (
+                      <div className="side-item" key={entry.client} title={entry.target}>
+                        <span className="name">
+                          {entry.title}
+                          <span className="row-subtitle"> · {entry.servers.map((id) => titleFor(catalog, id)).join(", ")}</span>
+                        </span>
+                        <span className="badge">Config</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {preview && preview.skipped.length > 0 && (
+                <>
+                  <div className="side-heading">Left out</div>
+                  <div className="side-list">
+                    {preview.skipped.map((skip) => (
+                      <div className="side-item" key={`${skip.id}-${skip.reason}`} title={skip.reason}>
+                        <span className="name">{titleFor(catalog, skip.id)}</span>
                         <span className="badge">Skipped</span>
                       </div>
                     ))}
@@ -367,7 +452,7 @@ export function SetupEditor({
         onApply={() => {
           void refreshSelections();
           run({
-            action: { kind: "bootstrapPackagesAndTools" },
+            action: { kind: "applySetup", name },
             title: `Applying ${name}`,
             description: "",
             verb: "Apply",

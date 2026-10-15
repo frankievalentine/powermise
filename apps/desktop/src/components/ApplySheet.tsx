@@ -73,7 +73,7 @@ export function ApplySheet({
     );
   }, [plan, preview]);
 
-  const manual = preview ? [...preview.resolved.mcpServerIds, ...preview.resolved.integrationIds] : [];
+  const manual = preview ? preview.resolved.integrationIds : [];
   const pretty = (path: string) => prettyPath(path);
 
   // On Linux/WSL, the first Homebrew install needs `sudo` to create its
@@ -108,7 +108,9 @@ export function ApplySheet({
         <h2 id="apply-title">Apply “{name}” to this computer?</h2>
         <p>
           powermise adds this setup to your mise config as one file, then mise installs it on{" "}
-          {PLATFORM_LABEL[target]}. Removing the setup later deletes that file.
+          {PLATFORM_LABEL[target]}
+          {preview && preview.mcp.length > 0 ? " and adds its MCP servers to your agents’ settings" : ""}. Removing
+          the setup later takes it all back out.
         </p>
       </div>
       <div className="sheet-body">
@@ -145,6 +147,28 @@ export function ApplySheet({
                     </div>
                   );
                 })}
+                {preview.mcp.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div className="side-heading" style={{ marginTop: 0 }}>
+                      MCP servers, added to your agents’ settings
+                    </div>
+                    <div className="list">
+                      {preview.mcp.map((entry) => (
+                        <div className="list-row" key={entry.client} style={{ minHeight: 36 }}>
+                          <div className="row-main">
+                            <div className="row-title">
+                              {entry.title}: {entry.servers.map((id) => titleFor(catalog, id)).join(", ")}
+                            </div>
+                            <div className="row-subtitle mono">{entry.target}</div>
+                          </div>
+                          <span className="badge" title="mise merges only these servers into the file and leaves the rest alone.">
+                            mise merge
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {manual.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
                     <div className="side-heading" style={{ marginTop: 0 }}>
@@ -166,9 +190,14 @@ export function ApplySheet({
                   <div className="callout warn" style={{ marginBottom: 14 }}>
                     <AlertTriangle size={14} />
                     <div>
-                      <strong>Not installed on this Mac:</strong>{" "}
-                      {preview.skipped.map((skip) => titleFor(catalog, skip.id)).join(", ")}.{" "}
-                      {preview.skipped[0].reason}; this Mac has an Intel processor.
+                      <strong>Left out on this computer:</strong>
+                      <ul className="plain-list">
+                        {preview.skipped.map((skip) => (
+                          <li key={`${skip.id}-${skip.reason}`}>
+                            {titleFor(catalog, skip.id)} — {skip.reason}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 )}

@@ -17,7 +17,8 @@ required_tool_ids = []
 desktop_tool_ids = ["antigravity-app"]
 desktop_required = true
 integration_ids = []
-mcp_server_ids = []
+mcp_server_ids = ["context7"]
+mcp_client = "antigravity"
 source_file = "antigravity.json"
 
 [[harnesses]]
@@ -66,10 +67,9 @@ integration_ids = [
     "claude-github",
     "claude-mem",
 ]
-mcp_server_ids = [
-    "claude-context7",
-    "claude-sequential-thinking",
-]
+mcp_server_ids = ["context7", "sequential-thinking"]
+mcp_client = "claude-code"
+desktop_mcp_client = "claude-desktop"
 source_file = "claude.json"
 
 [[harnesses]]
@@ -89,7 +89,8 @@ required_tool_ids = [
     "cline",
 ]
 integration_ids = []
-mcp_server_ids = ["cline-context7"]
+mcp_server_ids = ["context7"]
+mcp_client = "cline"
 source_file = "cline.json"
 
 [[harnesses]]
@@ -113,10 +114,8 @@ desktop_tool_ids = [
     "codex-app",
 ]
 integration_ids = ["codex-gmail"]
-mcp_server_ids = [
-    "codex-context7",
-    "codex-sequential-thinking",
-]
+mcp_server_ids = ["context7", "sequential-thinking"]
+mcp_client = "codex"
 source_file = "codex.json"
 
 [[harnesses]]
@@ -149,10 +148,8 @@ required_tool_ids = []
 desktop_tool_ids = ["cursor"]
 desktop_required = true
 integration_ids = []
-mcp_server_ids = [
-    "cursor-context7",
-    "cursor-sequential-thinking",
-]
+mcp_server_ids = ["context7", "sequential-thinking"]
+mcp_client = "cursor"
 source_file = "cursor.json"
 
 [[harnesses]]
@@ -173,10 +170,8 @@ required_tool_ids = [
     "gemini-cli",
 ]
 integration_ids = ["gemini-workspace"]
-mcp_server_ids = [
-    "gemini-context7",
-    "gemini-sequential-thinking",
-]
+mcp_server_ids = ["context7", "sequential-thinking"]
+mcp_client = "gemini-cli"
 source_file = "gemini.json"
 
 [[harnesses]]
@@ -195,7 +190,9 @@ supported_platforms = [
 required_tool_ids = ["copilot-cli"]
 desktop_tool_ids = ["vscode"]
 integration_ids = []
-mcp_server_ids = []
+mcp_server_ids = ["context7"]
+mcp_client = "copilot-cli"
+desktop_mcp_client = "vscode"
 source_file = "github-copilot.json"
 
 [[harnesses]]
@@ -272,10 +269,8 @@ required_tool_ids = [
     "opencode",
 ]
 integration_ids = []
-mcp_server_ids = [
-    "opencode-context7",
-    "opencode-sequential-thinking",
-]
+mcp_server_ids = ["context7", "sequential-thinking"]
+mcp_client = "opencode"
 source_file = "opencode.json"
 
 [[harnesses]]
@@ -374,10 +369,8 @@ required_tool_ids = []
 desktop_tool_ids = ["zed"]
 desktop_required = true
 integration_ids = []
-mcp_server_ids = [
-    "zed-context7",
-    "zed-sequential-thinking",
-]
+mcp_server_ids = []
+mcp_client = "zed"
 source_file = "zed.json"
 
 [[harnesses]]

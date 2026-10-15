@@ -300,6 +300,11 @@ pub enum MiseAction {
     },
     // AI Setups: install what the config declares, and clean up afterwards.
     BootstrapPackagesAndTools,
+    /// Installs a setup's packages and tools, then adds its MCP servers to
+    /// the agents' configs (`mise dotfiles apply` for just those files).
+    ApplySetup {
+        name: String,
+    },
     PruneTools,
     // Machine-wide.
     SetSetting {
@@ -409,6 +414,8 @@ enum Job {
         arguments: Vec<String>,
         display: String,
     },
+    /// Jobs run one after another, stopping at the first that fails.
+    Steps(Vec<Job>),
 }
 
 impl Job {
@@ -416,6 +423,11 @@ impl Job {
         match self {
             Self::Mise(_, command) => command.display(),
             Self::Program { display, .. } => display.clone(),
+            Self::Steps(steps) => steps
+                .iter()
+                .map(Job::display)
+                .collect::<Vec<_>>()
+                .join(" && "),
         }
     }
 }
@@ -511,7 +523,10 @@ impl MiseAction {
                 version,
                 path,
             } => MiseCommand::link(tool, version, path),
-            Self::InstallMise { .. } | Self::RelaunchApp { .. } | Self::UpdateMiseWithManager => {
+            Self::InstallMise { .. }
+            | Self::RelaunchApp { .. }
+            | Self::UpdateMiseWithManager
+            | Self::ApplySetup { .. } => {
                 return Err("this action doesn't run mise".into());
             }
         }
@@ -538,6 +553,18 @@ impl MiseAction {
                     }
                 ),
             });
+        }
+        if let Self::ApplySetup { name } = self {
+            let client = client()?;
+            let mut steps = vec![Job::Mise(
+                client.clone(),
+                MiseCommand::bootstrap_packages_and_tools(),
+            )];
+            let targets = crate::setups::mcp_targets(name)?;
+            if !targets.is_empty() {
+                steps.push(Job::Mise(client, MiseCommand::dotfiles_apply(&targets)));
+            }
+            return Ok(Job::Steps(steps));
         }
         if let Self::UpdateMiseWithManager = self {
             let mise = find_mise().ok_or("mise is not installed")?;
@@ -649,15 +676,7 @@ pub fn run_action(
                 },
             );
         };
-        let result = match &job {
-            Job::Mise(client, command) => client.run(command, &cancel, emit),
-            Job::Program {
-                program, arguments, ..
-            } => {
-                let cwd = home_dir().unwrap_or_else(std::env::temp_dir);
-                run_program(program, arguments, &cwd, &cancel, emit)
-            }
-        };
+        let result = run_job(&job, &cancel, &emit);
         let state = app.state::<MiseState>();
         if let Ok(mut running) = state.running.lock() {
             running.remove(&id);
@@ -679,6 +698,41 @@ pub fn run_action(
         }
     });
     Ok(id)
+}
+
+/// Runs a job; steps run in order and stop at the first that doesn't succeed.
+fn run_job(
+    job: &Job,
+    cancel: &Arc<AtomicBool>,
+    emit: &dyn Fn(powermise_mise::OutputLine),
+) -> Result<RunOutcome, powermise_mise::MiseAdapterError> {
+    match job {
+        Job::Mise(client, command) => client.run(command, cancel, emit),
+        Job::Program {
+            program, arguments, ..
+        } => {
+            let cwd = home_dir().unwrap_or_else(std::env::temp_dir);
+            run_program(program, arguments, &cwd, cancel, emit)
+        }
+        Job::Steps(steps) => {
+            let mut last = RunOutcome {
+                success: true,
+                code: Some(0),
+                cancelled: false,
+            };
+            for step in steps {
+                emit(powermise_mise::OutputLine {
+                    stream: powermise_mise::Stream::Stdout,
+                    text: format!("$ {}", step.display()),
+                });
+                last = run_job(step, cancel, emit)?;
+                if !last.success {
+                    break;
+                }
+            }
+            Ok(last)
+        }
+    }
 }
 
 #[tauri::command]

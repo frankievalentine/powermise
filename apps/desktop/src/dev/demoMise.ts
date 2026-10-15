@@ -161,6 +161,8 @@ function describe(action: MiseAction): string {
   switch (action.kind) {
     case "bootstrapPackagesAndTools":
       return "mise bootstrap --yes --only packages,tools";
+    case "applySetup":
+      return `mise bootstrap --yes --only packages,tools && mise dotfiles apply --yes ${applySetupTargets(action.name).join(" ")}`.trim();
     case "pruneTools":
       return "mise prune --tools --yes";
     case "useGlobal":
@@ -204,6 +206,8 @@ function perform(action: MiseAction): string[] {
   switch (action.kind) {
     case "bootstrapPackagesAndTools":
       return bootstrapHook();
+    case "applySetup":
+      return [...bootstrapHook(), ...applySetupHook(action.name)];
     case "pruneTools": {
       const unused = [...machine.entries()].flatMap(([tool, versions]) =>
         versions.filter((entry) => !entry.global).map((entry) => `${tool}@${entry.version}`),
@@ -398,6 +402,16 @@ export const NOT_HANDLED = Symbol("not handled");
 
 /** Set by the browser stub so a demo bootstrap installs the applied setups. */
 let bootstrapHook: () => string[] = () => ["mise all tools are installed"];
-export function setBootstrapHook(hook: () => string[]) {
+/** Applies a setup's MCP servers in the demo; returns the output lines. */
+let applySetupHook: (name: string) => string[] = () => [];
+/** The agent config files a demo setup merges MCP servers into. */
+let applySetupTargets: (name: string) => string[] = () => [];
+export function setBootstrapHook(
+  hook: () => string[],
+  apply?: (name: string) => string[],
+  targets?: (name: string) => string[],
+) {
   bootstrapHook = hook;
+  if (apply) applySetupHook = apply;
+  if (targets) applySetupTargets = targets;
 }

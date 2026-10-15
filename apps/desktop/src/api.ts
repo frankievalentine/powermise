@@ -27,7 +27,38 @@ export interface Harness {
   desktop_tool_ids: string[];
   desktop_required: boolean;
   integration_ids: string[];
+  /** MCP servers a new setup with this agent starts with. */
   mcp_server_ids: string[];
+  /** Where the agent reads MCP servers, when powermise can configure it. */
+  mcp_client: McpClientId | null;
+  /** The desktop app's MCP config, used when the desktop apps are in. */
+  desktop_mcp_client: McpClientId | null;
+}
+
+export type McpClientId =
+  | "claude-code"
+  | "claude-desktop"
+  | "codex"
+  | "gemini-cli"
+  | "opencode"
+  | "cursor"
+  | "vscode"
+  | "copilot-cli"
+  | "cline"
+  | "antigravity"
+  | "zed";
+
+/** An MCP server: a program mise installs and runs, or a remote `url`. */
+export interface McpServer {
+  id: string;
+  title: string;
+  description: string;
+  homepage: string | null;
+  tool: string | null;
+  version: string | null;
+  command: string | null;
+  args: string[];
+  url: string | null;
 }
 
 export type ToolProviderKind =
@@ -74,7 +105,7 @@ export interface CatalogBundle {
   tools: { tools: Tool[] };
   apps: { apps: Tool[] };
   integrations: { integrations: ConfigEntry[] };
-  mcp: { mcp_servers: ConfigEntry[] };
+  mcp: { mcp_servers: McpServer[] };
 }
 
 export interface EnvironmentInfo {
@@ -94,6 +125,8 @@ export interface SavedSelection {
   name: string;
   path: string;
   harnesses: string[];
+  /** The MCP servers picked, or `null` for the agents' recommendations. */
+  mcpServers: string[] | null;
   includeDesktopApps: boolean;
   /** The mise fragment this setup writes: conf.d/powermise-<name>.toml. */
   fragmentPath: string;
@@ -104,7 +137,26 @@ export interface SavedSelection {
 export interface SelectionDraft {
   name: string;
   harnesses: string[];
+  /** `null` keeps the agents' recommended MCP servers. */
+  mcpServers: string[] | null;
   includeDesktopApps: boolean;
+}
+
+/** An agent config file a setup adds MCP servers to. */
+export interface McpTarget {
+  client: McpClientId;
+  title: string;
+  /** From home, like `~/.claude.json`. */
+  target: string;
+  servers: string[];
+  /** From `mise dotfiles status` (setup status only): `applied`, `differs`, `not applied`. */
+  state?: string;
+}
+
+export interface RemovedServer {
+  client: McpClientId;
+  server: string;
+  path: string;
 }
 
 export interface FileChange {
@@ -140,11 +192,15 @@ export interface Preview {
   skipped: { id: string; reason: string }[];
   /** On Linux/WSL: Homebrew's folder, when it needs a one-time `sudo` to create. */
   homebrewSetup: string | null;
+  /** The agents' config files the setup adds MCP servers to. */
+  mcp: McpTarget[];
 }
 
 export interface WrittenSetup {
   path: string;
   change: FileChange;
+  /** MCP servers the setup dropped, taken out of agents' configs. */
+  removedServers: RemovedServer[];
 }
 
 /** `mise bootstrap plan --json`. */
@@ -169,10 +225,12 @@ export interface SetupStatus {
   change: FileChange;
   items: SetupItemStatus[];
   applyCommand: string;
+  mcp: McpTarget[];
 }
 
 export interface RemovedSetup {
   removed: string[];
+  removedServers: RemovedServer[];
   cleanupCommand: string;
 }
 
@@ -272,6 +330,8 @@ export type MiseAction =
   | { kind: "setEnv"; project: string; key: string; value: string; file: string | null }
   | { kind: "unsetEnv"; project: string; key: string; file: string | null }
   | { kind: "bootstrapPackagesAndTools" }
+  /** Packages and tools, then the setup's MCP servers into agents' configs. */
+  | { kind: "applySetup"; name: string }
   | { kind: "pruneTools" }
   | { kind: "setSetting"; key: string; value: string }
   | { kind: "unsetSetting"; key: string }

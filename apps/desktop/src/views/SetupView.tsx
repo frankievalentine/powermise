@@ -35,7 +35,12 @@ export function SetupView({ context, name }: { context: AppContext; name: string
     try {
       setPreview(
         await api.preview(
-          { name, harnesses: selection.harnesses, includeDesktopApps: selection.includeDesktopApps },
+          {
+            name,
+            harnesses: selection.harnesses,
+            mcpServers: selection.mcpServers,
+            includeDesktopApps: selection.includeDesktopApps,
+          },
           target,
         ),
       );
@@ -195,6 +200,38 @@ export function SetupView({ context, name }: { context: AppContext; name: string
           </Section>
         )}
 
+        {selection && status.data && status.data.mcp.length > 0 && (
+          <Section
+            title="MCP servers"
+            note="Added to each agent’s own settings by mise, which owns only these servers in the file."
+          >
+            <div className="list">
+              {status.data.mcp.map((entry) => {
+                const applied = entry.state === "applied";
+                return (
+                  <div className="list-row" key={entry.client}>
+                    {applied ? (
+                      <CheckCircle2 size={16} className="outcome-icon succeeded" />
+                    ) : (
+                      <AlertTriangle size={16} color="var(--orange)" />
+                    )}
+                    <div className="row-main">
+                      <div className="row-title">
+                        {entry.title}: {entry.servers.map((id) => titleFor(catalog, id)).join(", ")}
+                      </div>
+                      <div className="row-subtitle">
+                        <span className="mono">{entry.target}</span>
+                        {" · "}
+                        {applied ? "In place" : entry.state === "differs" ? "Changed since — apply again" : "Not applied yet"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+        )}
+
         {selection && (
           <Section title="In the terminal" note="A setup is one mise config file. These do what powermise does.">
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -229,7 +266,7 @@ export function SetupView({ context, name }: { context: AppContext; name: string
         onApply={() => {
           void refreshSelections();
           run({
-            action: { kind: "bootstrapPackagesAndTools" },
+            action: { kind: "applySetup", name },
             title: `Applying ${name}`,
             description: "",
             verb: "Apply",

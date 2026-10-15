@@ -112,11 +112,39 @@ setup editor's **Preview for** menu shows each one.
 
 ## What powermise writes
 
-- `conf.d/powermise-<name>.toml`, only when you click **Apply**, and only that
-  file. It's written atomically and never follows a symlink.
+- `conf.d/powermise-<name>.toml`, only when you click **Apply**. It's written
+  atomically and never follows a symlink.
+- `conf.d/powermise-<name>.files/`, beside it, when the setup has MCP servers:
+  one source file per agent, which the fragment's `[dotfiles]` merge entries
+  point at.
 - Its own folder, `~/.config/powermise/`: saved setups and app state.
 
 It never edits your own mise config files, and it never runs mise with
-`MISE_YES`, which would make mise trust configs on its own. MCP servers and
-integrations a harness lists are shown as **Manual setup** — powermise doesn't
-edit your agents' settings files.
+`MISE_YES`, which would make mise trust configs on its own. Integrations a
+harness lists are shown as **Manual setup**.
+
+## MCP servers
+
+An agent keeps its MCP servers in its own settings file, which it also writes
+to — `~/.claude.json`, `~/.codex/config.toml`, `~/.gemini/settings.json`, and
+so on. A setup adds its servers with a mise
+[merge entry](https://mise.jdx.dev/dotfiles/edits.html#merge), which owns only
+the keys in its source and leaves the rest of the file alone:
+
+```toml
+[dotfiles."~/.claude.json/powermise-work"]
+source = "powermise-work.files/claude-code.json"
+merge = true
+```
+
+Applying the setup runs `mise dotfiles apply` for just those files after
+`mise bootstrap`. Servers mise installs run as
+`<path to mise> x npm:@upstash/context7-mcp@4.4.2 -- context7-mcp`, so desktop
+apps that don't see your shell's `PATH` still find them; remote servers are a
+URL.
+
+mise never removes merged keys on its own, so when a setup drops a server, or
+you remove the setup, powermise takes exactly the servers it added back out of
+each file — by name, keeping the rest of the file as it was. A file it can't
+parse (JSON with comments, say) is left alone. This needs mise 2026.10 or
+newer.

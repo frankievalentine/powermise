@@ -1,7 +1,7 @@
 import { CheckCircle2, Plus, XCircle } from "lucide-react";
 import { PLATFORMS, PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
-import { categoryLabel, isAvailable, targetTitle } from "../catalog";
+import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED, categoryLabel, isAvailable, targetTitle } from "../catalog";
 import { InstallTable } from "../components/InstallTable";
 import { Monogram, Section } from "../components/ui";
 
@@ -17,7 +17,7 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
   }
   const target = env.hostTarget;
   const available = isAvailable(harness, target);
-  const configs = [...harness.mcp_server_ids, ...harness.integration_ids]
+  const configs = harness.integration_ids
     .map((entryId) => catalog.configById.get(entryId))
     .filter((entry) => entry !== undefined);
 
@@ -87,9 +87,41 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
           </Section>
         )}
 
+        {harness.mcp_client && (
+          <Section
+            title="MCP servers"
+            note={
+              MCP_CLIENT_UNSUPPORTED[harness.mcp_client] ??
+              `A setup adds the servers you pick to ${MCP_CLIENT_TITLE[harness.mcp_client]}${
+                harness.desktop_mcp_client ? ` and the ${MCP_CLIENT_TITLE[harness.desktop_mcp_client]}` : ""
+              } through mise. These are checked for you:`
+            }
+          >
+            {harness.mcp_server_ids.length > 0 && !MCP_CLIENT_UNSUPPORTED[harness.mcp_client] && (
+              <div className="list">
+                {harness.mcp_server_ids.map((id) => {
+                  const server = catalog.mcpById.get(id);
+                  return (
+                    <div className="list-row" key={id}>
+                      <Monogram id={id} title={server?.title ?? id} size={28} />
+                      <div className="row-main">
+                        <div className="row-title">{server?.title ?? id}</div>
+                        <div className="row-subtitle">{server?.description}</div>
+                      </div>
+                      <div className="row-trailing">
+                        {server && <span className="badge">{server.url ? "Remote" : "mise"}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Section>
+        )}
+
         {configs.length > 0 && (
           <Section
-            title="MCP servers & integrations"
+            title="Integrations"
             note="powermise doesn’t configure these yet. They’re listed so you know what to set up in the agent."
           >
             <div className="list">
