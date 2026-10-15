@@ -226,6 +226,7 @@ export function SkillsView({ context, query }: { context: AppContext; query: str
             <div className="install-row">
               <input
                 className="text-field mono"
+                style={{ flex: 3 }}
                 value={source}
                 onChange={(event) => setSource(event.target.value)}
                 placeholder="vercel-labs/agent-skills"
@@ -234,6 +235,7 @@ export function SkillsView({ context, query }: { context: AppContext; query: str
               />
               <input
                 className="text-field"
+                style={{ flex: 2 }}
                 value={names}
                 onChange={(event) => setNames(event.target.value)}
                 placeholder="Skills, comma-separated (optional)"
@@ -248,7 +250,16 @@ export function SkillsView({ context, query }: { context: AppContext; query: str
                 Install
               </button>
             </div>
-            {!chosen.length && <p className="field-hint">Pick at least one agent above.</p>}
+            <p className={`field-hint${chosen.length ? "" : " error"}`} style={{ marginTop: 8 }}>
+              {chosen.length ? (
+                <>
+                  Runs <span className="mono">mise x {report.data.cli} -- skills add …</span>, so the skills CLI needs no
+                  separate install.
+                </>
+              ) : (
+                "Pick at least one agent above."
+              )}
+            </p>
           </Section>
         )}
 
@@ -287,12 +298,6 @@ export function SkillsView({ context, query }: { context: AppContext; query: str
           </Section>
         )}
 
-        {report.data && (
-          <p className="section-note">
-            Runs <span className="mono">mise x {report.data.cli} -- skills …</span>, so the skills CLI needs no separate
-            install.
-          </p>
-        )}
       </div>
     </div>
   );
