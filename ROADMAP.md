@@ -53,41 +53,81 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
       providers, symlink-safe writes, name validation, stub recursion, exit codes).
 - [x] Tauri desktop app with the harness catalog, setup editor, and apply flow.
 
-### M1 — Foundation
+### M1 — Foundation ✅
 
-- [ ] `powermise-mise`: typed models for `ls`, `outdated`, `registry`, `ls-remote`,
-      `doctor`; fixture tests captured from real mise.
-- [ ] Minimum supported mise version, checked at launch with a clear upgrade path.
-- [ ] New navigation: Installed, Discover, Updates, Projects, Health, and AI Setups.
-- [ ] Move the existing harness screens under **AI Setups**.
-- [ ] **Installed**: every tool mise manages — active version, where it's configured,
+- [x] `powermise-mise`: typed models for `ls`, `outdated`, `registry`, `ls-remote`,
+      `config ls`, `tasks ls`, `env`, `doctor`, `version`; fixture tests captured from
+      real mise.
+- [x] Minimum supported mise version (2026.7.18), checked at launch.
+- [x] New navigation: mise (Installed, Discover, Updates, Activity, Health) and AI Setups.
+- [x] Move the existing harness screens under **AI Setups**.
+- [x] **Installed**: every tool mise manages — active version, where it's configured,
       update badges.
-- [ ] **Discover**: searchable mise registry with tool detail and available versions.
+- [x] **Discover**: searchable mise registry with tool pages and available versions.
 
 ### M2 — Changes
 
-- [ ] Install a tool globally (`mise use -g tool@version`), with a version picker.
-- [ ] Upgrade, uninstall, and change version from Installed.
-- [ ] **Updates**: everything outdated, with "Upgrade all".
-- [ ] Streamed command output with cancel, shared by every mutating action.
-- [ ] Activity log: every command Powermise ran, with its result.
+- [x] Install a tool globally (`mise use -g tool@version`), with a version picker.
+- [x] Upgrade, uninstall, change version, and remove from global on tool pages.
+- [x] **Updates**: everything outdated (including past pins, `--bump`), with "Upgrade all".
+- [x] Streamed command output with cancel (whole process group), shared by every change.
+- [x] Activity log: every command Powermise ran this session, with its result.
+- [ ] **Clean up**: remove versions nothing uses (`mise prune --dry-run` to preview,
+      then `mise prune`).
+- [ ] Tool pages from `mise tool --json`: backend, tool options, and supply-chain
+      checks (checksums, GitHub attestations) shown as "Verified" badges.
+- [ ] Install anything mise supports beyond the registry: a backend picker for
+      `npm:`, `pipx:`, `cargo:`, `go:`, `github:`, `aqua:`, `ubi:`, … (`mise backends ls`).
+- [ ] Split Updates into global vs. project tools (`mise outdated --global`,
+      `mise upgrade --global`; needs mise 2026.10.7+).
+- [ ] Automatic updates: toggles for `tool_update.global_auto`, per-tool `auto_update`,
+      and `self_update.auto` (2026.10.4+), set through `mise settings set`.
+- [ ] Persist the activity log across launches.
 
 ### M3 — Projects
 
 - [ ] Add project folders (manual add + recent; no disk scanning).
-- [ ] Per project: tools, environment variables (secrets masked), and config files
-      (`mise config ls`).
-- [ ] Tasks: list and run with live output (`mise tasks ls`, `mise run`).
-- [ ] Trust flow for untrusted configs (`mise trust`), always user-confirmed.
+- [ ] Tools per project, including idiomatic version files (`.nvmrc`,
+      `.python-version`, `.tool-versions`) and `mise install` for anything missing.
+- [ ] Config files (`mise config ls`) and the layering between them: `mise.toml`,
+      `mise.local.toml`, global, and system. Edit values through `mise config set`.
+- [ ] **Environments** (`MISE_ENV`, `mise.<env>.toml`): a switcher showing what changes
+      in `development` vs. `staging` vs. `production`.
+- [ ] Environment variables from `mise env --json`, masking anything marked
+      sensitive/redacted; add and remove with `mise set` / `mise unset`.
+- [ ] **Tasks**: list (`mise tasks ls`), run with live output, and a form for task
+      arguments, flags, and choices generated from the usage spec in
+      `mise tasks info --json`. Show dependencies (`mise tasks deps`), and offer
+      "Run on change" (`mise watch`). Interactive tasks open in Terminal.
+- [ ] Trust flow for untrusted configs (`mise trust` / `mise untrust`), always
+      user-confirmed; show which hooks (`[hooks]`) a config would run before trusting.
+- [ ] Lockfiles: show whether `mise.lock` is current and refresh it (`mise lock`,
+      which supports `--dry-run` and `--json`).
+- [ ] "Open a terminal with this project's tools" (`mise en`).
+- [ ] Generators: add a GitHub Actions workflow, git pre-commit hook, or devcontainer
+      (`mise generate …`), previewing the file first.
+- [ ] Per-machine `[vars]` prompts (`mise vars`, 2026.10.6+) and secrets sources
+      (`mise secrets ls --json`, experimental) shown read-only at first.
 
-### M4 — Health & onboarding
+### M4 — Health, settings & onboarding
 
-- [ ] **Health**: `mise doctor` findings in plain language with fixes.
-- [ ] Settings browser (`mise settings ls`), editing via `mise settings set`.
-- [ ] mise self-update.
-- [ ] First run: detect a missing mise and guide installation.
-- [ ] Explain shell-only configuration (env vars from `~/.zshrc`) that a Finder-launched
+- [x] **Health**: `mise doctor` findings, version vs. latest, shell activation with the
+      exact line to add, config files mise reads.
+- [x] mise self-update.
+- [x] Explain shell-only configuration (env vars from `~/.zshrc`) that a Dock-launched
       app can't see.
+- [ ] Settings browser (`mise settings ls --json`) grouped with docs links; edit through
+      `mise settings set` / `unset`.
+- [ ] GitHub token check: rate-limited downloads are the most common install failure.
+      Show what `mise token` finds and guide `mise token github --oauth`.
+- [ ] Disk usage and cache: `mise cache path` / `clear` / `prune`, and the download
+      cache size limit.
+- [ ] Trusted configs: review and revoke.
+- [ ] Shims vs. activation, explained, with `mise reshim` when shims are in use.
+- [ ] First run: detect a missing mise and guide installation; offer to bring over
+      versions from nvm, pyenv, or Homebrew (`mise sync node|python|ruby`, `mise link`).
+- [ ] Gate features by mise version (several above need 2026.10.x) and explain why a
+      control is disabled.
 
 ### M5 — Marketing site & docs
 
@@ -105,6 +145,46 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
 - [ ] Auto-update through GitHub Releases.
 - [ ] Download page with per-platform installers.
 
+### M7 — Machine setup (mise bootstrap)
+
+mise's newer `bootstrap` and `dotfiles` features configure a whole machine: system
+packages (Homebrew, apt, dnf, snap), repositories, dotfiles, macOS defaults and
+login items, and launchd/systemd services. AI Setups already compiles to
+`[bootstrap.packages]`.
+
+- [ ] Machine view from `mise bootstrap status --json`: what's applied, missing, or
+      drifted, by section.
+- [ ] Apply with a preview (`mise bootstrap --dry-run`, then `mise bootstrap --yes`).
+- [ ] Dotfiles: status (`mise dot status --json`), save, and sync.
+- [ ] Rebuild AI Setups on top of this view, so a setup is a bootstrap template.
+
+## mise coverage
+
+What the GUI does with each area of mise. "Planned" items are in the milestones above.
+
+| mise area | Commands | In the GUI |
+|---|---|---|
+| Tools | `ls`, `use`, `unuse`, `install`, `uninstall`, `upgrade`, `outdated`, `ls-remote`, `latest`, `which`, `where` | ✅ Installed, Discover, tool pages, Updates |
+| Registry & backends | `registry`, `search`, `tool`, `backends`, `tool-alias` | ✅ registry · planned: tool details, any-backend installs, aliases |
+| Cleanup | `prune`, `cache` | planned (M2, M4) |
+| Projects & config | `config ls/get/set`, `fmt`, `edit`, `trust`, `untrust`, `lock` | planned (M3) |
+| Environment | `env`, `set`, `unset`, `vars`, `secrets`, environments (`MISE_ENV`) | planned (M3) |
+| Tasks | `tasks ls/info/deps`, `run`, `watch` | planned (M3) |
+| Shell | `activate`, `doctor`, `reshim`, `en`, `exec` | ✅ activation guidance · planned: open terminal, reshim |
+| Settings | `settings ls/get/set/unset` | planned (M4) |
+| Updating mise | `version`, `self-update` | ✅ |
+| Machine setup | `bootstrap`, `dotfiles` | planned (M7) |
+| Migration | `sync`, `link` | planned (M4 onboarding) |
+| Generators | `generate github-action/git-pre-commit/devcontainer/bootstrap` | planned (M3) |
+| Auth | `token` | planned (M4) |
+| Plugins (asdf/vfox) | `plugins ls/install/update/uninstall` | later: listed read-only, legacy path |
+
+**Not planned:** `mcp` (an agent integration, not a GUI surface — but AI Setups could
+point agents at `mise mcp`), `oci`, `deps`, `daemons`, `installs`, `packslip`, and
+`ssh` (experimental or niche), `test-tool` (plugin authoring), `completion`,
+`deactivate`, `shell` (terminal-session only), `implode` (too destructive for a button),
+and `patrons`/`sponsors`.
+
 ## AI Setups (secondary feature)
 
 Continues as one section of the app and the `powermise` CLI.
@@ -116,6 +196,8 @@ Continues as one section of the app and the `powermise` CLI.
 - [ ] Record the mise config directory in the ledger so `uninstall` targets the
       directory a setup was applied to.
 - [ ] Linux, Windows, and WSL verification of the apply path.
+- [ ] Offer mise's own MCP server (`mise mcp`) to agents, so they can see and install
+      the tools a project uses.
 
 ## Decisions
 
@@ -129,5 +211,6 @@ Continues as one section of the app and the `powermise` CLI.
 
 ## Open questions
 
-- Minimum mise version to support (installed here: 2026.7.18; latest: 2026.10.10).
+- Minimum mise version: 2026.7.18 today. Many M2–M4 features need 2026.10.x — raise
+  the minimum, or gate those features by version?
 - Whether "Setups" (app) and "selections" (CLI) should share one name.

@@ -1,0 +1,85 @@
+{
+  "name": "deploy",
+  "aliases": [],
+  "description": "Deploy",
+  "source": "/Users/demo/code/app/mise.toml",
+  "config_sources": [
+    "/Users/demo/code/app/mise.toml"
+  ],
+  "depends": [],
+  "depends_post": [],
+  "wait_for": [],
+  "env": [],
+  "dir": "/Users/demo/code/app",
+  "hide": false,
+  "raw": false,
+  "interactive": false,
+  "sources": [],
+  "outputs": [],
+  "cache": {
+    "enabled": false,
+    "env": [],
+    "command_inputs": []
+  },
+  "shell": null,
+  "quiet": false,
+  "silent": false,
+  "tools": {},
+  "run": [
+    "echo deploy {{usage.env}}"
+  ],
+  "file": null,
+  "usage_spec": {
+    "name": "deploy",
+    "bin": "deploy",
+    "cmd": {
+      "full_cmd": [],
+      "usage": "[--dry-run] <env>",
+      "subcommands": {},
+      "args": [
+        {
+          "name": "env",
+          "usage": "<env>",
+          "help": "Target",
+          "help_first_line": "Target",
+          "required": true,
+          "double_dash": "Optional",
+          "hide": false,
+          "choices": {
+            "choices": [
+              "staging",
+              "prod"
+            ]
+          }
+        }
+      ],
+      "flags": [
+        {
+          "name": "dry-run",
+          "usage": "--dry-run",
+          "help": "Preview only",
+          "help_first_line": "Preview only",
+          "short": [],
+          "long": [
+            "dry-run"
+          ],
+          "hide": false,
+          "global": false
+        }
+      ],
+      "mounts": [],
+      "hide": false,
+      "help": "Deploy",
+      "name": "deploy",
+      "aliases": [],
+      "hidden_aliases": [],
+      "examples": []
+    },
+    "config": {
+      "props": {}
+    },
+    "usage": "",
+    "complete": {},
+    "about": "Deploy"
+  }
+}
