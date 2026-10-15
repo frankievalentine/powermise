@@ -47,7 +47,6 @@ const steps = [
   <h2 class="visually-hidden" id="demo-heading">Live demo of the Powermise app</h2>
   <div class="demo-stage" data-demo-stage>
     <div class="demo-window" data-demo-window>
-      <div class="demo-lights" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="demo-viewport" data-demo-viewport>
         <iframe
           data-demo-frame
@@ -61,6 +60,13 @@ const steps = [
           <span>This is the real app.</span> Click to try it
         </button>
       </div>
+    </div>
+
+    <div class="demo-platforms" role="group" aria-label="Show the app on">
+      <span>See it on</span>
+      <button type="button" data-demo-platform="darwin">macOS</button>
+      <button type="button" data-demo-platform="win32">Windows</button>
+      <button type="button" data-demo-platform="linux">Linux</button>
     </div>
 
     <div class="demo-tour">
@@ -110,8 +116,26 @@ const steps = [
   const post = (message: object) => frame?.contentWindow?.postMessage(message, window.location.origin);
   const syncTheme = () =>
     post({ type: 'powermise:theme', theme: document.documentElement.dataset.theme === 'light' ? 'light' : 'dark' });
+  // Start on the visitor's own OS; the buttons switch the app's chrome and
+  // conventions without reloading it.
+  const platformButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-demo-platform]'));
+  const agent = navigator.userAgent;
+  let platform = /Windows/i.test(agent) ? 'win32' : /Mac/i.test(agent) ? 'darwin' : 'linux';
+  const showPlatform = (next: string) => {
+    platform = next;
+    platformButtons.forEach((button) =>
+      button.setAttribute('aria-pressed', String(button.dataset.demoPlatform === next)),
+    );
+    post({ type: 'powermise:platform', platform: next });
+  };
+  platformButtons.forEach((button) =>
+    button.addEventListener('click', () => showPlatform(button.dataset.demoPlatform ?? 'darwin')),
+  );
+  showPlatform(platform);
+
   frame?.addEventListener('load', () => {
     syncTheme();
+    showPlatform(platform);
     showStep(current, true);
   });
   new MutationObserver(syncTheme).observe(document.documentElement, {

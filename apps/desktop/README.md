@@ -29,7 +29,24 @@ is handy for design work.
 
 ## Design
 
-Native macOS chrome (overlay title bar, sidebar vibrancy) with styling guided
-by Emil Kowalski's apple-design skill: system type with Apple's tracking curve,
-springs without overshoot, press feedback on pointer-down, and
-reduced-motion / reduced-transparency / increased-contrast fallbacks.
+One brand on every platform, with native edges:
+
+- **Shared:** Geist and Geist Mono (bundled, so layouts match everywhere), the
+  coral accent from the website, warm neutrals, platform-neutral controls with
+  visible focus rings and 32px targets, and restrained motion (springs without
+  overshoot, reduced-motion fallbacks).
+- **Per platform** (`html[data-platform]`, set before first render):
+  - **macOS:** overlay title bar with traffic lights over a vibrancy sidebar,
+    ⌘ shortcuts, primary dialog button last.
+  - **Windows:** our own title bar with caption buttons over Mica
+    (`tauri.windows.conf.json`), Ctrl shortcuts, primary dialog button first,
+    thin scrollbars.
+  - **Linux:** the system's window frame and solid surfaces, Ctrl shortcuts,
+    GNOME button order, thin scrollbars.
+
+Window settings live in `src-tauri/tauri.conf.json` (the Linux default) plus
+`tauri.macos.conf.json` and `tauri.windows.conf.json`, which Tauri merges per
+platform.
+
+In a browser, `?platform=win32` (or the **Preview as** switcher at the bottom
+right) shows another platform's chrome and conventions.

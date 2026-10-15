@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
 import {
   Activity,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import {
   api,
+  inTauri,
   onMiseFinished,
   PLATFORM_LABEL,
   type EnvironmentInfo,
@@ -29,6 +30,8 @@ import {
 } from "./api";
 import { indexCatalog, type CatalogIndex } from "./catalog";
 import { RunSheet, type RunRequest } from "./components/RunSheet";
+import { PlatformSwitcher, WindowChrome } from "./components/WindowChrome";
+import { hasPrimaryModifier, shortcutLabel, usePlatform } from "./platform";
 import { HarnessesView } from "./views/HarnessesView";
 import { HarnessDetail } from "./views/HarnessDetail";
 import { ToolsView } from "./views/ToolsView";
@@ -126,6 +129,22 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const [miseError, setMiseError] = useState<string | null>(null);
 
   const route = history[history.length - 1];
+  const platform = usePlatform();
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // ⌘F / Ctrl+F focuses search wherever a screen has one.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "f" && hasPrimaryModifier(event, platform)) {
+        if (!searchRef.current) return;
+        event.preventDefault();
+        searchRef.current.focus();
+        searchRef.current.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [platform]);
 
   const refreshSelections = useCallback(async () => {
     const next = await api.selections();
@@ -217,45 +236,52 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="window">
-        <Sidebar route={route} root={history[0]} context={context} />
-        <main className="main">
-          <header className="toolbar" data-tauri-drag-region>
-            {history.length > 1 && (
-              <button className="icon-button" onClick={goBack} aria-label="Back">
-                <ChevronLeft size={18} />
-              </button>
-            )}
-            <div className="toolbar-title" data-tauri-drag-region>
-              <span data-tauri-drag-region>{toolbarTitle(route, context)}</span>
-            </div>
-            <div className="toolbar-spacer" data-tauri-drag-region />
-            {SEARCHABLE.includes(route.kind) && (
-              <label className="search">
-                <Search size={14} />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder={route.kind === "discover" ? "Search 1,000+ tools" : "Search"}
-                  aria-label="Search"
-                />
-              </label>
-            )}
-          </header>
-          {/* Swap pages immediately and ease the new one in; waiting on an
-              exit fade makes navigation feel slower than it is. */}
-          <motion.div
-            key={routeKey(route)}
-            style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...spring, opacity: { duration: 0.18 } }}
-          >
-            <RouteView route={route} context={context} query={query} />
-          </motion.div>
-        </main>
+      <div className="app-frame">
+        <WindowChrome />
+        <div className="window">
+          <Sidebar route={route} root={history[0]} context={context} />
+          <main className="main">
+            <header className="toolbar" data-tauri-drag-region>
+              {history.length > 1 && (
+                <button className="icon-button" onClick={goBack} aria-label="Back">
+                  <ChevronLeft size={18} />
+                </button>
+              )}
+              <div className="toolbar-title" data-tauri-drag-region>
+                <span data-tauri-drag-region>{toolbarTitle(route, context)}</span>
+              </div>
+              <div className="toolbar-spacer" data-tauri-drag-region />
+              {SEARCHABLE.includes(route.kind) && (
+                <label className="search">
+                  <Search size={14} />
+                  <input
+                    ref={searchRef}
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder={route.kind === "discover" ? "Search 1,000+ tools" : "Search"}
+                    aria-label="Search"
+                    aria-keyshortcuts={platform === "darwin" ? "Meta+F" : "Control+F"}
+                  />
+                  <kbd aria-hidden>{shortcutLabel(platform, "f")}</kbd>
+                </label>
+              )}
+            </header>
+            {/* Swap pages immediately and ease the new one in; waiting on an
+                exit fade makes navigation feel slower than it is. */}
+            <motion.div
+              key={routeKey(route)}
+              style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...spring, opacity: { duration: 0.18 } }}
+            >
+              <RouteView route={route} context={context} query={query} />
+            </motion.div>
+          </main>
+        </div>
       </div>
       <RunSheet request={runRequest} onClose={() => setRunRequest(null)} />
+      <PlatformSwitcher />
     </MotionConfig>
   );
 }
@@ -324,6 +350,7 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
 
 function Sidebar({ route, root, context }: { route: Route; root: Route; context: AppContext }) {
   const { catalog, selections, env, mise, navigate } = context;
+  const platform = usePlatform();
   const installedCount = Object.keys(mise.inventory ?? {}).length;
   const updateCount = Object.keys(mise.outdated ?? {}).length;
 
@@ -442,7 +469,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
             <AlertTriangle size={13} /> mise not found
           </div>
         )}
-        <div className="row">{PLATFORM_LABEL[env.hostTarget]}</div>
+        <div className="row">{PLATFORM_LABEL[inTauri ? env.hostTarget : platform]}</div>
       </div>
     </nav>
   );

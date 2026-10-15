@@ -9,6 +9,8 @@
       "name": "@powermise/desktop",
       "version": "0.1.0",
       "dependencies": {
+        "@fontsource-variable/geist": "^5.3.0",
+        "@fontsource-variable/geist-mono": "^5.3.0",
         "@tauri-apps/api": "^2.9.0",
         "lucide-react": "^0.546.0",
         "motion": "^12.23.24",
@@ -240,6 +242,10 @@
     "@expressive-code/plugin-shiki": ["@expressive-code/plugin-shiki@0.44.1", "", { "dependencies": { "@expressive-code/core": "^0.44.1", "shiki": "^4.0.2" } }, "sha512-YApiZt3buUzBwL5tqj8G+sYC5NjMjRCHgQwr9bmGl69rtcHy6fE9dooWUeKYB978fJT2BuxT5FeHcF47rA3SEg=="],
 
     "@expressive-code/plugin-text-markers": ["@expressive-code/plugin-text-markers@0.44.1", "", { "dependencies": { "@expressive-code/core": "^0.44.1" } }, "sha512-B3BsJoJ8CFMlcIX9f+X9tcI3C4zPDO601+YuLi9GheSTNro7ZfqSjLptMQKBHOWZvxnAtY5zvIX7iO/qtBhNBg=="],
+
+    "@fontsource-variable/geist": ["@fontsource-variable/geist@5.3.0", "", {}, "sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA=="],
+
+    "@fontsource-variable/geist-mono": ["@fontsource-variable/geist-mono@5.3.0", "", {}, "sha512-vBbuwDEo9AkrqADMXOrlAR3DFcJi4/JxeuU43FoiQERnNwsfXNnvxvReZG02cQKmyk4DZkZdBZX3oTDvy2zBAw=="],
 
     "@fontsource-variable/plus-jakarta-sans": ["@fontsource-variable/plus-jakarta-sans@5.3.0", "", {}, "sha512-/l/4r0yyWK9JzAlmA0LiYgGgmJe/Gswt4jTJEzr5QhJfwMbvJZDmYWyW0M4X7yCK69BajMVlV/Lx8g7WDc1+sw=="],
 

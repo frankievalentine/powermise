@@ -131,7 +131,7 @@
 .demo-stage {
   /* As wide as the page allows, but short enough that the pinned window
      and its tour fit on screen (the app is 1180 × 740). */
-  max-width: min(var(--pm-page-max), calc((100vh - 15rem) * 1180 / 740));
+  max-width: min(var(--pm-page-max), calc((100vh - 18rem) * 1180 / 740));
   margin: 0 auto;
 }
 
@@ -153,32 +153,6 @@
     0 0 0 1px rgba(22, 30, 44, 0.14),
     0 40px 100px -24px rgba(22, 30, 44, 0.32),
     0 18px 40px -18px rgba(22, 30, 44, 0.22);
-}
-
-/* The app leaves room for traffic lights at its top-left, as in the real window. */
-.demo-lights {
-  position: absolute;
-  top: calc(16px * var(--demo-scale, 1) + 2px);
-  left: calc(20px * var(--demo-scale, 1) + 2px);
-  z-index: 2;
-  display: flex;
-  gap: 8px;
-}
-
-.demo-lights span {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #ff5f57;
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.2);
-}
-
-.demo-lights span:nth-child(2) {
-  background: #febc2e;
-}
-
-.demo-lights span:nth-child(3) {
-  background: #28c840;
 }
 
 .demo-viewport {
@@ -235,6 +209,42 @@
 .demo-viewport.is-interactive .demo-activate {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Platform switcher */
+
+.demo-platforms {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  color: var(--pm-ink-faint);
+  font: 500 0.8rem/1 var(--pm-font-reading);
+}
+
+.demo-platforms span {
+  margin-right: 0.35rem;
+}
+
+.demo-platforms button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--pm-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pm-ink-soft);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.demo-platforms button[aria-pressed='true'] {
+  border-color: var(--pm-line-strong);
+  background: var(--pm-panel);
+  color: var(--pm-ink);
 }
 
 /* Tour */

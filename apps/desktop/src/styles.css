@@ -1,159 +1,181 @@
-/* Powermise desktop — macOS-native styling.
-   Typography follows the system font with Apple's tracking curve, materials
-   use vibrancy (the window's native sidebar effect, with a CSS fallback), and
-   motion is limited to transform/opacity with reduced-motion fallbacks. */
+/* Powermise desktop — one brand across macOS, Windows, and Linux.
+   Shared: Geist type, the coral accent from the website, warm neutrals,
+   platform-neutral controls with visible focus rings, and restrained motion.
+   Per platform (html[data-platform]): window chrome, materials (vibrancy on
+   macOS, Mica on Windows, solid on Linux), scrollbars, and dialog button
+   order. Motion is transform/opacity only, with reduced-motion fallbacks. */
 
 :root {
   color-scheme: light dark;
 
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --font: "Geist Variable", "Geist", system-ui, "Segoe UI", sans-serif;
+  --font-display: var(--font);
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Consolas, monospace;
 
-  --text: rgba(0, 0, 0, 0.88);
-  --text-secondary: rgba(0, 0, 0, 0.55);
-  --text-tertiary: rgba(0, 0, 0, 0.35);
-  --separator: rgba(0, 0, 0, 0.08);
-  --separator-strong: rgba(0, 0, 0, 0.14);
+  --text: #1b1d22;
+  --text-secondary: rgba(27, 29, 34, 0.64);
+  --text-tertiary: rgba(27, 29, 34, 0.42);
+  --separator: rgba(22, 30, 44, 0.1);
+  --separator-strong: rgba(22, 30, 44, 0.18);
 
-  --content: #ffffff;
-  --sidebar-fallback: rgba(236, 236, 240, 0.86);
-  --fill: rgba(0, 0, 0, 0.04);
-  --fill-hover: rgba(0, 0, 0, 0.065);
-  --fill-strong: rgba(0, 0, 0, 0.09);
-  --card: rgba(0, 0, 0, 0.022);
+  --content: #fdfcf9;
+  --sidebar-bg: #f3f1ec;
+  --fill: rgba(22, 30, 44, 0.045);
+  --fill-hover: rgba(22, 30, 44, 0.07);
+  --fill-strong: rgba(22, 30, 44, 0.1);
+  --card: rgba(22, 30, 44, 0.022);
   --control: #ffffff;
-  --control-border: rgba(0, 0, 0, 0.12);
-  --code-bg: rgba(0, 0, 0, 0.035);
+  --control-hover: #f7f5f0;
+  --control-border: rgba(22, 30, 44, 0.16);
+  --code-bg: rgba(22, 30, 44, 0.04);
 
-  --accent: #007aff;
-  --accent-hover: #006ee6;
-  --accent-soft: rgba(0, 122, 255, 0.1);
+  --accent: #c4553c;
+  --accent-hover: #ad4730;
+  --accent-soft: rgba(196, 85, 60, 0.12);
+  --accent-text: #a8432c;
   --on-accent: #ffffff;
-  --green: #28a745;
-  --green-soft: rgba(52, 199, 89, 0.14);
-  --orange: #c56a00;
-  --orange-soft: rgba(255, 159, 10, 0.16);
-  --red: #e0352b;
-  --red-soft: rgba(255, 59, 48, 0.12);
+  --green: #2f8a4c;
+  --green-soft: rgba(47, 138, 76, 0.13);
+  --orange: #a86200;
+  --orange-soft: rgba(230, 150, 30, 0.16);
+  --red: #c93a2f;
+  --red-soft: rgba(201, 58, 47, 0.11);
 
-  --scrim: rgba(0, 0, 0, 0.22);
-  --sheet: rgba(255, 255, 255, 0.92);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.12);
-  --shadow-control: 0 0.5px 1px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  --scrim: rgba(15, 17, 22, 0.28);
+  --sheet: #fdfcf9;
+  --shadow-card: none;
+  --shadow-sheet: 0 24px 64px rgba(15, 17, 22, 0.2), 0 0 0 1px rgba(22, 30, 44, 0.12);
 
   --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --sidebar-width: 236px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --control-height: 32px;
+  --sidebar-width: 240px;
   --toolbar-height: 52px;
+  --titlebar-height: 0px;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --text: rgba(255, 255, 255, 0.9);
-    --text-secondary: rgba(255, 255, 255, 0.56);
-    --text-tertiary: rgba(255, 255, 255, 0.34);
-    --separator: rgba(255, 255, 255, 0.08);
-    --separator-strong: rgba(255, 255, 255, 0.14);
+    --text: #eef0f4;
+    --text-secondary: rgba(238, 240, 244, 0.64);
+    --text-tertiary: rgba(238, 240, 244, 0.4);
+    --separator: rgba(226, 232, 255, 0.09);
+    --separator-strong: rgba(226, 232, 255, 0.16);
 
-    --content: #1e1e21;
-    --sidebar-fallback: rgba(40, 40, 44, 0.9);
-    --fill: rgba(255, 255, 255, 0.05);
-    --fill-hover: rgba(255, 255, 255, 0.08);
-    --fill-strong: rgba(255, 255, 255, 0.11);
-    --card: rgba(255, 255, 255, 0.03);
-    --control: rgba(255, 255, 255, 0.1);
-    --control-border: rgba(255, 255, 255, 0.12);
-    --code-bg: rgba(255, 255, 255, 0.045);
+    --content: #121419;
+    --sidebar-bg: #0d0f14;
+    --fill: rgba(226, 232, 255, 0.05);
+    --fill-hover: rgba(226, 232, 255, 0.08);
+    --fill-strong: rgba(226, 232, 255, 0.11);
+    --card: rgba(226, 232, 255, 0.03);
+    --control: rgba(226, 232, 255, 0.06);
+    --control-hover: rgba(226, 232, 255, 0.1);
+    --control-border: rgba(226, 232, 255, 0.15);
+    --code-bg: rgba(226, 232, 255, 0.04);
 
-    --accent: #0a84ff;
-    --accent-hover: #3395ff;
-    --accent-soft: rgba(10, 132, 255, 0.18);
-    --green: #32d74b;
-    --green-soft: rgba(50, 215, 75, 0.16);
-    --orange: #ffb340;
-    --orange-soft: rgba(255, 159, 10, 0.18);
-    --red: #ff6961;
-    --red-soft: rgba(255, 69, 58, 0.18);
+    --accent: #ff896b;
+    --accent-hover: #ff9d84;
+    --accent-soft: rgba(255, 137, 107, 0.15);
+    --accent-text: #ffa48c;
+    --on-accent: #1a0d08;
+    --green: #4cc777;
+    --green-soft: rgba(76, 199, 119, 0.15);
+    --orange: #ffb477;
+    --orange-soft: rgba(255, 180, 119, 0.15);
+    --red: #ff7a6e;
+    --red-soft: rgba(255, 122, 110, 0.15);
 
-    --scrim: rgba(0, 0, 0, 0.42);
-    --sheet: rgba(40, 40, 44, 0.94);
+    --scrim: rgba(0, 0, 0, 0.5);
+    --sheet: #171a21;
     --shadow-card: none;
-    --shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
-    --shadow-control: 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+    --shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(226, 232, 255, 0.12);
   }
 }
 
 /* An explicit theme (set by the marketing-site demo) beats the OS preference. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --text: rgba(255, 255, 255, 0.9);
-  --text-secondary: rgba(255, 255, 255, 0.56);
-  --text-tertiary: rgba(255, 255, 255, 0.34);
-  --separator: rgba(255, 255, 255, 0.08);
-  --separator-strong: rgba(255, 255, 255, 0.14);
+  --text: #eef0f4;
+  --text-secondary: rgba(238, 240, 244, 0.64);
+  --text-tertiary: rgba(238, 240, 244, 0.4);
+  --separator: rgba(226, 232, 255, 0.09);
+  --separator-strong: rgba(226, 232, 255, 0.16);
 
-  --content: #1e1e21;
-  --sidebar-fallback: rgba(40, 40, 44, 0.9);
-  --fill: rgba(255, 255, 255, 0.05);
-  --fill-hover: rgba(255, 255, 255, 0.08);
-  --fill-strong: rgba(255, 255, 255, 0.11);
-  --card: rgba(255, 255, 255, 0.03);
-  --control: rgba(255, 255, 255, 0.1);
-  --control-border: rgba(255, 255, 255, 0.12);
-  --code-bg: rgba(255, 255, 255, 0.045);
+  --content: #121419;
+  --sidebar-bg: #0d0f14;
+  --fill: rgba(226, 232, 255, 0.05);
+  --fill-hover: rgba(226, 232, 255, 0.08);
+  --fill-strong: rgba(226, 232, 255, 0.11);
+  --card: rgba(226, 232, 255, 0.03);
+  --control: rgba(226, 232, 255, 0.06);
+  --control-hover: rgba(226, 232, 255, 0.1);
+  --control-border: rgba(226, 232, 255, 0.15);
+  --code-bg: rgba(226, 232, 255, 0.04);
 
-  --accent: #0a84ff;
-  --accent-hover: #3395ff;
-  --accent-soft: rgba(10, 132, 255, 0.18);
-  --green: #32d74b;
-  --green-soft: rgba(50, 215, 75, 0.16);
-  --orange: #ffb340;
-  --orange-soft: rgba(255, 159, 10, 0.18);
-  --red: #ff6961;
-  --red-soft: rgba(255, 69, 58, 0.18);
+  --accent: #ff896b;
+  --accent-hover: #ff9d84;
+  --accent-soft: rgba(255, 137, 107, 0.15);
+  --accent-text: #ffa48c;
+  --on-accent: #1a0d08;
+  --green: #4cc777;
+  --green-soft: rgba(76, 199, 119, 0.15);
+  --orange: #ffb477;
+  --orange-soft: rgba(255, 180, 119, 0.15);
+  --red: #ff7a6e;
+  --red-soft: rgba(255, 122, 110, 0.15);
 
-  --scrim: rgba(0, 0, 0, 0.42);
-  --sheet: rgba(40, 40, 44, 0.94);
+  --scrim: rgba(0, 0, 0, 0.5);
+  --sheet: #171a21;
   --shadow-card: none;
-  --shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
-  --shadow-control: 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(226, 232, 255, 0.12);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --text: rgba(0, 0, 0, 0.88);
-  --text-secondary: rgba(0, 0, 0, 0.55);
-  --text-tertiary: rgba(0, 0, 0, 0.35);
-  --separator: rgba(0, 0, 0, 0.08);
-  --separator-strong: rgba(0, 0, 0, 0.14);
-  --content: #ffffff;
-  --sidebar-fallback: rgba(236, 236, 240, 0.86);
-  --fill: rgba(0, 0, 0, 0.04);
-  --fill-hover: rgba(0, 0, 0, 0.065);
-  --fill-strong: rgba(0, 0, 0, 0.09);
-  --card: rgba(0, 0, 0, 0.022);
+  --text: #1b1d22;
+  --text-secondary: rgba(27, 29, 34, 0.64);
+  --text-tertiary: rgba(27, 29, 34, 0.42);
+  --separator: rgba(22, 30, 44, 0.1);
+  --separator-strong: rgba(22, 30, 44, 0.18);
+
+  --content: #fdfcf9;
+  --sidebar-bg: #f3f1ec;
+  --fill: rgba(22, 30, 44, 0.045);
+  --fill-hover: rgba(22, 30, 44, 0.07);
+  --fill-strong: rgba(22, 30, 44, 0.1);
+  --card: rgba(22, 30, 44, 0.022);
   --control: #ffffff;
-  --control-border: rgba(0, 0, 0, 0.12);
-  --code-bg: rgba(0, 0, 0, 0.035);
-  --accent: #007aff;
-  --accent-hover: #006ee6;
-  --accent-soft: rgba(0, 122, 255, 0.1);
-  --green: #28a745;
-  --green-soft: rgba(52, 199, 89, 0.14);
-  --orange: #c56a00;
-  --orange-soft: rgba(255, 159, 10, 0.16);
-  --red: #e0352b;
-  --red-soft: rgba(255, 59, 48, 0.12);
-  --scrim: rgba(0, 0, 0, 0.22);
-  --sheet: rgba(255, 255, 255, 0.92);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.12);
-  --shadow-control: 0 0.5px 1px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  --control-hover: #f7f5f0;
+  --control-border: rgba(22, 30, 44, 0.16);
+  --code-bg: rgba(22, 30, 44, 0.04);
+
+  --accent: #c4553c;
+  --accent-hover: #ad4730;
+  --accent-soft: rgba(196, 85, 60, 0.12);
+  --accent-text: #a8432c;
+  --on-accent: #ffffff;
+  --green: #2f8a4c;
+  --green-soft: rgba(47, 138, 76, 0.13);
+  --orange: #a86200;
+  --orange-soft: rgba(230, 150, 30, 0.16);
+  --red: #c93a2f;
+  --red-soft: rgba(201, 58, 47, 0.11);
+
+  --scrim: rgba(15, 17, 22, 0.28);
+  --sheet: #fdfcf9;
+  --shadow-card: none;
+  --shadow-sheet: 0 24px 64px rgba(15, 17, 22, 0.2), 0 0 0 1px rgba(22, 30, 44, 0.12);
+}
+
+/* ---------- Platform materials and chrome metrics ---------- */
+
+/* Windows draws our own title bar; macOS overlays traffic lights on the
+   sidebar; Linux keeps the system's window frame. */
+:root[data-platform="win32"] {
+  --titlebar-height: 32px;
 }
 
 * {
@@ -169,9 +191,11 @@ body,
 
 body {
   font: 13px/1.45 var(--font);
+  font-feature-settings: "ss01", "cv11";
   color: var(--text);
-  /* Transparent so the native window vibrancy shows behind the sidebar. */
-  background: transparent;
+  /* Solid by default; macOS and Windows (in Tauri) let the native material
+     show through instead — see the platform rules below. */
+  background: var(--sidebar-bg);
   -webkit-font-smoothing: antialiased;
   user-select: none;
   -webkit-user-select: none;
@@ -179,13 +203,19 @@ body {
   overflow: hidden;
 }
 
-/* A plain browser has no native vibrancy; paint a solid fallback. */
-body.browser {
-  background: var(--sidebar-fallback);
+/* Native materials: vibrancy behind the macOS sidebar, Mica behind the
+   Windows window. Only in Tauri — a browser has neither. */
+body.native[data-platform="darwin"],
+:root[data-platform="darwin"] body.native,
+:root[data-platform="win32"] body.native {
+  background: transparent;
 }
 
-/* Inside the site demo the frame draws the traffic lights; keep the page
-   from scrolling the host. */
+:root[data-platform="win32"] body.native .sidebar {
+  background: color-mix(in srgb, var(--sidebar-bg) 55%, transparent);
+}
+
+/* Keep the site demo from scrolling the host page. */
 body.embedded {
   overscroll-behavior: contain;
 }
@@ -201,8 +231,8 @@ button {
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  outline-offset: 1px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .selectable {
@@ -213,18 +243,30 @@ button {
 
 /* ---------- Window layout ---------- */
 
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .window {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
-  height: 100%;
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: var(--toolbar-height) 10px 10px;
+  padding: 12px 10px 10px;
   border-right: 1px solid var(--separator);
+}
+
+/* macOS: the traffic lights sit over the top of the sidebar. */
+:root[data-platform="darwin"] .sidebar {
+  padding-top: var(--toolbar-height);
 }
 
 .main {
@@ -257,7 +299,8 @@ button {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-tertiary);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .sidebar-heading button {
@@ -280,18 +323,26 @@ button {
   align-items: center;
   gap: 8px;
   width: 100%;
-  height: 28px;
-  padding: 0 8px;
+  height: 32px;
+  padding: 0 10px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
+  color: var(--text-secondary);
   text-align: left;
   font-size: 13px;
+  font-weight: 450;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
 }
 
 .sidebar-item svg {
   flex: none;
-  color: var(--accent);
+  color: var(--text-tertiary);
+}
+
+.sidebar-item:hover {
+  background: var(--fill);
+  color: var(--text);
 }
 
 .sidebar-item .label {
@@ -309,7 +360,13 @@ button {
 }
 
 .sidebar-item[aria-current="page"] {
-  background: var(--fill-strong);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-weight: 550;
+}
+
+.sidebar-item[aria-current="page"] svg {
+  color: var(--accent);
 }
 
 .sidebar-item:active {
@@ -416,11 +473,20 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 220px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 7px;
+  width: 240px;
+  height: 30px;
+  padding: 0 6px 0 9px;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-sm);
   background: var(--fill);
+  color: var(--text-tertiary);
+}
+
+.search kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--separator);
+  border-radius: 4px;
+  font: 500 10.5px/1.4 var(--font-mono);
   color: var(--text-tertiary);
 }
 
@@ -435,7 +501,7 @@ button {
 }
 
 .search:focus-within {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+  border-color: var(--accent);
 }
 
 /* ---------- Content ---------- */
@@ -495,27 +561,30 @@ button {
   font-size: 12px;
 }
 
-/* ---------- Controls ---------- */
+/* ---------- Controls ----------
+   Platform-neutral: a 1px border instead of Apple's hairline shadow, a
+   32px target height, and press feedback on pointer-down. */
 
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 28px;
+  height: 30px;
   padding: 0 12px;
-  border: 0;
-  border-radius: 7px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
   background: var(--control);
-  box-shadow: var(--shadow-control);
+  color: var(--text);
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  transition: transform 100ms ease-out, background-color 120ms ease-out;
+  transition: transform 100ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out;
 }
 
-.button:hover {
-  background: color-mix(in srgb, var(--control) 92%, var(--text));
+.button:hover:not(:disabled) {
+  background: var(--control-hover);
+  border-color: var(--separator-strong);
 }
 
 .button:active:not(:disabled) {
@@ -527,12 +596,13 @@ button {
 }
 
 .button.primary {
+  border-color: transparent;
   background: var(--accent);
   color: var(--on-accent);
-  box-shadow: none;
 }
 
 .button.primary:hover:not(:disabled) {
+  border-color: transparent;
   background: var(--accent-hover);
 }
 
@@ -541,67 +611,72 @@ button {
 }
 
 .button.large {
-  height: 32px;
+  height: var(--control-height);
   padding: 0 16px;
-  border-radius: 8px;
 }
 
 .segmented {
   display: inline-flex;
-  padding: 2px;
-  border-radius: 8px;
-  background: var(--fill);
+  padding: 3px;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius);
   gap: 2px;
 }
 
 .segmented button {
-  height: 24px;
-  padding: 0 11px;
+  height: 26px;
+  padding: 0 12px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--text-secondary);
   white-space: nowrap;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.segmented button:hover {
+  color: var(--text);
 }
 
 .segmented button[aria-pressed="true"] {
-  background: var(--control);
+  background: var(--fill-strong);
   color: var(--text);
-  box-shadow: var(--shadow-control);
 }
 
 .switch {
   position: relative;
   flex: none;
-  width: 34px;
+  width: 36px;
   height: 20px;
   border: 0;
   border-radius: 10px;
   background: var(--fill-strong);
+  box-shadow: inset 0 0 0 1px var(--control-border);
   transition: background-color 180ms var(--ease-out);
 }
 
 .switch::after {
   content: "";
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  transition: transform 220ms var(--ease-out);
+  background: var(--text-secondary);
+  transition: transform 220ms var(--ease-out), background-color 180ms var(--ease-out);
 }
 
 .switch[aria-checked="true"] {
-  background: var(--green);
+  background: var(--accent);
+  box-shadow: none;
 }
 
 .switch[aria-checked="true"]::after {
-  transform: translateX(14px);
+  background: var(--on-accent);
+  transform: translateX(16px);
 }
 
 .checkbox {
@@ -610,7 +685,7 @@ button {
   flex: none;
   width: 18px;
   height: 18px;
-  border-radius: 5px;
+  border-radius: 4px;
   background: var(--control);
   box-shadow: inset 0 0 0 1px var(--control-border);
   color: var(--on-accent);
@@ -624,10 +699,10 @@ button {
 
 .text-field {
   width: 100%;
-  height: 30px;
+  height: var(--control-height);
   padding: 0 10px;
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--control);
   box-shadow: inset 0 0 0 1px var(--control-border);
   outline: 0;
@@ -655,7 +730,7 @@ button {
 
 .badge.accent {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .badge.green {
@@ -1330,7 +1405,7 @@ button {
 
 .version-pill.accent {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .install-row {
@@ -1343,12 +1418,11 @@ button {
   height: 32px;
   min-width: 220px;
   padding: 0 28px 0 10px;
-  border: 0;
-  border-radius: 8px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
   background: var(--control)
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5'/%3E%3C/svg%3E")
     no-repeat right 10px center;
-  box-shadow: var(--shadow-control);
   font: inherit;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -1415,6 +1489,146 @@ button {
   background: var(--fill);
 }
 
+/* ---------- Window chrome per platform ---------- */
+
+/* Windows: our own title bar with caption buttons on the right. */
+.titlebar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: var(--titlebar-height);
+  padding-left: 12px;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--separator);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+:root[data-platform="win32"] body.native .titlebar {
+  background: transparent;
+}
+
+.titlebar__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  height: 100%;
+}
+
+.titlebar__icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.caption-button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.caption-button:hover {
+  background: var(--fill-hover);
+}
+
+.caption-button.close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+/* Linux in a browser preview: stand in for the system's header bar. */
+.fake-headerbar {
+  flex: none;
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 38px;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid var(--separator);
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.fake-headerbar__close {
+  position: absolute;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--fill-strong);
+  color: var(--text-secondary);
+}
+
+/* macOS in a browser preview: stand in for the traffic lights. */
+.fake-traffic-lights {
+  position: fixed;
+  top: 18px;
+  left: 20px;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+}
+
+.fake-traffic-lights span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.2);
+}
+
+.fake-traffic-lights span:nth-child(2) {
+  background: #febc2e;
+}
+
+.fake-traffic-lights span:nth-child(3) {
+  background: #28c840;
+}
+
+/* Windows and Linux: thin, always-visible scrollbars. macOS keeps overlay
+   scrollbars from the system. */
+:root:not([data-platform="darwin"]) * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--separator-strong) transparent;
+}
+
+/* Windows puts the primary action first: [Apply] [Cancel]. macOS and GNOME
+   put it last: [Cancel] [Apply]. */
+:root[data-platform="win32"] .sheet-foot .button.primary,
+:root[data-platform="win32"] .sheet-foot .button.danger {
+  order: -1;
+}
+
+:root[data-platform="win32"] .sheet-foot .run-status {
+  order: -2;
+}
+
+/* Browser-preview platform switcher (never shown in Tauri or the site demo). */
+.platform-switcher {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--separator-strong);
+  border-radius: 10px;
+  background: var(--sheet);
+  box-shadow: var(--shadow-sheet);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
 /* ---------- Accessibility preferences ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1442,8 +1656,8 @@ button {
     -webkit-backdrop-filter: none;
   }
 
-  body {
-    background: var(--sidebar-fallback);
+  body.native {
+    background: var(--sidebar-bg) !important;
   }
 }
 

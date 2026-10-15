@@ -22,8 +22,9 @@ original AI-harness-first design.
    surfaces trust prompts; it never trusts a file automatically.
 4. **Built for people who'd rather not live in a terminal**, in the spirit of
    Homebrew's BrewUI — plain language, clear consequences, undo where possible.
-5. **Native feel.** macOS-first chrome and motion (Emil Kowalski's apple-design
-   guidance), with Linux and Windows builds from the same codebase.
+5. **One brand, native edges.** The same Powermise look on macOS, Windows, and
+   Linux — Geist type, the coral accent, platform-neutral controls — with each
+   platform's own window chrome, materials, shortcuts, and dialog conventions.
 
 ## Architecture
 
@@ -143,6 +144,24 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
 - [x] The dithered chef's hat moves to the closing call-to-action.
 - [ ] Screenshots / short screen recordings for docs pages once installers ship.
 - [ ] Download page with per-platform installers (with M6).
+
+### Cross-platform design ✅ (first pass)
+
+- [x] Brand system: bundled Geist / Geist Mono, coral accent, warm neutrals,
+      platform-neutral controls, visible focus rings, 32px targets.
+- [x] Per-platform chrome via merged Tauri configs: macOS overlay title bar and
+      vibrancy; Windows custom title bar over Mica; Linux system frame.
+- [x] Per-platform conventions: ⌘ vs. Ctrl shortcut labels (⌘F / Ctrl+F search),
+      dialog button order, scrollbars, platform-aware copy.
+- [x] Platform switcher in the browser preview and the website demo.
+- [ ] Verify on real Windows 11 and Linux (GNOME and KDE): Mica, caption buttons,
+      drag regions, high-DPI scaling, and WebKitGTK font rendering.
+- [ ] Windows 11 snap-layout flyout on our maximize button (custom title bars
+      don't get it for free; Win+Z and edge snapping still work).
+- [ ] In-window app menu on Windows and Linux (About, Check for Updates, Quit);
+      confirm the native macOS menu bar includes Edit for copy/paste.
+- [ ] Follow the system light/dark change live on all three, and respect Windows
+      high-contrast mode.
 
 ### M6 — Release
 

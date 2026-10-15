@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw } from "lucide-re
 import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
+import { usePlatform } from "../../platform";
 import { CommandBlock, Section } from "../../components/ui";
 
 /** The line that hooks mise into a shell, by shell name. */
@@ -15,6 +16,9 @@ function activationCommand(shell: string): { file: string; line: string } {
 
 export function HealthView({ context }: { context: AppContext }) {
   const { mise, run } = context;
+  const platform = usePlatform();
+  const launchedFrom =
+    platform === "darwin" ? "the Dock or Finder" : platform === "win32" ? "the Start menu" : "your app launcher";
   const doctor = useAsync(() => api.doctor(), [mise.revision]);
   const info = mise.info;
   const problems = [...(doctor.data?.errors ?? []), ...(doctor.data?.warnings ?? [])];
@@ -144,7 +148,7 @@ export function HealthView({ context }: { context: AppContext }) {
               <Info size={14} />
               <span>
                 Powermise can’t see settings exported in your shell files (like <code>MISE_*</code>{" "}
-                variables), because apps opened from the Dock don’t load them. Put mise settings in{" "}
+                variables), because apps opened from {launchedFrom} don’t load them. Put mise settings in{" "}
                 <code>~/.config/mise/config.toml</code> to share them with Powermise.
               </span>
             </div>
