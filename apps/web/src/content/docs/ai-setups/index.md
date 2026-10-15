@@ -18,6 +18,8 @@ Under **AI Agents** in the sidebar:
   **Plugins**, and **Skills** they can bring along.
 - **Your setups** — listed below it. Create one with **+**, pick
   harnesses, and the side panel shows exactly what will be installed.
+  **Export…** on a setup's page saves it as a file; **Import a Setup File…** in
+  a new setup opens one from another computer.
 
 **Save & Apply** opens a review: what gets installed, the exact config file
 powermise will write, and the commands it runs. Click **Apply** and mise

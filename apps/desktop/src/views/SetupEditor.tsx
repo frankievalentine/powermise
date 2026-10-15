@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, FileUp, Info } from "lucide-react";
 import {
   api,
   isValidSetupName,
@@ -8,6 +8,7 @@ import {
   type Platform,
   type Preview,
   type SelectionDraft,
+  type SetupFile,
 } from "../api";
 import type { AppContext } from "../App";
 import { AGENT_CLI_TITLE, CATEGORY_LABEL, isAvailable, titleFor } from "../catalog";
@@ -18,22 +19,34 @@ export function SetupEditor({
   context,
   name: existingName,
   seed,
+  imported,
 }: {
   context: AppContext;
   name?: string;
   seed?: string[];
+  /** A setup file to review before saving it as a new setup. */
+  imported?: SetupFile;
 }) {
   const { catalog, env, selections, navigate, refreshSelections, run, mise } = context;
   // Once a new setup is saved, the editor edits that saved setup.
   const [savedAs, setSavedAs] = useState<string | undefined>(existingName);
   const existing = selections.find((selection) => selection.name === savedAs);
 
-  const [name, setName] = useState(existing?.name ?? "");
-  const [harnesses, setHarnesses] = useState<string[]>(existing?.harnesses ?? seed ?? []);
-  const [includeDesktopApps, setIncludeDesktopApps] = useState(existing?.includeDesktopApps ?? false);
+  const start = existing ?? imported?.draft;
+  const [name, setName] = useState(start?.name ?? "");
+  const [harnesses, setHarnesses] = useState<string[]>(start?.harnesses ?? seed ?? []);
+  const [includeDesktopApps, setIncludeDesktopApps] = useState(start?.includeDesktopApps ?? false);
   // `null` follows the agents' recommendations until you change the list.
-  const [mcpPicks, setMcpPicks] = useState<string[] | null>(existing?.mcpServers ?? null);
-  const [pluginPicks, setPluginPicks] = useState<string[] | null>(existing?.integrations ?? null);
+  const [mcpPicks, setMcpPicks] = useState<string[] | null>(start?.mcpServers ?? null);
+  const [pluginPicks, setPluginPicks] = useState<string[] | null>(start?.integrations ?? null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const importFile = () => {
+    setImportError(null);
+    api
+      .readSetupFile()
+      .then((file) => file && navigate({ kind: "editor", imported: file }))
+      .catch((reason: Error) => setImportError(reason.message));
+  };
   const [target, setTarget] = useState<Platform>(env.hostTarget);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -151,6 +164,28 @@ export function SetupEditor({
             <h1 className="page-title">{existing.name}</h1>
           ) : (
             <>
+              <div className="editor-import">
+                <button className="button" onClick={importFile}>
+                  <FileUp size={14} /> Import a Setup File…
+                </button>
+              </div>
+              {imported && !savedAs && (
+                <div className="callout" style={{ marginBottom: 14 }}>
+                  <Info size={14} />
+                  <span>
+                    From {imported.path.split(/[\\/]/).pop()}. Review it, then save it as a new setup
+                    {nameTaken ? " — you already have one with this name, so give it another" : ""}.
+                    {imported.unknown.length > 0 &&
+                      ` Left out because this version of powermise doesn’t have them: ${imported.unknown.join(", ")}.`}
+                  </span>
+                </div>
+              )}
+              {importError && (
+                <div className="callout error selectable" style={{ marginBottom: 14 }}>
+                  <AlertTriangle size={14} />
+                  <span>{importError}</span>
+                </div>
+              )}
               <input
                 className="name-field"
                 value={name}

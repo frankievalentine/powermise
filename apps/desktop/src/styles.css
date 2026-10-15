@@ -2548,3 +2548,10 @@ button {
 .import-bar .detail-actions {
   flex-shrink: 0;
 }
+
+/* "Import a Setup File…" above a new setup's name. */
+.editor-import {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}

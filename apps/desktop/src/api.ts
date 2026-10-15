@@ -206,6 +206,14 @@ export interface SelectionDraft {
   includeDesktopApps: boolean;
 }
 
+/** A setup file read for the editor to review (from Export on another computer). */
+export interface SetupFile {
+  path: string;
+  draft: SelectionDraft;
+  /** Agents, MCP servers, and plugins this powermise doesn't have, left out. */
+  unknown: string[];
+}
+
 /** An agent config file a setup adds MCP servers to. */
 export interface McpTarget {
   client: McpClientId;
@@ -849,6 +857,8 @@ export const api = {
   agentPlugins: (agent: AgentCli) => call<PluginReport>("agent_plugins", { agent }),
   installPluginInTerminal: (agent: AgentCli, id: string) => call<void>("install_plugin_in_terminal", { agent, id }),
   reveal: (path: string) => call<void>("reveal_path", { path }),
+  exportSetup: (name: string) => call<string | null>("export_setup", { name }),
+  readSetupFile: () => call<SetupFile | null>("read_setup_file"),
 
   miseInfo: () => call<MiseInfo>("mise_info"),
   installed: () => call<ToolInventory>("installed_tools"),

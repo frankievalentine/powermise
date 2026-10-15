@@ -28,6 +28,7 @@ import {
   type OutdatedReport,
   type RegistryEntry,
   type SavedSelection,
+  type SetupFile,
   type ToolInventory,
 } from "./api";
 import { indexCatalog, type CatalogIndex } from "./catalog";
@@ -81,7 +82,7 @@ export type Route =
   | { kind: "skills" }
   | { kind: "import" }
   | { kind: "setup"; name: string }
-  | { kind: "editor"; name?: string; seed?: string[] };
+  | { kind: "editor"; name?: string; seed?: string[]; imported?: SetupFile };
 
 /** What mise reports, shared by every mise screen and refreshed after changes. */
 export interface MiseData {
@@ -523,7 +524,15 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
     case "setup":
       return <SetupView context={context} name={route.name} />;
     case "editor":
-      return <SetupEditor context={context} name={route.name} seed={route.seed} />;
+      return (
+        <SetupEditor
+          key={route.imported?.path ?? route.name ?? "new"}
+          context={context}
+          name={route.name}
+          seed={route.seed}
+          imported={route.imported}
+        />
+      );
   }
 }
 

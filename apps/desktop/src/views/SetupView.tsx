@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { AlertTriangle, Blocks, CheckCircle2, FolderOpen, Info, Loader2, Pencil, SquareTerminal, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Blocks,
+  CheckCircle2,
+  FileDown,
+  FolderOpen,
+  Info,
+  Loader2,
+  Pencil,
+  SquareTerminal,
+  Trash2,
+} from "lucide-react";
 import { api, type Preview, type RemovedSetup } from "../api";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
@@ -20,6 +31,7 @@ export function SetupView({ context, name }: { context: AppContext; name: string
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removed, setRemoved] = useState<RemovedSetup | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [exported, setExported] = useState<string | null>(null);
   const pretty = (path: string) => prettyPath(path);
 
   if (!selection && !removed) {
@@ -92,6 +104,20 @@ export function SetupView({ context, name }: { context: AppContext; name: string
           </div>
           {selection && (
             <div className="detail-actions">
+              <button
+                className="button large"
+                title="Save this setup as a file to open in powermise on another computer"
+                onClick={() => {
+                  setError(null);
+                  setExported(null);
+                  api
+                    .exportSetup(name)
+                    .then(setExported)
+                    .catch((reason: Error) => setError(reason.message));
+                }}
+              >
+                <FileDown size={14} /> Export…
+              </button>
               <button className="button large" onClick={() => navigate({ kind: "editor", name })}>
                 <Pencil size={14} /> Edit
               </button>
@@ -119,6 +145,18 @@ export function SetupView({ context, name }: { context: AppContext; name: string
           </div>
         )}
 
+        {exported && (
+          <div className="callout" style={{ marginTop: 16 }}>
+            <CheckCircle2 size={14} />
+            <span>
+              Saved to {pretty(exported)}. On another computer, open it from New Setup ›{" "}
+              <strong>Import a Setup File…</strong>{" "}
+              <button className="link-button" onClick={() => void api.reveal(exported)}>
+                Show in {env.hostTarget === "darwin" ? "Finder" : env.hostTarget === "win32" ? "File Explorer" : "Files"}
+              </button>
+            </span>
+          </div>
+        )}
         {error && (
           <div className="callout error selectable" style={{ marginTop: 16 }}>
             <AlertTriangle size={14} />

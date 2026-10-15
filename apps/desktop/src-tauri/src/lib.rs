@@ -229,6 +229,8 @@ pub fn run() {
             setups::get_catalog,
             setups::list_selections,
             setups::save_selection,
+            setups::export_setup,
+            setups::read_setup_file,
             setups::preview_selection,
             setups::write_setup,
             setups::setup_status,

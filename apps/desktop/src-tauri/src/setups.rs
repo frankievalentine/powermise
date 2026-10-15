@@ -14,7 +14,8 @@ use powermise_domain::{
 };
 use powermise_mise::{BootstrapPlan, MiseCommand};
 use powermise_registry::{
-    load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog, load_tool_catalog,
+    load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog, load_selection,
+    load_tool_catalog,
 };
 use powermise_setups::{
     CatalogPaths, RemovedServer, SelectionStore, compile_setup, expand_home, inspect_fragment,
@@ -22,6 +23,8 @@ use powermise_setups::{
 };
 use powermise_state::{GeneratedFileChange, fragment_path};
 use serde::{Deserialize, Serialize};
+use tauri::AppHandle;
+use tauri_plugin_dialog::DialogExt;
 
 use crate::{CommandResult, layout, message, mise_commands::client, mise_config_dir};
 
@@ -226,7 +229,7 @@ pub fn get_catalog() -> CommandResult<CatalogBundle> {
 // ---------------------------------------------------------------------------
 
 /// What the setup editor sends: the parts of a selection the app edits.
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SelectionDraft {
     name: String,
@@ -309,6 +312,121 @@ pub fn save_selection(draft: SelectionDraft, replace: bool) -> CommandResult<Pat
         store.remove(&selection.name).map_err(message)?;
     }
     store.create(&selection).map_err(message)
+}
+
+/// Saves a setup as a file to open in powermise on another computer.
+#[tauri::command]
+pub async fn export_setup(app: AppHandle, name: String) -> CommandResult<Option<PathBuf>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let layout = layout()?;
+        let contents = SelectionStore::new(&layout)
+            .export(&name)
+            .map_err(message)?;
+        let Some(path) = app
+            .dialog()
+            .file()
+            .set_title("Export Setup")
+            .set_file_name(format!("{name}.powermise.toml"))
+            .add_filter("powermise setup", &["toml"])
+            .blocking_save_file()
+            .and_then(|picked| picked.into_path().ok())
+        else {
+            return Ok(None);
+        };
+        fs::write(&path, format!("{SETUP_FILE_HEADER}{contents}")).map_err(message)?;
+        Ok(Some(path))
+    })
+    .await
+    .map_err(message)?
+}
+
+const SETUP_FILE_HEADER: &str = "# A powermise setup. To use it on another computer, open powermise and\n\
+# choose New Setup › Import a Setup File…, then review it and save.\n\n";
+
+/// A setup file read for the editor to review; nothing is saved yet.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupFile {
+    path: PathBuf,
+    draft: SelectionDraft,
+    /// Agents, MCP servers, and plugins this powermise doesn't have, left out.
+    unknown: Vec<String>,
+}
+
+/// Reads a setup file you pick (one made with Export).
+#[tauri::command]
+pub async fn read_setup_file(app: AppHandle) -> CommandResult<Option<SetupFile>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let Some(path) = app
+            .dialog()
+            .file()
+            .set_title("Choose a powermise Setup File")
+            .add_filter("powermise setup", &["toml"])
+            .blocking_pick_file()
+            .and_then(|picked| picked.into_path().ok())
+        else {
+            return Ok(None);
+        };
+        let selection = load_selection(&path).map_err(message)?;
+        let paths = catalog_paths()?;
+        let harnesses = load_catalog(&paths.harnesses).map_err(message)?;
+        let mcp = load_mcp_catalog(&paths.mcp).map_err(message)?;
+        let integrations = load_integration_catalog(&paths.integrations).map_err(message)?;
+        Ok(Some(setup_file(
+            path,
+            selection,
+            &harnesses,
+            &mcp,
+            &integrations,
+        )))
+    })
+    .await
+    .map_err(message)?
+}
+
+/// Keeps what this catalog has; lists the rest (from a newer or older
+/// powermise).
+fn setup_file(
+    path: PathBuf,
+    selection: Selection,
+    harnesses: &Catalog,
+    mcp: &McpServerCatalog,
+    integrations: &IntegrationCatalog,
+) -> SetupFile {
+    let mut unknown = Vec::new();
+    let mut keep = |ids: Vec<String>, known: &dyn Fn(&str) -> bool| -> Vec<String> {
+        ids.into_iter()
+            .filter(|id| {
+                let ok = known(id);
+                if !ok {
+                    unknown.push(id.clone());
+                }
+                ok
+            })
+            .collect()
+    };
+    let draft = SelectionDraft {
+        harnesses: keep(selection.harnesses, &|id| {
+            harnesses.harnesses.iter().any(|entry| entry.id == id)
+        }),
+        mcp_servers: selection.mcp_servers.map(|ids| {
+            keep(ids, &|id| {
+                mcp.mcp_servers.iter().any(|entry| entry.id == id)
+            })
+        }),
+        integrations: selection.integrations.map(|ids| {
+            keep(ids, &|id| {
+                integrations.integrations.iter().any(|entry| entry.id == id)
+            })
+        }),
+        include_desktop_apps: selection.preferences.include_desktop_apps,
+        name: selection.name,
+    };
+    SetupFile {
+        path,
+        draft,
+        unknown,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -681,4 +799,43 @@ pub fn remove_setup(name: String) -> CommandResult<RemovedSetup> {
         removed_servers,
         cleanup_command: MiseCommand::prune_tools().display(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reads_an_exported_setup_and_drops_what_the_catalog_lacks() {
+        let paths = CatalogPaths::in_dir(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../catalog/profiles"),
+        );
+        let harnesses = load_catalog(&paths.harnesses).unwrap();
+        let mcp = load_mcp_catalog(&paths.mcp).unwrap();
+        let integrations = load_integration_catalog(&paths.integrations).unwrap();
+        let selection = SelectionDraft {
+            name: "work-laptop".into(),
+            harnesses: vec!["claude".into(), "future-agent".into()],
+            mcp_servers: Some(vec!["context7".into(), "gone-server".into()]),
+            integrations: None,
+            include_desktop_apps: true,
+        }
+        .into_selection(&harnesses.catalog);
+        // What Export writes, read back the way Import does.
+        let dir = env::temp_dir().join(format!("powermise-setup-file-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("work-laptop.powermise.toml");
+        let body = toml::to_string(&selection).unwrap();
+        fs::write(&path, format!("{SETUP_FILE_HEADER}{body}")).unwrap();
+        let read = load_selection(&path).unwrap();
+        fs::remove_dir_all(&dir).unwrap();
+
+        let file = setup_file(path, read, &harnesses, &mcp, &integrations);
+        assert_eq!(file.draft.name, "work-laptop");
+        assert_eq!(file.draft.harnesses, ["claude"]);
+        assert_eq!(file.draft.mcp_servers, Some(vec!["context7".into()]));
+        assert_eq!(file.draft.integrations, None);
+        assert!(file.draft.include_desktop_apps);
+        assert_eq!(file.unknown, ["future-agent", "gone-server"]);
+    }
 }

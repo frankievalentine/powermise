@@ -38,8 +38,13 @@ the setup editor says so before anything is saved or applied.
 
 ## Moving a setup between computers
 
-Copy the selection file into the other computer's
-`~/.config/powermise/selections/` folder; it appears under **My Setups** and
-compiles for that computer's platform when you apply it. To skip powermise on
+On the setup's page, **Export…** saves it as a file (`<name>.powermise.toml`).
+On the other computer, create a setup with **+** and choose **Import a Setup
+File…**: the editor opens with that setup filled in, so you can review it,
+rename it if the name is taken, and save. Anything the other computer's
+powermise doesn't have — an agent from a newer catalog, say — is left out and
+listed. The setup compiles for that computer's platform when you apply it.
+
+Copying the selection file into `~/.config/powermise/selections/` works too. To skip powermise on
 the other end entirely, copy the compiled mise file instead — see
 [From the terminal](/ai-setups/terminal/#other-machines-dotfiles-and-ci).

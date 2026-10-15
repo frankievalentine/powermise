@@ -411,6 +411,21 @@ export async function browserPreview<T>(command: string, args: Record<string, un
       return catalog as T;
     case "list_selections":
       return [...setups].sort((a, b) => a.name.localeCompare(b.name)).map(saved) as T;
+    case "export_setup":
+      return `${HOME}/Downloads/${args.name as string}.powermise.toml` as T;
+    case "read_setup_file":
+      // A setup exported on another computer, by a powermise with one more agent.
+      return {
+        path: `${HOME}/Downloads/engineering-agents.powermise.toml`,
+        draft: {
+          name: "engineering-agents",
+          harnesses: ["claude", "codex"],
+          mcpServers: null,
+          integrations: null,
+          includeDesktopApps: true,
+        },
+        unknown: ["future-agent"],
+      } as T;
     case "save_selection": {
       const draft = args.draft as SelectionDraft;
       const existing = setups.find((setup) => setup.name === draft.name);
