@@ -23,7 +23,9 @@ export interface CatalogIndex {
 
 export function indexCatalog(bundle: CatalogBundle): CatalogIndex {
   const all = bundle.harnesses.harnesses;
-  const tools = [...bundle.tools.tools, ...bundle.apps.apps];
+  // Apps that are also tools (vscode, zed, cursor) are listed once, as tools.
+  const toolIds = new Set(bundle.tools.tools.map((tool) => tool.id));
+  const tools = [...bundle.tools.tools, ...bundle.apps.apps.filter((app) => !toolIds.has(app.id))];
   const integrations = bundle.integrations.integrations;
   const mcpServers = bundle.mcp.mcp_servers;
   return {

@@ -622,3 +622,48 @@ export const onMiseFinished = (handler: (entry: ActivityEntry) => void) =>
 export function isValidSetupName(name: string): boolean {
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(name);
 }
+
+export interface QuietResult {
+  /** The exact command line that ran. */
+  command: string;
+  ok: boolean;
+  /** Output lines, for showing why it failed. */
+  output: string[];
+}
+
+/** Runs an action without the run sheet and resolves when it finishes. For
+ *  quick, easily undone changes (like a setting) whose command is shown
+ *  inline instead; it still lands in the activity log. */
+export async function runQuietly(action: MiseAction): Promise<QuietResult> {
+  const output: string[] = [];
+  let jobId: number | null = null;
+  const early: OutputEvent[] = [];
+  const finishedEarly: ActivityEntry[] = [];
+  let resolve!: (entry: ActivityEntry) => void;
+  const finished = new Promise<ActivityEntry>((done) => (resolve = done));
+  // Subscribe first: a fast job can finish before `run` returns its id.
+  const stopOutput = await onMiseOutput((event) => {
+    if (jobId === null) early.push(event);
+    else if (event.jobId === jobId) output.push(event.text);
+  });
+  const stopFinished = await onMiseFinished((entry) => {
+    if (jobId === null) finishedEarly.push(entry);
+    else if (entry.id === jobId) resolve(entry);
+  });
+  try {
+    const id = await api.run(action);
+    jobId = id;
+    output.push(...early.filter((event) => event.jobId === id).map((event) => event.text));
+    const already = finishedEarly.find((entry) => entry.id === id);
+    if (already) resolve(already);
+    const entry = await finished;
+    return {
+      command: entry.command,
+      ok: !!entry.outcome?.success && !entry.error,
+      output: entry.error ? [...output, entry.error] : output,
+    };
+  } finally {
+    stopOutput();
+    stopFinished();
+  }
+}

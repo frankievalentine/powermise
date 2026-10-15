@@ -242,12 +242,18 @@ Reads: `mise bootstrap status --json`, `mise dotfiles status --json`
 
 ## Settings
 
-Every mise setting, grouped (General, GitHub, Node, Python, …) with its
-description and where it's set. Switches and text fields change your global
-config through `mise settings set`; **Reset to default** runs
-`mise settings unset`. Lists are edited comma-separated. A
-setting another file sets (a project, or a `conf.d` file) is labelled with that
-file. **Changed** shows only what you've set.
+**Common** shows the settings most people need, in plain words and grouped by
+what they're for — installing tools, updates, projects, languages — each with
+the control that fits: a switch, a number, a choice, or a list you pick from
+(tools you have installed, or folders from the folder picker). Each says whether
+it's at mise's default, changed by you, or set by a project or AI setup, with
+**Reset**. Changes save right away; the row shows the exact command
+(`mise settings set auto_install false`) with **Undo**, and every change is in
+Activity. Search finds everyday words too: "nvmrc", "offline", "update".
+
+**All settings** lists every mise setting by its own name, grouped as mise
+groups them, with **Changed** to show only what you've set. Changes there show
+the command and ask first.
 
 Reads: `mise settings ls --all --json-extended`
 

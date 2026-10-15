@@ -1075,6 +1075,90 @@ button {
   max-width: 240px;
 }
 
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+/* Common settings */
+.common-row .row-trailing {
+  max-width: 50%;
+}
+
+.common-control {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.common-control .select {
+  max-width: 260px;
+}
+
+.muted-key {
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+}
+
+.common-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.common-feedback.error {
+  color: var(--red);
+}
+
+.common-feedback code {
+  font-size: 10.5px;
+}
+
+.list-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.badge.chip {
+  gap: 4px;
+  padding-right: 3px;
+}
+
+.chip-remove {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+}
+
+.chip-remove:hover {
+  background: var(--fill-hover);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stepper-value {
+  min-width: 72px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .chip-row {
   display: flex;
   flex-wrap: wrap;

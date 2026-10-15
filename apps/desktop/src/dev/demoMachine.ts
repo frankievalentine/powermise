@@ -29,7 +29,9 @@ const settings: Setting[] = [
   setting("experimental", "boolean", false, "Enable experimental features, which may change or be removed in any release."),
   setting("auto_install", "boolean", true, "Install missing tools automatically when running commands like `mise exec` or `mise run`."),
   setting("not_found_auto_install", "boolean", true, "Install a missing tool when its command isn't found in an activated shell."),
-  setting("http_timeout", "string", "30s", "How long to wait for HTTP requests before giving up."),
+  setting("http_timeout", "number", "30s", "Timeout for connecting or waiting between reads during HTTP requests."),
+  setting("offline", "boolean", false, "Block every HTTP request, so mise uses only installed tools and cached data."),
+  setting("status.missing_tools", "string", "if_other_versions_installed", "When to warn that tools requested by config are not installed."),
   setting("idiomatic_version_file_enable_tools", "array", [], "Tools whose idiomatic version files (like .nvmrc) mise reads."),
   setting("trusted_config_paths", "array", [], "Config paths mise trusts without asking."),
   setting("disable_tools", "array", [], "Tools mise ignores even when a config asks for them."),
@@ -93,6 +95,20 @@ const checkpoints = [
   { id: 2, createdAt: "2026-10-10T18:40:00-07:00", trigger: "baseline", summary: "tracked ~/.zshrc", machine: "studio", changed: [] },
 ];
 const trusted = ["/Users/demo/code/web-app", "/Users/demo/code/old-prototype"];
+
+/** mise's defaults, for `settings unset`. */
+const defaults = new Map(settings.map((entry) => [entry.key, entry.source ? defaultFor(entry) : entry.value]));
+function defaultFor(entry: Setting): unknown {
+  return entry.key === "jobs" ? 8 : entry.value;
+}
+
+/** How mise stores `mise settings set <key> <text>` for a setting's type. */
+function parseSettingValue(entry: Setting, text: string): unknown {
+  if (entry.type === "array") return text ? text.split(",").map((item) => item.trim()).filter(Boolean) : [];
+  if (text === "true" || text === "false") return text === "true";
+  if (entry.type === "number" && /^-?\d+(\.\d+)?$/.test(text)) return Number(text);
+  return text;
+}
 
 const imports: DetectedImport[] = [
   { source: "nvm", tool: "node", versions: ["18.20.4", "20.11.1"] },
@@ -182,8 +198,7 @@ export function performMachineAction(action: MiseAction): string[] | null {
     case "setSetting": {
       const entry = settings.find((candidate) => candidate.key === action.key);
       if (entry) {
-        entry.value =
-          entry.type === "boolean" ? action.value === "true" : entry.type === "number" ? Number(action.value) : action.value;
+        entry.value = parseSettingValue(entry, action.value);
         entry.source = GLOBAL_CONFIG;
       }
       return [];
@@ -191,10 +206,8 @@ export function performMachineAction(action: MiseAction): string[] | null {
     case "unsetSetting": {
       const entry = settings.find((candidate) => candidate.key === action.key);
       if (entry) {
+        entry.value = defaults.get(entry.key);
         entry.source = null;
-        if (entry.key === "jobs") entry.value = 8;
-        if (entry.type === "boolean") entry.value = false;
-        if (entry.key === "github.credential_command") entry.value = "";
       }
       return [];
     }

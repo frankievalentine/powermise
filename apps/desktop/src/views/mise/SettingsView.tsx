@@ -5,6 +5,7 @@ import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { ExternalLinkButton } from "../../components/machine";
 import { Segmented, Switch } from "../../components/ui";
+import { CommonSettings } from "./CommonSettings";
 
 const GROUP_TITLE: Record<string, string> = {
   "": "General",
@@ -40,11 +41,32 @@ const asText = (value: unknown) =>
         : JSON.stringify(value);
 
 type Filter = "all" | "changed";
+type Tab = "common" | "advanced";
+
+const TAB_KEY = "powermise.settingsTab";
+
+function initialTab(): Tab {
+  try {
+    return localStorage.getItem(TAB_KEY) === "advanced" ? "advanced" : "common";
+  } catch {
+    return "common";
+  }
+}
 
 export function SettingsView({ context, query }: { context: AppContext; query: string }) {
   const { mise, env } = context;
   const settings = useAsync(() => api.settings(), [mise.revision]);
   const [filter, setFilter] = useState<Filter>("all");
+  const [tab, setTabState] = useState<Tab>(initialTab);
+  const setTab = (next: Tab) => {
+    setTabState(next);
+    try {
+      localStorage.setItem(TAB_KEY, next);
+    } catch {
+      // Remembering the tab is a convenience only.
+    }
+  };
+  const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
 
   const groups = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -74,20 +96,39 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
           <div>
             <h1 className="page-title">Settings</h1>
             <p className="page-subtitle">
-              How mise behaves everywhere on this computer. Changes go in your global mise config with{" "}
-              <span className="mono">mise settings set</span>.{" "}
-              <ExternalLinkButton url="https://mise.jdx.dev/configuration/settings.html">All settings</ExternalLinkButton>
+              {tab === "common" ? (
+                <>How mise behaves everywhere on this computer. Changes save right away, and each one can be undone.</>
+              ) : (
+                <>
+                  Every mise setting. Changes go in your global mise config with{" "}
+                  <span className="mono">mise settings set</span>.{" "}
+                  <ExternalLinkButton url="https://mise.jdx.dev/configuration/settings.html">mise’s settings docs</ExternalLinkButton>
+                </>
+              )}
             </p>
           </div>
+        </div>
+        <div className="settings-tabs">
           <Segmented
-            label="Show"
-            value={filter}
-            onChange={setFilter}
+            label="Settings view"
+            value={tab}
+            onChange={setTab}
             options={[
-              { value: "all", label: "All" },
-              { value: "changed", label: `Changed${changedCount ? ` (${changedCount})` : ""}` },
+              { value: "common", label: "Common" },
+              { value: "advanced", label: "All settings" },
             ]}
           />
+          {tab === "advanced" && (
+            <Segmented
+              label="Show"
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "all", label: "All" },
+                { value: "changed", label: `Changed${changedCount ? ` (${changedCount})` : ""}` },
+              ]}
+            />
+          )}
         </div>
 
         {settings.error && <div className="callout error selectable">{settings.error}</div>}
@@ -96,14 +137,18 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
             <Loader2 size={20} className="spin" />
           </div>
         )}
-        {settings.data && groups.length === 0 && (
+        {tab === "common" && settings.data && (
+          <CommonSettings context={context} settings={settings.data} query={query} pretty={pretty} />
+        )}
+
+        {tab === "advanced" && settings.data && groups.length === 0 && (
           <div className="empty">
             <h3>{query ? "No matches" : "Nothing changed yet"}</h3>
             <p>{query ? "Try a different search." : "Every setting is at mise’s default."}</p>
           </div>
         )}
 
-        {groups.map(([group, entries]) => (
+        {tab === "advanced" && groups.map(([group, entries]) => (
           <section className="section" key={group || "general"}>
             <h2 className="section-title">{groupTitle(group)}</h2>
             <div className="list">
