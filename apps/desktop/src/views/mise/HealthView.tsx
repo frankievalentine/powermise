@@ -84,7 +84,7 @@ export function HealthView({ context, section }: { context: AppContext; section?
                     </div>
                     <div className="row-subtitle">
                       {info.supported
-                        ? `You have ${info.version?.split(" ")[0]}. Updating to ${info.recommended} or newer turns on AI Setups, macOS settings, automatic updates, and more.`
+                        ? `You have ${info.version?.split(" ")[0]}. Updating to ${info.recommended} or newer turns on AI Setups, ${context.env.hostTarget === "darwin" ? "macOS settings, " : ""}automatic updates, and more.`
                         : `powermise needs mise ${info.minimum} or newer.`}
                     </div>
                   </div>

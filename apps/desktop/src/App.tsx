@@ -313,7 +313,10 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
     () =>
       env && catalog
         ? {
-            env,
+            // In a browser (design work, the site demo), the "Preview as"
+            // platform stands in for the computer, so platform-only parts
+            // (like macOS settings) follow it. In the app it's the real one.
+            env: inTauri ? env : { ...env, hostTarget: platform },
             catalog,
             selections,
             projects,
@@ -325,7 +328,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
             run: setRunRequest,
           }
         : null,
-    [env, catalog, selections, projects, refreshProjects, addProject, mise, navigate, refreshSelections],
+    [env, catalog, selections, projects, refreshProjects, addProject, mise, navigate, refreshSelections, platform],
   );
 
   if (error) {
@@ -484,7 +487,12 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
     case "machine":
       return <MachineView context={context} />;
     case "macos-settings":
-      return <MacosSettingsView context={context} query={query} />;
+      // macOS only; anywhere else, show This Computer instead.
+      return context.env.hostTarget === "darwin" ? (
+        <MacosSettingsView context={context} query={query} />
+      ) : (
+        <MachineView context={context} />
+      );
     case "welcome":
       return <WelcomeView context={context} />;
     case "project":

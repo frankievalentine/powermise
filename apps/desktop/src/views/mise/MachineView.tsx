@@ -57,6 +57,9 @@ const GOOD = [
   "true",
 ];
 
+/** Parts mise applies only on macOS; hidden on Windows and Linux. */
+const MACOS_ONLY = ["macos_defaults", "macos_login_items", "launchd"];
+
 const titleOf = (id: string) => PARTS[id]?.title ?? id.replace(/_/g, " ").replace(/^\w/, (letter) => letter.toUpperCase());
 
 /** Machine setup: what the global config's `[bootstrap]` and `[dotfiles]`
@@ -64,7 +67,11 @@ const titleOf = (id: string) => PARTS[id]?.title ?? id.replace(/_/g, " ").replac
 export function MachineView({ context }: { context: AppContext }) {
   const { mise, run } = context;
   const status = useAsync(() => api.machineStatus(), [mise.revision]);
-  const data = status.data;
+  const mac = context.env.hostTarget === "darwin";
+  const data = status.data && {
+    ...status.data,
+    sections: status.data.sections.filter((section) => mac || !MACOS_ONLY.includes(section.id)),
+  };
 
   const preview = (only: string | null, title: string) =>
     run({
