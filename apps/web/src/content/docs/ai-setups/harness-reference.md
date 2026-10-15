@@ -36,10 +36,10 @@ harness's recommended MCP servers.
 
 | Harness | Works on | Installs on macOS, beyond the basics | Desktop apps (opt-in) | MCP servers |
 | --- | --- | --- | --- | --- |
-| `antigravity` | darwin, win32 | `npm:@upstash/context7-mcp`, `brew-cask:antigravity` | — | `context7` |
+| `antigravity` | darwin, linux, win32, wsl | `antigravity-cli`, `npm:@upstash/context7-mcp` | `brew-cask:antigravity` | `context7` |
 | `claude` | darwin, linux, win32, wsl | `claude-code`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp` | `brew-cask:claude` | `context7`, `sequential-thinking` |
 | `cline` | darwin, win32 | `node`, `npm:@upstash/context7-mcp`, `npm:cline`, `brew-cask:visual-studio-code` | — | `context7` |
-| `codex` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@openai/codex`, `npm:@upstash/context7-mcp` | `brew-cask:codex-app` | `context7`, `sequential-thinking` |
+| `codex` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@openai/codex`, `npm:@upstash/context7-mcp` | `brew-cask:chatgpt` | `context7`, `sequential-thinking` |
 | `conductor` | darwin | `brew-cask:conductor` | — | — |
 | `cursor` | darwin, win32 | `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp`, `brew-cask:cursor` | — | `context7`, `sequential-thinking` |
 | `fx` | darwin, linux, wsl | `github:vercel-labs/fx` | — | — |
@@ -48,7 +48,7 @@ harness's recommended MCP servers.
 | `goose` | darwin, linux, win32, wsl | `github:aaif-goose/goose` | — | — |
 | `hermes` | darwin, linux, wsl | `brew:hermes-agent` | — | — |
 | `openclaw` | darwin, linux, win32, wsl | `node`, `npm:openclaw` | — | — |
-| `opencode` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp`, `npm:opencode-ai` | — | `context7`, `sequential-thinking` |
+| `opencode` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@opencode/cli`, `npm:@upstash/context7-mcp` | — | `context7`, `sequential-thinking` |
 | `orca` | darwin, win32 | `macos-app:orca` | — | — |
 | `paseo` | darwin, linux, win32, wsl | `npm:@getpaseo/cli` | — | — |
 | `pi` | darwin, linux, win32, wsl | `npm:@earendil-works/pi-coding-agent` | — | — |
@@ -58,6 +58,13 @@ harness's recommended MCP servers.
 
 ## Known gaps
 
+- **Gemini CLI is enterprise-only now.** Google retired it for personal
+  accounts on June 18, 2026; it still works with a Gemini Code Assist Standard
+  or Enterprise license, or a paid API key. Personal accounts use Antigravity
+  CLI (`agy`), which the `antigravity` harness installs.
+- **ChatGPT on Windows comes from the Microsoft Store** (`9PLM9XGG6VKS`, through
+  winget). Store apps can't be pinned to a version, so it's declared `latest`.
+
 - **`hermes` has no Windows build.** It installs from Homebrew on macOS and
   Linux.
 - **Desktop apps install on macOS and Windows only.** They come from Homebrew
@@ -66,8 +73,8 @@ harness's recommended MCP servers.
   there's no official Linux route yet.
 - **Zed's MCP servers aren't configured.** Zed's settings file can hold
   comments, which mise won't merge into; add servers in Zed's Agent Panel.
-- **`cline` and `github-copilot` need VS Code**, which has no Linux provider.
-- **`antigravity` covers macOS and Linux only.**
+- **`cline` needs VS Code**, which has no Linux provider. (`github-copilot`
+  installs Copilot CLI everywhere; VS Code is its optional desktop app.)
 
 ## Regenerating the table
 

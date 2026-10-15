@@ -5,17 +5,18 @@ catalog_revision = "2"
 [[harnesses]]
 id = "antigravity"
 title = "Antigravity"
-description = "Google's agent-first code editor and agent manager."
-kind = "ecosystem"
-category = "ide"
+description = "Google's Antigravity: the Antigravity CLI (`agy`, which replaced Gemini CLI), plus the Antigravity desktop app on macOS and Windows."
+kind = "terminal-agent"
+category = "terminal"
 extends = "base"
 supported_platforms = [
     "darwin",
+    "linux",
     "win32",
+    "wsl",
 ]
-required_tool_ids = []
+required_tool_ids = ["antigravity-cli"]
 desktop_tool_ids = ["antigravity-app"]
-desktop_required = true
 integration_ids = []
 mcp_server_ids = ["context7"]
 mcp_client = "antigravity"
@@ -94,7 +95,7 @@ source_file = "cline.json"
 [[harnesses]]
 id = "codex"
 title = "Codex"
-description = "OpenAI's Codex CLI, plus the Codex desktop app on macOS."
+description = "OpenAI's Codex CLI, plus the ChatGPT desktop app (which includes Codex) on macOS and Windows."
 kind = "terminal-agent"
 category = "terminal"
 extends = "base"
@@ -109,7 +110,7 @@ required_tool_ids = [
     "codex",
 ]
 desktop_tool_ids = [
-    "codex-app",
+    "chatgpt-app",
 ]
 integration_ids = []
 plugin_agent = "codex"
@@ -154,7 +155,7 @@ source_file = "cursor.json"
 [[harnesses]]
 id = "gemini"
 title = "Gemini"
-description = "Google's Gemini CLI agent."
+description = "Google's Gemini CLI, for Gemini Code Assist Standard or Enterprise and paid API keys. Personal accounts moved to Antigravity CLI on June 18, 2026."
 kind = "terminal-agent"
 category = "terminal"
 extends = "base"

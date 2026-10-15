@@ -290,7 +290,9 @@ impl McpClient {
             Self::Cline => format!(
                 "{vscode}/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
             ),
-            Self::Antigravity => "~/.gemini/antigravity/mcp_config.json".into(),
+            // Antigravity CLI and the Antigravity 2 app share this file
+            // (the older `~/.gemini/antigravity/` one is migrated from).
+            Self::Antigravity => "~/.gemini/config/mcp_config.json".into(),
             Self::Zed => {
                 return Err(
                     "Zed's settings file can hold comments, which mise won't merge into; add servers in Zed's Agent Panel settings",

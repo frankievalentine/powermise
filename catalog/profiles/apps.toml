@@ -10,7 +10,7 @@ description = "The AI-native code editor with built-in agent capabilities, selec
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "cursor"
-version = "3.18.9"
+version = "3.24.18"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -21,7 +21,7 @@ description = "Password manager and secrets vault for individuals and teams."
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "1password"
-version = "8.12.34"
+version = "8.12.40"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -32,7 +32,7 @@ description = "User-friendly design tool for creating marketing materials, prese
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "canva"
-version = "1.124.1"
+version = "1.126.1"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -43,7 +43,7 @@ description = "Collaborative design tool for interfaces and digital products."
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "figma"
-version = "126.8.16"
+version = "126.9.13"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -54,7 +54,7 @@ description = "Issue tracking and project management built for software teams."
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "linear"
-version = "1.32.2"
+version = "1.32.4"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -65,7 +65,7 @@ description = "Screen and video recording software for async communication."
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "loom"
-version = "0.372.0"
+version = "0.380.6"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -76,7 +76,7 @@ description = "Online collaborative whiteboard platform for brainstorming and pl
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "miro"
-version = "0.11.168"
+version = "0.11.187"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -87,7 +87,7 @@ description = "All-in-one workspace for notes, tasks, wikis, and databases."
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "notion"
-version = "7.31.3"
+version = "7.38.1"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -98,7 +98,7 @@ description = "Team communication and collaboration hub."
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "slack"
-version = "4.51.191"
+version = "4.52.178"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -109,24 +109,24 @@ description = "Microsoft's lightweight but powerful source code editor."
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "visual-studio-code"
-version = "1.135.0"
+version = "1.142.0"
 supported_platforms = ["darwin"]
 
 [[apps.providers]]
 kind = "winget"
 package = "Microsoft.VisualStudioCode"
-version = "1.135.0"
+version = "1.142.0"
 supported_platforms = ["win32"]
 
 [[apps]]
-id = "windsurf"
-title = "Windsurf"
-description = "Codeium's AI-native code editor with built-in Cascade agent."
+id = "devin-desktop"
+title = "Devin Desktop"
+description = "Cognition's agentic IDE, formerly Windsurf."
 
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
-package = "windsurf"
-version = "3.8.20"
+package = "devin-desktop"
+version = "3.10.67"
 supported_platforms = ["darwin"]
 
 [[apps]]
@@ -137,5 +137,5 @@ description = "High-performance multiplayer code editor with built-in AI assista
 [[apps.providers]]
 kind = "bootstrap-brew-cask"
 package = "zed"
-version = "1.17.2"
+version = "1.24.2"
 supported_platforms = ["darwin"]

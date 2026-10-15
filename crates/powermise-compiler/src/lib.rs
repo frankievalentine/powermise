@@ -212,6 +212,17 @@ fn declared_version(kind: &ToolProviderKind, version: &str) -> String {
     }
 }
 
+/// A Microsoft Store product ID (`9PLM9XGG6VKS`), which winget installs from
+/// the Store. Store apps have no versions to pin, so they're declared
+/// `latest` (any installed version satisfies it).
+pub fn is_store_id(package: &str) -> bool {
+    package.len() == 12
+        && (package.starts_with('9') || package.starts_with("XP"))
+        && package
+            .bytes()
+            .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
+}
+
 /// Compiles a resolved selection into a mise config fragment for `target`.
 pub fn compile(
     selection: &ResolvedSelection,

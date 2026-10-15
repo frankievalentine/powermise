@@ -257,13 +257,16 @@ pub fn validate_harness_tool_references(
                     tool.id
                 )));
             }
+            let store_app =
+                provider.kind == ToolProviderKind::Winget && is_store_id(&provider.package);
             if provider.version.eq_ignore_ascii_case("latest")
                 && provider.kind != ToolProviderKind::BootstrapApt
+                && !store_app
             {
                 return Err(RegistryError::Validation(format!(
                     "tool `{}` provider `{}` uses `latest`; \
                      catalog providers must pin an explicit resolved version \
-                     (only bootstrap-apt tracks the distribution channel)",
+                     (only bootstrap-apt and Microsoft Store apps track the latest)",
                     tool.id, provider.package
                 )));
             }
@@ -342,6 +345,17 @@ fn validate_tool_provider(owner: &str, provider: &ToolProvider) -> Result<(), Re
         )));
     }
     validate_download(owner, provider)
+}
+
+/// A Microsoft Store product ID (`9PLM9XGG6VKS`). Mirrors
+/// `powermise_compiler::is_store_id` (the registry doesn't depend on the
+/// compiler).
+fn is_store_id(package: &str) -> bool {
+    package.len() == 12
+        && (package.starts_with('9') || package.starts_with("XP"))
+        && package
+            .bytes()
+            .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
 }
 
 /// `macos-app` providers need a complete, checksummed download; other kinds
@@ -982,7 +996,7 @@ harnesses = ["conductor"]
             Platform::Darwin,
         )
         .unwrap();
-        assert_eq!(darwin.desktop_app_ids, ["claude-app", "codex-app"]);
+        assert_eq!(darwin.desktop_app_ids, ["chatgpt-app", "claude-app"]);
         assert!(darwin.tool_ids.contains(&"claude-app".to_owned()));
         assert!(darwin.unavailable_desktop_ids.is_empty());
 
@@ -996,7 +1010,7 @@ harnesses = ["conductor"]
         )
         .unwrap();
         assert!(linux.desktop_app_ids.is_empty());
-        assert_eq!(linux.unavailable_desktop_ids, ["claude-app", "codex-app"]);
+        assert_eq!(linux.unavailable_desktop_ids, ["claude-app", "chatgpt-app"]);
         assert!(
             !linux.tool_ids.contains(&"claude-app".to_owned()),
             "unavailable desktop apps must never enter the tool set"

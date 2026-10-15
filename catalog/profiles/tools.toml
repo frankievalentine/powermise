@@ -26,7 +26,7 @@ supported_platforms = ["linux", "wsl"]
 [[tools.providers]]
 kind = "winget"
 package = "Git.Git"
-version = "2.55.0.3"
+version = "2.55.0.5"
 supported_platforms = ["win32"]
 
 [[tools]]
@@ -49,7 +49,7 @@ supported_platforms = ["linux", "wsl"]
 [[tools.providers]]
 kind = "winget"
 package = "cURL.cURL"
-version = "8.21.0.6"
+version = "8.23.0.1"
 supported_platforms = ["win32"]
 
 [[tools]]
@@ -144,14 +144,14 @@ description = "Anthropic's coding agent CLI for terminal workflows."
 [[tools.providers]]
 kind = "mise-tool"
 package = "claude-code"
-version = "2.1.251"
+version = "2.1.300"
 command = "claude"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "claude-code"
-version = "2.1.236"
+version = "2.1.300"
 supported_platforms = ["darwin"]
 
 [[tools]]
@@ -162,7 +162,7 @@ description = "Anthropic's official Claude AI desktop app."
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "claude"
-version = "1.40609.0"
+version = "2.42304.0"
 supported_platforms = ["darwin"]
 
 [[tools.providers]]
@@ -179,13 +179,13 @@ description = "Microsoft's lightweight but powerful source code editor."
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "visual-studio-code"
-version = "1.135.0"
+version = "1.142.0"
 supported_platforms = ["darwin"]
 
 [[tools.providers]]
 kind = "winget"
 package = "Microsoft.VisualStudioCode"
-version = "1.135.0"
+version = "1.142.0"
 supported_platforms = ["win32"]
 
 [[tools]]
@@ -196,20 +196,20 @@ description = "Required for npm-based agent tooling and parts of the web workspa
 [[tools.providers]]
 kind = "mise-tool"
 package = "node"
-version = "26.8.1"
+version = "26.12.0"
 command = "node"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
 [[tools.providers]]
 kind = "bootstrap-brew"
 package = "node"
-version = "26.8.1"
+version = "26.12.0"
 supported_platforms = ["darwin", "linux", "wsl"]
 
 [[tools.providers]]
 kind = "winget"
 package = "OpenJS.NodeJS"
-version = "26.7.0"
+version = "26.8.1"
 supported_platforms = ["win32"]
 
 [[tools]]
@@ -220,7 +220,7 @@ description = "AI coding assistant VS Code extension (saoudrizwan.claude-dev)."
 [[tools.providers]]
 kind = "mise-tool"
 package = "npm:cline"
-version = "3.0.60"
+version = "3.0.71"
 command = "cline"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
@@ -232,26 +232,34 @@ description = "OpenAI's terminal coding agent."
 [[tools.providers]]
 kind = "mise-tool"
 package = "npm:@openai/codex"
-version = "0.151.0"
+version = "0.162.1"
 command = "codex"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "codex"
-version = "0.151.0"
+version = "0.162.1"
 supported_platforms = ["darwin"]
 
 [[tools]]
-id = "codex-app"
-title = "Codex App"
-description = "OpenAI's Codex desktop app for managing coding agents."
+id = "chatgpt-app"
+title = "ChatGPT"
+description = "OpenAI's ChatGPT desktop app, with the Codex agent built in. It replaced the separate Codex app."
 
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
-package = "codex-app"
-version = "26.623.141536"
+package = "chatgpt"
+version = "26.1007.71326"
 supported_platforms = ["darwin"]
+
+# The Microsoft Store app (OpenAI's documented `winget install --id
+# 9PLM9XGG6VKS -s msstore`); Store apps have no versions to pin.
+[[tools.providers]]
+kind = "winget"
+package = "9PLM9XGG6VKS"
+version = "latest"
+supported_platforms = ["win32"]
 
 [[tools]]
 id = "conductor"
@@ -261,7 +269,7 @@ description = "Run a team of coding agents on your Mac in isolated workspaces."
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "conductor"
-version = "0.83.1"
+version = "0.91.0"
 supported_platforms = ["darwin"]
 
 [[tools]]
@@ -272,13 +280,13 @@ description = "The AI-native code editor with built-in agent capabilities."
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "cursor"
-version = "3.18.9"
+version = "3.24.18"
 supported_platforms = ["darwin"]
 
 [[tools.providers]]
 kind = "scoop"
 package = "cursor"
-version = "3.18.9"
+version = "3.24.18"
 supported_platforms = ["win32"]
 
 [[tools.providers]]
@@ -290,20 +298,16 @@ supported_platforms = ["win32"]
 [[tools]]
 id = "gemini-cli"
 title = "Gemini CLI"
-description = "Google's open-source AI agent for terminal workflows."
+description = "Google's Gemini CLI. Retired for personal Google accounts on June 18, 2026 (Antigravity CLI replaces it); it still works with a Gemini Code Assist Standard or Enterprise license, or a paid API key."
 
 [[tools.providers]]
 kind = "mise-tool"
 package = "npm:@google/gemini-cli"
-version = "0.57.0"
+version = "0.64.0"
 command = "gemini"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
-[[tools.providers]]
-kind = "bootstrap-brew"
-package = "gemini-cli"
-version = "0.46.0"
-supported_platforms = ["darwin"]
+["darwin"]
 
 [[tools]]
 id = "goose"
@@ -313,7 +317,7 @@ description = "An open-source, extensible AI agent for code, workflows, and auto
 [[tools.providers]]
 kind = "mise-tool"
 package = "github:aaif-goose/goose"
-version = "1.48.0"
+version = "1.54.0"
 command = "goose"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
@@ -336,7 +340,7 @@ description = "A personal AI assistant that runs on your own devices."
 [[tools.providers]]
 kind = "mise-tool"
 package = "npm:openclaw"
-version = "2026.7.1"
+version = "2026.10.3"
 command = "openclaw"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
@@ -347,15 +351,15 @@ description = "Provider-agnostic open source coding agent for terminal workflows
 
 [[tools.providers]]
 kind = "mise-tool"
-package = "npm:opencode-ai"
-version = "1.18.25"
+package = "npm:@opencode/cli"
+version = "2.0.30"
 command = "opencode"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
 [[tools.providers]]
 kind = "bootstrap-brew"
 package = "opencode"
-version = "1.18.25"
+version = "2.0.29"
 supported_platforms = ["darwin", "linux", "wsl"]
 
 [[tools]]
@@ -366,7 +370,7 @@ description = "Agent orchestration CLI that manages existing provider CLIs acros
 [[tools.providers]]
 kind = "mise-tool"
 package = "npm:@getpaseo/cli"
-version = "0.6.1"
+version = "0.11.2"
 command = "paseo"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
@@ -378,7 +382,7 @@ description = "Earendil's Pi coding agent for terminal-driven AI assistance."
 [[tools.providers]]
 kind = "mise-tool"
 package = "npm:@earendil-works/pi-coding-agent"
-version = "0.84.4"
+version = "1.2.0"
 command = "pi"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
@@ -390,7 +394,7 @@ description = "The code editor for AI agents. Orchestrate parallel coding agents
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "superset"
-version = "1.25.1"
+version = "1.38.0"
 supported_platforms = ["darwin"]
 
 [[tools]]
@@ -401,7 +405,7 @@ description = "Minimal GUI for AI code agents by T3 Tools."
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "t3-code"
-version = "0.0.37"
+version = "0.0.45"
 supported_platforms = ["darwin"]
 
 [[tools]]
@@ -412,13 +416,13 @@ description = "High-performance multiplayer code editor with built-in AI assista
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
 package = "zed"
-version = "1.17.2"
+version = "1.24.2"
 supported_platforms = ["darwin"]
 
 [[tools.providers]]
 kind = "scoop"
 package = "zed"
-version = "1.17.2"
+version = "1.24.2"
 supported_platforms = ["win32"]
 
 [[tools.providers]]
@@ -435,7 +439,7 @@ description = "Vercel's native coding agent CLI (single static binary)."
 [[tools.providers]]
 kind = "mise-tool"
 package = "github:vercel-labs/fx"
-version = "0.0.7"
+version = "0.0.13"
 command = "fx"
 supported_platforms = ["darwin", "linux", "wsl"]
 
@@ -501,3 +505,15 @@ kind = "winget"
 package = "StablyAI.Orca"
 version = "1.4.224"
 supported_platforms = ["win32"]
+
+[[tools]]
+id = "antigravity-cli"
+title = "Antigravity CLI"
+description = "Google's terminal agent for Antigravity (the `agy` command), which replaced Gemini CLI."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "antigravity-cli"
+version = "1.3.5"
+command = "agy"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]

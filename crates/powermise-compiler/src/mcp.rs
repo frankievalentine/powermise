@@ -171,7 +171,8 @@ fn entry(client: McpClient, server: &McpServer, mise: &str) -> Option<Value> {
             McpClient::Cline => {
                 Some(json!({ "type": "streamableHttp", "url": url, "disabled": false }))
             }
-            McpClient::Antigravity => Some(json!({ "serverUrl": url })),
+            // `serverUrl` is Antigravity's legacy key; it now reads `url`.
+            McpClient::Antigravity => Some(json!({ "url": url })),
             McpClient::ClaudeDesktop | McpClient::Zed => None,
         };
     }

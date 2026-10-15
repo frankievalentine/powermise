@@ -229,7 +229,7 @@ const MCP_PATHS: Partial<Record<McpClientId, (platform: Platform) => string | nu
   "copilot-cli": () => "~/.copilot/mcp-config.json",
   cline: (platform) =>
     `${platform === "darwin" ? "~/Library/Application Support/Code/User" : platform === "win32" ? "~/AppData/Roaming/Code/User" : "~/.config/Code/User"}/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`,
-  antigravity: () => "~/.gemini/antigravity/mcp_config.json",
+  antigravity: () => "~/.gemini/config/mcp_config.json",
 };
 
 function fragment(name: string, installs: Install[], mcpTargets: McpTarget[] = []): string {
