@@ -148,6 +148,14 @@ export const MCP_CLIENT_UNSUPPORTED: Partial<Record<McpClientId, string>> = {
   zed: "Zed’s settings file can hold comments, which mise won’t merge into. Add servers in Zed’s Agent Panel settings.",
 };
 
+/** The harness's desktop MCP config, when its desktop app installs on
+ *  `platform` (Claude's desktop app isn't on Linux, nor VS Code). */
+export function desktopMcpClient(index: CatalogIndex, harness: Harness, platform: Platform): McpClientId | null {
+  if (!harness.desktop_mcp_client) return null;
+  const installable = harness.desktop_tool_ids.some((id) => providerFor(index.toolById.get(id), platform));
+  return installable ? harness.desktop_mcp_client : null;
+}
+
 /** How an MCP server runs, in words. */
 export function mcpRunsAs(server: McpServer): string {
   if (server.url) return "Remote server · nothing to install";

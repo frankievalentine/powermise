@@ -570,6 +570,8 @@ export interface ImportScan {
   defaultPackages: DefaultPackage[];
   /** Packages already in powermise's import file. */
   importedPackages: string[];
+  /** mise installs Homebrew formulas here (Apple Silicon Macs and Linux). */
+  homebrewFormulas: boolean;
 }
 
 export interface ImportFile {

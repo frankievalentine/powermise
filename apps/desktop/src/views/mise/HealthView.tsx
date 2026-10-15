@@ -268,8 +268,12 @@ export function HealthView({ context, section }: { context: AppContext; section?
                   <div className="row-main">
                     <div className="row-title">Versions, packages, and apps from other tools</div>
                     <div className="row-subtitle">
-                      Version managers, Homebrew and your Brewfile, App Store apps, and command-line packages — with a
-                      dry run before anything changes.
+                      {context.env.hostTarget === "darwin"
+                        ? "Version managers, Homebrew and your Brewfile, App Store apps, and command-line packages"
+                        : context.env.hostTarget === "win32"
+                          ? "Version managers, winget and Scoop tools, and command-line packages"
+                          : "Version managers, Homebrew and your Brewfile, and command-line packages"}{" "}
+                      — with a dry run before anything changes.
                     </div>
                   </div>
                   <span className="button">Open Import</span>

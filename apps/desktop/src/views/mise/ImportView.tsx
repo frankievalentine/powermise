@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, FileUp, Loader2, ScanSearch } from "lucide-react";
-import { api, type Brewfile, type ImportFile, type ImportSource, type RegistryEntry } from "../../api";
+import { api, type Brewfile, type ImportFile, type ImportSource, type Platform, type RegistryEntry } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { prettyPath } from "../../mise";
@@ -35,13 +35,27 @@ interface ImportItem {
   suggested: boolean;
 }
 
-const GROUPS = [
+const groups = (platform: Platform) => [
   { id: "versions", title: "Version managers", note: "Versions mise can use where they are, without downloading them again." },
   { id: "packages", title: "Command-line packages", note: "From npm -g, pipx, uv, cargo, or default-package files. As mise tools, they stay put when you switch Node or Python versions." },
-  { id: "homebrew", title: "Homebrew", note: "Formulas and apps mise can install and keep track of itself — no Homebrew needed on your next Mac. What Homebrew already installed stays as it is." },
+  {
+    id: "homebrew",
+    title: "Homebrew",
+    note:
+      platform === "darwin"
+        ? "Formulas and apps mise can install and keep track of itself — no Homebrew needed on your next Mac. What Homebrew already installed stays as it is."
+        : "Formulas and fonts mise can install and keep track of itself. Mac apps in a Brewfile are left out — they only install on macOS.",
+  },
   { id: "appstore", title: "Mac App Store", note: "Installed with mas, signed in to your Apple account. Paid apps must already be yours." },
-  { id: "other", title: "Installed another way", note: "From an install script, go install, and so on — mise has them too." },
-] as const;
+  {
+    id: "other",
+    title: "Installed another way",
+    note:
+      platform === "win32"
+        ? "From winget, Scoop, an install script, go install, and so on — mise has them too."
+        : "From an install script, go install, and so on — mise has them too.",
+  },
+];
 
 /** Homebrew formulas whose same-named mise tool is a different project. */
 const SAME_NAME_DIFFERENT_TOOL = new Set(["coreutils"]);
@@ -129,10 +143,19 @@ export function ImportView({ context }: { context: AppContext }) {
       });
     }
 
-    // 3. Homebrew: what's installed, and every Brewfile.
-    const brewfiles = [...(scan.data?.brewfiles ?? []), ...extraBrewfiles];
-    const installedFormulas = new Map((scan.data?.homebrew.formulas ?? []).map((item) => [item.name, item]));
-    const installedCasks = new Map((scan.data?.homebrew.casks ?? []).map((item) => [item.name, item]));
+    // 3. Homebrew: what's installed, and every Brewfile. There's no Homebrew
+    // on Windows; on Linux mise installs formulas and font casks only (not
+    // Mac apps); on an Intel Mac, casks but not formulas.
+    const platform = context.env.hostTarget;
+    const mac = platform === "darwin";
+    const brewfiles = platform === "win32" ? [] : [...(scan.data?.brewfiles ?? []), ...extraBrewfiles];
+    const formulasInstall = platform !== "win32" && (scan.data?.homebrewFormulas ?? true);
+    const installedFormulas = new Map(
+      (platform === "win32" ? [] : (scan.data?.homebrew.formulas ?? [])).map((item) => [item.name, item]),
+    );
+    const installedCasks = new Map(
+      (platform === "win32" ? [] : (scan.data?.homebrew.casks ?? [])).map((item) => [item.name, item]),
+    );
     // A Brewfile names a tapped formula without its tap; use the installed one's full name.
     const qualify = (name: string, installed: Map<string, unknown>) =>
       name.includes("/") ? name : ([...installed.keys()].find((full) => full.split("/").pop() === name) ?? name);
@@ -156,7 +179,7 @@ export function ImportView({ context }: { context: AppContext }) {
           installed: false,
           suggested: inFile,
         });
-      } else {
+      } else if (formulasInstall) {
         add({
           key: `brew:${name}`,
           group: "homebrew",
@@ -170,6 +193,7 @@ export function ImportView({ context }: { context: AppContext }) {
     }
     const caskNames = [...new Set([...installedCasks.keys(), ...brewfiles.flatMap((file) => file.casks.map((name) => qualify(name, installedCasks)))])];
     for (const name of caskNames) {
+      if (!mac && !name.split("/").pop()!.startsWith("font-")) continue;
       const installed = installedCasks.has(name);
       const inFile = listed.has(`cask:${name}`);
       add({
@@ -183,10 +207,10 @@ export function ImportView({ context }: { context: AppContext }) {
       });
     }
 
-    // 4. Mac App Store.
+    // 4. Mac App Store (macOS only).
     const masInstalled = new Map((scan.data?.masApps ?? []).map((app) => [app.id, app]));
     const masListed = new Map(brewfiles.flatMap((file) => file.mas.map(([name, id]) => [id, name] as const)));
-    for (const id of new Set([...masInstalled.keys(), ...masListed.keys()])) {
+    for (const id of mac ? new Set([...masInstalled.keys(), ...masListed.keys()]) : []) {
       const app = masInstalled.get(id);
       add({
         key: `mas:${id}`,
@@ -215,7 +239,7 @@ export function ImportView({ context }: { context: AppContext }) {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, imports.data, packages.data, programs.data, scan.data, extraBrewfiles, mise.inventory, mise.registry]);
+  }, [loading, imports.data, packages.data, programs.data, scan.data, extraBrewfiles, mise.inventory, mise.registry, context.env.hostTarget]);
 
   const isPicked = (item: ImportItem) => picked.get(item.key) ?? item.suggested;
   const makesDefault = (item: ImportItem) =>
@@ -292,14 +316,15 @@ export function ImportView({ context }: { context: AppContext }) {
     }
   };
 
-  const brewfiles = [...(scan.data?.brewfiles ?? []), ...extraBrewfiles];
+  const platform = context.env.hostTarget;
+  const brewfiles = platform === "win32" ? [] : [...(scan.data?.brewfiles ?? []), ...extraBrewfiles];
   const sources = [
     ...new Set((imports.data ?? []).map((entry) => SOURCE_LABEL[entry.source])),
-    ...(scan.data && scan.data.homebrew.formulas.length + scan.data.homebrew.casks.length
+    ...(platform !== "win32" && scan.data && scan.data.homebrew.formulas.length + scan.data.homebrew.casks.length
       ? [`Homebrew (${scan.data.homebrew.formulas.length} formulas, ${scan.data.homebrew.casks.length} casks)`]
       : []),
     ...brewfiles.map((file) => prettyPath(file.path, context.env.home)),
-    ...(scan.data?.masApps.length ? [`App Store (${scan.data.masApps.length})`] : []),
+    ...(platform === "darwin" && scan.data?.masApps.length ? [`App Store (${scan.data.masApps.length})`] : []),
   ];
 
   return (
@@ -309,16 +334,23 @@ export function ImportView({ context }: { context: AppContext }) {
           <div>
             <h1 className="page-title">Import</h1>
             <p className="page-subtitle">
-              Bring over what you already have — versions from other version managers, Homebrew and a Brewfile, App
-              Store apps, and command-line packages. Pick what to import, try a dry run, and powermise adds it to one
-              file of its own in your mise config.
+              Bring over what you already have — versions from other version managers,{" "}
+              {platform === "darwin"
+                ? "Homebrew and a Brewfile, App Store apps, "
+                : platform === "win32"
+                  ? "tools from winget and Scoop, "
+                  : "Homebrew and a Brewfile, "}
+              and command-line packages. Pick what to import, try a dry run, and powermise adds it to one file of its own
+              in your mise config.
             </p>
           </div>
-          <div className="detail-actions">
-            <button className="button" onClick={() => void addBrewfile()}>
-              <FileUp size={14} /> Add a Brewfile…
-            </button>
-          </div>
+          {platform !== "win32" && (
+            <div className="detail-actions">
+              <button className="button" onClick={() => void addBrewfile()}>
+                <FileUp size={14} /> Add a Brewfile…
+              </button>
+            </div>
+          )}
         </div>
 
         {loading && (
@@ -352,11 +384,14 @@ export function ImportView({ context }: { context: AppContext }) {
         {!loading && items.length === 0 && (
           <div className="empty">
             <h3>Nothing to bring over</h3>
-            <p>mise already has everything powermise found. Have a Brewfile somewhere else? Add it above.</p>
+            <p>
+              mise already has everything powermise found.
+              {platform !== "win32" ? " Have a Brewfile somewhere else? Add it above." : ""}
+            </p>
           </div>
         )}
 
-        {GROUPS.map((group) => {
+        {groups(platform).map((group) => {
           const rows = items.filter((item) => item.group === group.id);
           if (!rows.length) return null;
           const all = rows.every(isPicked);

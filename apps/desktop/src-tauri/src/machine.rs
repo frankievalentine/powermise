@@ -152,6 +152,9 @@ pub struct ImportScan {
     default_packages: Vec<powermise_mise::DefaultPackage>,
     /// Packages already in `conf.d/powermise-imported.toml`.
     imported_packages: Vec<String>,
+    /// mise installs Homebrew formulas here (Apple Silicon Macs and Linux;
+    /// not Intel Macs or Windows).
+    homebrew_formulas: bool,
 }
 
 /// Homebrew's installs, Brewfiles in the usual places, Mac App Store apps,
@@ -182,6 +185,9 @@ pub async fn import_scan() -> CommandResult<ImportScan> {
             brewfiles,
             mas_apps,
             default_packages: powermise_mise::default_packages(&home),
+            homebrew_formulas: !cfg!(windows)
+                && powermise_setups::compile_options(powermise_setups::host_platform())
+                    .homebrew_formulas,
             imported_packages: crate::mise_config_dir()
                 .map(|mise| {
                     powermise_setups::read_imported(&mise)

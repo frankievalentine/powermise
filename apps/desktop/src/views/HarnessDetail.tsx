@@ -1,7 +1,14 @@
 import { CheckCircle2, Plus, XCircle } from "lucide-react";
 import { PLATFORMS, PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
-import { AGENT_CLI_TITLE, MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED, categoryLabel, isAvailable } from "../catalog";
+import {
+  AGENT_CLI_TITLE,
+  MCP_CLIENT_TITLE,
+  MCP_CLIENT_UNSUPPORTED,
+  categoryLabel,
+  desktopMcpClient,
+  isAvailable,
+} from "../catalog";
 import { InstallTable } from "../components/InstallTable";
 import { Monogram, Section } from "../components/ui";
 
@@ -93,7 +100,9 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
             note={
               MCP_CLIENT_UNSUPPORTED[harness.mcp_client] ??
               `A setup adds the servers you pick to ${MCP_CLIENT_TITLE[harness.mcp_client]}${
-                harness.desktop_mcp_client ? ` and the ${MCP_CLIENT_TITLE[harness.desktop_mcp_client]}` : ""
+                desktopMcpClient(catalog, harness, target)
+                  ? ` and the ${MCP_CLIENT_TITLE[desktopMcpClient(catalog, harness, target)!]}`
+                  : ""
               } through mise. These are checked for you:`
             }
           >

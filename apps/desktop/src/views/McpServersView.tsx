@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
-import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED, mcpRunsAs } from "../catalog";
+import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED, desktopMcpClient, mcpRunsAs } from "../catalog";
 import { ExternalLinkButton, canOpen } from "../components/machine";
 import { AgentsTabs } from "../components/SectionTabs";
 import { Monogram, Section } from "../components/ui";
@@ -85,9 +85,12 @@ export function McpServersView({ context, query }: { context: AppContext; query:
                     <div className="row-title">{harness.title}</div>
                     <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
                       {unsupported ?? MCP_CLIENT_TITLE[client]}
-                      {harness.desktop_mcp_client && !unsupported
-                        ? ` and the ${MCP_CLIENT_TITLE[harness.desktop_mcp_client]} (when desktop apps are included)`
-                        : ""}
+                      {(() => {
+                        const desktop = desktopMcpClient(catalog, harness, env.hostTarget);
+                        return desktop && !unsupported
+                          ? ` and the ${MCP_CLIENT_TITLE[desktop]} (when desktop apps are included)`
+                          : "";
+                      })()}
                     </div>
                   </div>
                   <div className="row-trailing">

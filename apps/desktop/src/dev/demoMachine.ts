@@ -185,6 +185,7 @@ const importScan: ImportScan = {
   masApps: [{ id: "441258766", name: "Magnet", version: "3.0.7" }],
   defaultPackages: [{ backend: "npm", name: "typescript", version: null, file: "/Users/demo/.default-npm-packages" }],
   importedPackages: [],
+  homebrewFormulas: true,
 };
 
 /** Whether the demo machine already has a package (Homebrew or App Store). */
