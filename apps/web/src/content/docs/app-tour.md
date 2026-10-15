@@ -269,7 +269,7 @@ Reads: `mise bootstrap status --json`, `mise dotfiles status --json`
 
 ## Settings
 
-**Common** shows the settings most people need, in plain words and grouped by
+One page. The settings most people need come first, in plain words and grouped by
 what they're for — installing tools, updates, projects, languages — each with
 the control that fits: a switch, a number, a choice, or a list you pick from
 (tools you have installed, or folders from the folder picker). Each says whether
@@ -278,9 +278,10 @@ it's at mise's default, changed by you, or set by a project or AI setup, with
 (`mise settings set auto_install false`) with **Undo**, and every change is in
 Activity. Search finds everyday words too: "nvmrc", "offline", "update".
 
-**All settings** lists every mise setting by its own name, grouped as mise
-groups them, with **Changed** to show only what you've set. Changes there show
-the command and ask first.
+**Advanced settings**, folded away below, lists everything else by mise's own
+setting name — never the ones above again — grouped as mise groups them, with
+**Changed** to show only what you've set. Changes there show the command and ask
+first. A search that only matches an advanced setting opens it.
 
 Reads: `mise settings ls --all --json-extended`
 

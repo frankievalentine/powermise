@@ -5,7 +5,7 @@ import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { ExternalLinkButton } from "../../components/machine";
 import { Segmented, Switch } from "../../components/ui";
-import { CommonSettings } from "./CommonSettings";
+import { COMMON_KEYS, CommonSettings, commonGroups } from "./CommonSettings";
 import { prettyPath } from "../../mise";
 
 const GROUP_TITLE: Record<string, string> = {
@@ -42,17 +42,6 @@ const asText = (value: unknown) =>
         : JSON.stringify(value);
 
 type Filter = "all" | "changed";
-type Tab = "common" | "advanced";
-
-const TAB_KEY = "powermise.settingsTab";
-
-function initialTab(): Tab {
-  try {
-    return localStorage.getItem(TAB_KEY) === "advanced" ? "advanced" : "common";
-  } catch {
-    return "common";
-  }
-}
 
 /** Whether a setting does anything on this OS: `windows_*` settings only on
  *  Windows, `unix_*` ones everywhere else. */
@@ -66,21 +55,15 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
   const { mise, env } = context;
   const settings = useAsync(() => api.settings(), [mise.revision]);
   const [filter, setFilter] = useState<Filter>("all");
-  const [tab, setTabState] = useState<Tab>(initialTab);
-  const setTab = (next: Tab) => {
-    setTabState(next);
-    try {
-      localStorage.setItem(TAB_KEY, next);
-    } catch {
-      // Remembering the tab is a convenience only.
-    }
-  };
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const pretty = (path: string) => prettyPath(path);
 
   const groups = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const visible = (settings.data ?? []).filter(
       (setting) =>
+        // The friendly settings above already cover these.
+        !COMMON_KEYS.has(setting.key) &&
         (filter === "all" || setting.source) &&
         // Deprecated settings only show when something still sets them.
         (!setting.deprecated || setting.source) &&
@@ -98,7 +81,14 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
     return [...byGroup.entries()].sort(([a], [b]) => (a === "" ? -1 : b === "" ? 1 : a.localeCompare(b)));
   }, [settings.data, filter, query, env.hostTarget]);
 
-  const changedCount = (settings.data ?? []).filter((setting) => setting.source).length;
+  const advancedCount = groups.reduce((total, [, entries]) => total + entries.length, 0);
+  const changedCount = (settings.data ?? []).filter(
+    (setting) => setting.source && !COMMON_KEYS.has(setting.key),
+  ).length;
+  const commonCount = settings.data ? commonGroups(context, settings.data, query).length : 0;
+  const searching = query.trim().length > 0;
+  // A search that only matches advanced settings opens them.
+  const showAdvanced = advancedOpen || (searching && advancedCount > 0);
 
   return (
     <div className="content">
@@ -107,39 +97,9 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
           <div>
             <h1 className="page-title">Settings</h1>
             <p className="page-subtitle">
-              {tab === "common" ? (
-                <>How mise behaves everywhere on this computer. Changes save right away, and each one can be undone.</>
-              ) : (
-                <>
-                  Every mise setting. Changes go in your global mise config with{" "}
-                  <span className="mono">mise settings set</span>.{" "}
-                  <ExternalLinkButton url="https://mise.jdx.dev/configuration/settings.html">mise’s settings docs</ExternalLinkButton>
-                </>
-              )}
+              How mise behaves everywhere on this computer. Changes save to your global mise config right away.
             </p>
           </div>
-        </div>
-        <div className="settings-tabs">
-          <Segmented
-            label="Settings view"
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: "common", label: "Common" },
-              { value: "advanced", label: "All settings" },
-            ]}
-          />
-          {tab === "advanced" && (
-            <Segmented
-              label="Show"
-              value={filter}
-              onChange={setFilter}
-              options={[
-                { value: "all", label: "All" },
-                { value: "changed", label: `Changed${changedCount ? ` (${changedCount})` : ""}` },
-              ]}
-            />
-          )}
         </div>
 
         {settings.error && <div className="callout error selectable">{settings.error}</div>}
@@ -148,28 +108,57 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
             <Loader2 size={20} className="spin" />
           </div>
         )}
-        {tab === "common" && settings.data && (
-          <CommonSettings context={context} settings={settings.data} query={query} pretty={pretty} />
-        )}
+        {settings.data && <CommonSettings context={context} settings={settings.data} query={query} pretty={pretty} />}
 
-        {tab === "advanced" && settings.data && groups.length === 0 && (
+        {settings.data && searching && commonCount === 0 && advancedCount === 0 && (
           <div className="empty">
-            <h3>{query ? "No matches" : "Nothing changed yet"}</h3>
-            <p>{query ? "Try a different search." : "Every setting is at mise’s default."}</p>
+            <h3>No matches</h3>
+            <p>Try a different word.</p>
           </div>
         )}
 
-        {tab === "advanced" && groups.map(([group, entries]) => (
-          <section className="section" key={group || "general"}>
-            <h2 className="section-title">{groupTitle(group)}</h2>
-            <div className="list">
-              {entries.map((setting) => (
-                // Keyed by value too, so an edit resets once mise reports the change.
-                <SettingRow key={`${setting.key}=${asText(setting.value)}`} setting={setting} context={context} globalDir={env.miseConfigDir} />
-              ))}
+        {settings.data && (advancedCount > 0 || filter === "changed") && (
+          <details
+            className="more-details"
+            open={showAdvanced}
+            onToggle={(event) => setAdvancedOpen((event.target as HTMLDetailsElement).open)}
+          >
+            <summary>
+              Advanced settings
+              {changedCount > 0 && <span className="badge">{changedCount} changed</span>}
+            </summary>
+            <div className="settings-advanced-head">
+              <p className="section-note">
+                Everything else mise can do, by its setting name. Changes use{" "}
+                <span className="mono">mise settings set</span>.{" "}
+                <ExternalLinkButton url="https://mise.jdx.dev/configuration/settings.html">mise’s settings docs</ExternalLinkButton>
+              </p>
+              <Segmented
+                label="Show"
+                value={filter}
+                onChange={setFilter}
+                options={[
+                  { value: "all", label: "All" },
+                  { value: "changed", label: `Changed${changedCount ? ` (${changedCount})` : ""}` },
+                ]}
+              />
             </div>
-          </section>
-        ))}
+            {groups.length === 0 && (
+              <p className="section-note">Every advanced setting is at mise’s default.</p>
+            )}
+            {groups.map(([group, entries]) => (
+              <section className="section" key={group || "general"}>
+                <h2 className="section-title">{groupTitle(group)}</h2>
+                <div className="list">
+                  {entries.map((setting) => (
+                    // Keyed by value too, so an edit resets once mise reports the change.
+                    <SettingRow key={`${setting.key}=${asText(setting.value)}`} setting={setting} context={context} globalDir={env.miseConfigDir} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </details>
+        )}
       </div>
     </div>
   );

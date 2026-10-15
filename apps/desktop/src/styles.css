@@ -1075,14 +1075,6 @@ button {
   max-width: 240px;
 }
 
-.settings-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 4px;
-}
 
 /* Common settings */
 .common-row .row-trailing {
@@ -2469,4 +2461,16 @@ button {
 .plain-list {
   margin: 4px 0 0;
   padding-left: 18px;
+}
+
+.settings-advanced-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.settings-advanced-head .section-note {
+  margin: 0;
 }

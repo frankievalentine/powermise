@@ -40,6 +40,28 @@ interface Feedback {
   undo?: MiseAction;
 }
 
+/** The common settings this mise has, matching `query`, by group. */
+export function commonGroups(context: AppContext, settings: Setting[], query: string) {
+  const keys = new Set(settings.map((setting) => setting.key));
+  const needle = query.trim().toLowerCase();
+  return COMMON_SETTINGS.map((group) => ({
+    ...group,
+    settings: group.settings.filter(
+      (setting) =>
+        keys.has(setting.key) &&
+        // Packaged installs (Homebrew, apt, …) can't update themselves.
+        !(setting.key === "self_update.auto" && context.mise.doctor?.self_update_available === false) &&
+        (!needle ||
+          `${setting.title} ${setting.description} ${setting.key} ${setting.keywords.join(" ")}`
+            .toLowerCase()
+            .includes(needle)),
+    ),
+  })).filter((group) => group.settings.length > 0);
+}
+
+/** Every key the common settings cover. */
+export const COMMON_KEYS = new Set(COMMON_SETTINGS.flatMap((group) => group.settings.map((setting) => setting.key)));
+
 export function CommonSettings({
   context,
   settings,
@@ -52,29 +74,9 @@ export function CommonSettings({
   pretty: Pretty;
 }) {
   const byKey = new Map(settings.map((setting) => [setting.key, setting]));
-  const needle = query.trim().toLowerCase();
-  const groups = COMMON_SETTINGS.map((group) => ({
-    ...group,
-    settings: group.settings.filter(
-      (setting) =>
-        byKey.has(setting.key) &&
-        // Packaged installs (Homebrew, apt, …) can't update themselves.
-        !(setting.key === "self_update.auto" && context.mise.doctor?.self_update_available === false) &&
-        (!needle ||
-          `${setting.title} ${setting.description} ${setting.key} ${setting.keywords.join(" ")}`
-            .toLowerCase()
-            .includes(needle)),
-    ),
-  })).filter((group) => group.settings.length > 0);
+  const groups = commonGroups(context, settings, query);
 
-  if (!groups.length) {
-    return (
-      <div className="empty">
-        <h3>No matches</h3>
-        <p>Try another word, or look in All settings.</p>
-      </div>
-    );
-  }
+  if (!groups.length) return null;
   return (
     <>
       {groups.map((group) => (
