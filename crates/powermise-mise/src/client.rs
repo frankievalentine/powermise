@@ -890,6 +890,20 @@ impl MiseCommand {
         Self::new(vec!["fmt".into()]).in_project(project)
     }
 
+    /// `mise bootstrap packages use -g --yes <manager:package>`: install a
+    /// system package and record it in the global config.
+    pub fn use_package(spec: &str) -> Result<Self, MiseAdapterError> {
+        validate_package_spec(spec)?;
+        Ok(Self::new(vec![
+            "bootstrap".into(),
+            "packages".into(),
+            "use".into(),
+            "-g".into(),
+            "--yes".into(),
+            spec.into(),
+        ]))
+    }
+
     /// `mise lock` in a project: write or refresh its lockfile.
     pub fn lock(project: impl Into<PathBuf>) -> Self {
         Self::new(vec!["lock".into()]).in_project(project)
@@ -1095,6 +1109,23 @@ fn tool_spec(tool: &str, version: &str) -> Result<String, MiseAdapterError> {
     validate_argument(tool)?;
     validate_argument(version)?;
     Ok(format!("{tool}@{version}"))
+}
+
+/// `manager:package` for the managers Discover installs with.
+pub fn validate_package_spec(spec: &str) -> Result<(), MiseAdapterError> {
+    let valid = spec.split_once(':').is_some_and(|(manager, package)| {
+        ["brew", "apt"].contains(&manager)
+            && !package.is_empty()
+            && !package.starts_with('-')
+            && package
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || "._+-@".contains(character))
+    });
+    if valid {
+        Ok(())
+    } else {
+        Err(MiseAdapterError::InvalidArgument { value: spec.into() })
+    }
 }
 
 /// Bootstrap parts `--only` accepts (2026.7.18 and 2026.10).
@@ -1309,6 +1340,12 @@ mod tests {
         );
         assert!(MiseCommand::link("node", "20", Path::new("relative")).is_err());
         assert!(MiseCommand::untrust(Path::new("-rf")).is_err());
+        assert_eq!(
+            MiseCommand::use_package("brew:wget").unwrap().display(),
+            "mise bootstrap packages use -g --yes brew:wget"
+        );
+        assert!(MiseCommand::use_package("pip:requests").is_err());
+        assert!(MiseCommand::use_package("brew:-rf").is_err());
         assert_eq!(
             MiseCommand::bootstrap_apply(Some("dotfiles"))
                 .unwrap()

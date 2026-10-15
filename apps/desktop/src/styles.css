@@ -1159,6 +1159,32 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.discover-chips {
+  margin: -4px 0 14px;
+}
+
+.chip-button {
+  height: 26px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--fill);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.chip-button:hover {
+  background: var(--fill-hover);
+  color: var(--text);
+}
+
+.chip-button.selected {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
 .chip-row {
   display: flex;
   flex-wrap: wrap;

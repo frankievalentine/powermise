@@ -10,6 +10,7 @@ import type {
 } from "../api";
 
 const GLOBAL_CONFIG = "/Users/demo/.config/mise/config.toml";
+const MISE_CONFIG_PRETTY = "~/.config/mise/config.toml";
 
 /** Whether the demo machine has mise. `?nomise` shows the first-run install. */
 export let demoHasMise = !new URLSearchParams(globalThis.location?.search ?? "").has("nomise");
@@ -75,6 +76,7 @@ const machineSections = [
 ];
 const dotHistory = { enabled: true, trackedFiles: 12, checkpoints: 4, latest: null, unsaved: true as unknown, pendingOperations: 0 };
 let dotOrigin: string | null = null;
+const packageStates: Record<string, string> = { "brew:git": "installed", "brew:wget": "missing" };
 /** macOS preferences: what powermise's file manages, and what "macOS" has. */
 const macManaged = new Map<string, boolean | number | string>([["com.apple.dock tilesize", 36]]);
 const macCurrent = new Map<string, string>([
@@ -181,6 +183,8 @@ export function describeMachineAction(action: MiseAction): string | null {
       return `mise dotfiles rollback --to ${action.checkpoint} --all ${action.dryRun ? "--dry-run" : "--yes"}`;
     case "dotfilesUndo":
       return "mise dotfiles undo --yes";
+    case "usePackage":
+      return `mise bootstrap packages use -g --yes ${action.spec}`;
     case "relaunchApp":
       return `killall ${action.app.includes(" ") ? `'${action.app}'` : action.app}`;
     case "setToolAlias":
@@ -242,6 +246,9 @@ export function performMachineAction(action: MiseAction): string[] | null {
     }
     case "relaunchApp":
       return [];
+    case "usePackage":
+      packageStates[action.spec] = "installed";
+      return [`mise ${MISE_CONFIG_PRETTY}: added ${action.spec}`, `==> Pouring ${action.spec.split(":")[1]}`, "mise bootstrap: system packages ✓"];
     case "bootstrapApply": {
       const lines: string[] = [];
       if (!action.only || action.only === "macos-defaults") {
@@ -350,6 +357,10 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
     }
     case "plugins":
       return [];
+    case "package_states":
+      return { ...packageStates };
+    case "use_package_in_terminal":
+      return undefined;
     case "macos_settings": {
       const keys = args.keys as { domain: string; key: string }[];
       return {

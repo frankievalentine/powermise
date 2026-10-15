@@ -8,7 +8,9 @@ mod machine;
 mod models;
 mod project;
 
-pub use client::{MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program};
+pub use client::{
+    MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program, validate_package_spec,
+};
 pub use machine::{
     DetectedImport, DotfileCheckpoint, DotfilesHistory, ImportSource, MachineItem, MachineSection,
     Plugin, Setting, TokenStatus, ToolAlias, detect_imports, directory_size, parse_checkpoints,

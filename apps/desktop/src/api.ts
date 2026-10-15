@@ -283,6 +283,7 @@ export type MiseAction =
   | { kind: "unsetToolAlias"; tool: string; alias: string }
   | { kind: "formatConfig"; project: string }
   | { kind: "relaunchApp"; app: string }
+  | { kind: "usePackage"; spec: string }
   | { kind: "cachePrune" }
   | { kind: "cacheClear" }
   | { kind: "reshim" }
@@ -578,6 +579,9 @@ export const api = {
   miseInstallers: () => call<InstallerOption[]>("mise_installers"),
   openUrl: (url: string) => call<void>("open_url", { url }),
   diskUsage: () => call<DiskUsage>("disk_usage"),
+  /** Declared system packages and their state, keyed `manager:package`. */
+  packageStates: () => call<Record<string, string>>("package_states"),
+  usePackageInTerminal: (spec: string) => call<void>("use_package_in_terminal", { spec }),
   macosSettings: (keys: { domain: string; key: string }[]) => call<MacosState>("macos_settings", { keys }),
   setMacosDefault: (domain: string, key: string, value: boolean | number | string | null) =>
     call<MacosState["managed"]>("set_macos_default", { domain, key, value }),

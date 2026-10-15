@@ -259,6 +259,48 @@ pub async fn plugins() -> CommandResult<Vec<powermise_mise::Plugin>> {
     blocking(|| client()?.plugins().map_err(message)).await
 }
 
+/// The state of every declared system package, keyed `manager:package`
+/// (`installed`, `missing`, …), from `mise bootstrap status --json`.
+#[tauri::command]
+pub async fn package_states() -> CommandResult<std::collections::BTreeMap<String, String>> {
+    blocking(|| {
+        let status = client()?.bootstrap_status().map_err(message)?;
+        Ok(status
+            .packages
+            .into_iter()
+            .flat_map(|(manager, entry)| {
+                entry
+                    .packages
+                    .into_iter()
+                    .map(move |package| (format!("{manager}:{}", package.package), package.state))
+            })
+            .collect())
+    })
+    .await
+}
+
+/// Opens the terminal app running `mise bootstrap packages use -g --yes
+/// <spec>`, for apt packages, whose `sudo` needs a password.
+#[tauri::command]
+pub fn use_package_in_terminal(spec: String) -> CommandResult<()> {
+    powermise_mise::validate_package_spec(&spec).map_err(message)?;
+    let home = home_dir().ok_or("could not determine your home directory")?;
+    let mise = crate::find_mise().ok_or("mise is not installed")?;
+    crate::terminal::open(
+        &home,
+        &mise,
+        &[
+            "bootstrap".into(),
+            "packages".into(),
+            "use".into(),
+            "-g".into(),
+            "--yes".into(),
+            spec,
+        ],
+    )
+    .map_err(message)
+}
+
 /// A folder picker, for linking an install made outside mise.
 #[tauri::command]
 pub async fn pick_folder(app: AppHandle) -> CommandResult<Option<PathBuf>> {

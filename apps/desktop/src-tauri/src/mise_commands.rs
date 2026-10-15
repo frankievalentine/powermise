@@ -366,6 +366,9 @@ pub enum MiseAction {
     RelaunchApp {
         app: String,
     },
+    UsePackage {
+        spec: String,
+    },
     DotfilesOriginSet {
         url: String,
     },
@@ -483,6 +486,7 @@ impl MiseAction {
             } => MiseCommand::set_tool_alias(tool, alias, version),
             Self::UnsetToolAlias { tool, alias } => MiseCommand::unset_tool_alias(tool, alias),
             Self::FormatConfig { project } => Ok(MiseCommand::format_config(project)),
+            Self::UsePackage { spec } => MiseCommand::use_package(spec),
             Self::DotfilesOriginSet { url } => MiseCommand::dotfiles_origin_set(url),
             Self::CachePrune => Ok(MiseCommand::cache_prune()),
             Self::CacheClear => Ok(MiseCommand::cache_clear()),

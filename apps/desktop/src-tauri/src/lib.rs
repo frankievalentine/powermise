@@ -233,6 +233,8 @@ pub fn run() {
             machine::resolve_dotfile_conflicts,
             machine::tool_aliases,
             machine::plugins,
+            machine::package_states,
+            machine::use_package_in_terminal,
             macos::macos_settings,
             macos::set_macos_default,
         ])

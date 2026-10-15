@@ -37,14 +37,23 @@ Reads: `mise ls --json`, `mise outdated --bump --json`, `mise ls --prunable --js
 
 ## Discover
 
-The full [mise registry](https://mise.jdx.dev/registry.html): popular tools
-first, then everything else. Search matches names, aliases, and descriptions.
+Every tool in the [mise registry](https://mise.jdx.dev/registry.html), most
+popular first — ranked by how often developers install each one (Homebrew's
+public install counts for the past year). **Popular** shows the top tools, and
+the category chips narrow the list: languages, package and build tools, cloud
+and DevOps, containers and Kubernetes, databases, command-line essentials,
+editors, AI, media, and mobile. Search matches names, aliases, and descriptions.
 
-Anything else mise can install, search by full name — `npm:prettier`,
-`github:cli/cli`, `cargo:ripgrep`, and so on — and open it like any other tool.
-**Install from anywhere** lists the sources this mise supports.
+- **System utilities** (macOS and Linux) — everyday tools mise doesn't version,
+  like wget, tree, htop, gnupg, and rsync, installed as system packages
+  (`mise bootstrap packages use -g brew:wget`; apt on Linux, in your terminal so
+  it can ask for your password).
+- **Also available** — search finds popular tools from other ecosystems, like
+  `pipx:httpie` or `gem:fastlane`.
+- Anything else mise can install, search by full name — `npm:prettier`,
+  `github:cli/cli`, `cargo:ripgrep` — and open it like any other tool.
 
-Reads: `mise registry --json`, `mise backends ls`
+Reads: `mise registry --json`, `mise backends ls`, `mise bootstrap status --json`
 
 ## Tool pages
 
