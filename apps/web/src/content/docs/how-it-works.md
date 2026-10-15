@@ -18,7 +18,7 @@ so mise's own rules (pins, file layering, trust) always apply.
 
 Before anything changes, powermise shows the exact command. While it runs, you
 see mise's own output. **Stop** cancels it — including any downloads mise
-started. The [Activity](/app-tour/#activity) screen keeps a list of everything
+started. The [History](/app-tour/#history) screen keeps a list of everything
 that ran.
 
 ## 3. Nothing is trusted for you

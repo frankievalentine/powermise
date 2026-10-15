@@ -33,6 +33,7 @@ import {
 import { indexCatalog, type CatalogIndex } from "./catalog";
 import { healthSummary } from "./health";
 import { RunSheet, type RunRequest } from "./components/RunSheet";
+import { CommandPalette } from "./components/CommandPalette";
 import { PlatformSwitcher, WindowChrome } from "./components/WindowChrome";
 import { hasPrimaryModifier, shortcutLabel, usePlatform } from "./platform";
 import { HarnessesView } from "./views/HarnessesView";
@@ -148,14 +149,10 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const [selections, setSelections] = useState<SavedSelection[]>([]);
   const [projects, setProjects] = useState<ProjectEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
-  // First run starts on Welcome; the site demo (embedded) never does.
+  // First run starts on Welcome; after that (and in the site demo), Home.
   const [history, setHistory] = useState<Route[]>([
     initialRoute ??
-      (document.body.classList.contains("embedded")
-        ? { kind: "installed" }
-        : hasBeenWelcomed()
-          ? { kind: "home" }
-          : { kind: "welcome" }),
+      (hasBeenWelcomed() || document.body.classList.contains("embedded") ? { kind: "home" } : { kind: "welcome" }),
   ]);
   const [query, setQuery] = useState("");
   const [runRequest, setRunRequest] = useState<RunRequest | null>(null);
@@ -173,9 +170,15 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const platform = usePlatform();
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // ⌘F / Ctrl+F focuses search wherever a screen has one.
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  // ⌘K / Ctrl+K searches everything; ⌘F / Ctrl+F focuses the page's search.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "k" && hasPrimaryModifier(event, platform)) {
+        event.preventDefault();
+        setPaletteOpen((open) => !open);
+        return;
+      }
       if (event.key.toLowerCase() === "f" && hasPrimaryModifier(event, platform)) {
         if (!searchRef.current) return;
         event.preventDefault();
@@ -354,6 +357,14 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
               </div>
               <div className="toolbar-spacer" data-tauri-drag-region />
               <button
+                className="toolbar-search"
+                onClick={() => setPaletteOpen(true)}
+                aria-label="Search everything"
+                aria-keyshortcuts={platform === "darwin" ? "Meta+K" : "Control+K"}
+              >
+                <Search size={13} /> Search all <kbd aria-hidden>{shortcutLabel(platform, "k")}</kbd>
+              </button>
+              <button
                 className={`icon-button${route.kind === "activity" ? " active" : ""}`}
                 onClick={() => navigate({ kind: "activity" })}
                 aria-label="History"
@@ -391,6 +402,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
         </div>
       </div>
       <RunSheet request={runRequest} onClose={() => setRunRequest(null)} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} context={context} setQuery={setQuery} />
       <PlatformSwitcher />
     </MotionConfig>
   );

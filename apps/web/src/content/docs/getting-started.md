@@ -49,13 +49,16 @@ bun run desktop:dev
 
 ## 3. Look around
 
-powermise opens on **Installed**, showing what mise already manages. From there:
+The first time, powermise walks you through installing mise if you need it.
+After that it opens on **Home**, with a checklist that ticks itself off:
 
-1. Open **Discover**, search for a tool, and pick a version.
-2. Click **Install**. powermise shows the exact `mise use -g …` command first,
-   then mise's own output while it runs.
-3. Check **Updates** for anything with a newer version.
-4. Visit **Health** to confirm mise is set up in your shell.
+1. Turn mise on in your terminal — Home shows the one line to add.
+2. Open **Discover**, pick a tool, and click **Install**. powermise shows the
+   exact `mise use -g …` command first, then mise's own output while it runs.
+3. Add a project folder to see the tools and tasks it uses.
+
+**My Tools** shows what's installed and what has an update; **Health** lists
+anything that needs attention, with the fix.
 
 The [app tour](/app-tour/) walks through each screen.
 

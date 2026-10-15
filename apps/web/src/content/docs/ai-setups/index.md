@@ -11,12 +11,12 @@ depends on, and optional desktop apps. AI Setups need mise 2026.10 or newer;
 
 ## In the app
 
-Under **AI Setups** in the sidebar:
+Under **AI Agents** in the sidebar:
 
-- **Harnesses** — the catalog, with what each harness installs on each platform.
-- **Agent Tools**, **MCP Servers**, **Integrations** — everything the harnesses
-  can bring along.
-- **My Setups** — the setups you've saved. Create one with **+**, pick
+- **Browse Agents** — the catalog of agents (harnesses), with what each installs
+  on each platform, and tabs for the **Agent Tools**, **MCP Servers**, and
+  **Integrations** they can bring along.
+- **Your setups** — listed below it. Create one with **+**, pick
   harnesses, and the side panel shows exactly what will be installed.
 
 **Save & Apply** opens a review: what gets installed, the exact config file

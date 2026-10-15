@@ -7,6 +7,15 @@ Every action in powermise opens a sheet that shows the mise command it will run.
 Confirm it, and the sheet streams mise's output live; you can stop it at any
 time. When it finishes, every screen refreshes from mise.
 
+## Home
+
+Where the app opens. A **Get started** checklist ticks itself off as you go —
+turn mise on in your terminal, install your first tool, add a project, bring over
+versions from other managers, sign in GitHub downloads, set up AI agents — and
+**At a glance** shows your tools and updates, health, projects, and AI setups,
+with recent changes below. Press **⌘K** (Ctrl+K) anywhere to search pages, tools,
+projects, setups, and settings at once.
+
 ## Welcome
 
 The first time powermise opens, it walks through four steps, each checked off
@@ -19,7 +28,7 @@ when it's already true:
    Homebrew, so mise uses them without downloading them again (`mise sync`).
 4. **Sign in GitHub downloads** (optional) — see [Health](#health).
 
-## Installed
+## My Tools
 
 Every tool mise manages on this computer:
 
@@ -85,6 +94,9 @@ version (`mise link`).
 
 ## Updates
 
+The **Updates** tab of My Tools.
+
+
 Everything with a newer version — including tools pinned to an exact version,
 which a plain `mise outdated` leaves out. Upgrading a pinned tool moves the pin
 in your config to the new version.
@@ -100,7 +112,10 @@ in your config to the new version.
 Commands: `mise upgrade --global --bump [<tool>]` (or without `--global` on older
 mise), `mise upgrade --local --bump [<tool>]` in a project.
 
-## Activity
+## History
+
+Open it with the clock button in the toolbar.
+
 
 Every command powermise has run, kept between launches (the newest 500), with
 how long it took and whether it worked. Copy any of them to run it yourself.
@@ -183,6 +198,9 @@ Config Files…** tidies their layout (`mise fmt`).
 
 ## Health
 
+Health leads with **Needs attention** — only what's wrong, each with its fix —
+and keeps the rest under **More details**:
+
 - **mise** — your version, the minimum powermise needs, and an update button
   when a newer mise is out (`mise self-update`).
 - **Your shell** — whether mise is activated. If it isn't, powermise shows the
@@ -207,7 +225,7 @@ warnings, red when something is broken.
 
 Reads: `mise doctor --json`, `mise version --json`, `mise token github`
 
-## Machine
+## This Computer
 
 What your global mise config sets up on this computer beyond tools — system
 packages, dotfiles, Git repositories, services, macOS settings, and more — from

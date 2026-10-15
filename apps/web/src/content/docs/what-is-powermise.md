@@ -15,17 +15,21 @@ powermise is an unofficial desktop app for [mise-en-place](https://mise.jdx.dev)
 that installs and switches between versions of your languages and developer
 tools. mise lives in the terminal. powermise puts it in a window:
 
-- **Installed** — every tool mise manages, the version you use, and which config
-  file set it.
-- **Discover** — search the 1,000+ tools in the mise registry and install any
-  version.
-- **Updates** — everything with a newer version, including tools pinned to an
-  exact version. Upgrade one, or all of them.
+- **Home** — a getting-started checklist and how everything stands.
+- **My Tools** — every tool mise manages, the version you use, and which config
+  file set it, plus **Updates**: everything with a newer version, including tools
+  pinned to an exact version.
+- **Discover** — the 1,000+ tools in the mise registry, most popular first and by
+  category, plus everyday utilities.
+- **Projects** — each folder's tools, tasks, and environment.
 - **Health** — `mise doctor` in plain language: your mise version, whether your
   shell is set up, and anything that needs fixing.
-- **Activity** — every command powermise ran and how it went.
-- **AI Setups** — install a curated AI coding environment (Claude, Codex,
+- **AI Agents** — install a curated AI coding environment (Claude, Codex,
   Gemini, and more) in one step. See [AI Setups](/ai-setups/).
+- **This Computer**, **Settings**, and **History** — machine-wide setup, mise's
+  settings in plain words, and every command powermise ran.
+
+Press **⌘K** (Ctrl+K on Windows and Linux) to search everything at once.
 
 ## mise is the CLI. powermise is the GUI.
 

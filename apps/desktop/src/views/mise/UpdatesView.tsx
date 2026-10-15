@@ -75,6 +75,9 @@ export function UpdatesView({ context }: { context: AppContext }) {
             <CheckCircle2 size={28} color="var(--green)" />
             <h3>Everything is up to date</h3>
             <p>powermise checks again whenever you open this page.</p>
+            <button className="button large" onClick={() => navigate({ kind: "discover" })}>
+              Discover More Tools
+            </button>
           </div>
         )}
 

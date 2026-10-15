@@ -25,7 +25,10 @@ export function ActivityView({ context }: { context: AppContext }) {
           <div className="empty">
             <History size={28} color="var(--text-tertiary)" />
             <h3>Nothing yet</h3>
-            <p>Installs, upgrades, and removals will show up here.</p>
+            <p>Installs, upgrades, and other changes show up here, with the exact command each one ran.</p>
+            <button className="button primary large" onClick={() => context.navigate({ kind: "discover" })}>
+              Find a Tool to Install
+            </button>
           </div>
         )}
         <div className="activity">

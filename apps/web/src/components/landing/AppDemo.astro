@@ -5,16 +5,22 @@
 // postMessage. Visitors can click in and use it at any time.
 const steps = [
   {
+    route: { kind: 'home' },
+    label: 'Home',
+    title: 'Start here.',
+    body: 'A checklist that ticks itself off as you go, and how your tools, projects, and setup stand — at a glance.',
+  },
+  {
     route: { kind: 'installed' },
-    label: 'Installed',
+    label: 'My Tools',
     title: 'Everything mise manages, at a glance.',
     body: 'The version you use, where it’s set, and what has an update — without running a single command.',
   },
   {
     route: { kind: 'discover' },
     label: 'Discover',
-    title: '1,000+ tools, one search.',
-    body: 'The whole mise registry — languages, CLIs, cloud tools — with descriptions and the backends they install from.',
+    title: '1,000+ tools, most popular first.',
+    body: 'The whole mise registry, ranked by what developers actually install and sorted into categories — plus everyday utilities like wget and htop.',
   },
   {
     route: [{ kind: 'discover' }, { kind: 'tool', name: 'deno' }],
@@ -42,7 +48,7 @@ const steps = [
   },
   {
     route: { kind: 'harnesses' },
-    label: 'AI Setups',
+    label: 'AI Agents',
     title: 'And when you want AI agents…',
     body: 'Pick Claude, Codex, Gemini, and more. powermise installs everything they need through mise.',
   },
