@@ -89,4 +89,6 @@ fn mise_versions_compare_against_the_minimum() {
     assert!(MiseVersion::parse("2026.10.10").unwrap() > MiseVersion::MINIMUM);
     assert!(MiseVersion::parse("2025.12.0").unwrap() < MiseVersion::MINIMUM);
     assert_eq!(MiseVersion::parse("not a version"), None);
+    assert!(MiseVersion::RECOMMENDED > MiseVersion::MINIMUM);
+    assert!(installed < MiseVersion::RECOMMENDED);
 }

@@ -10,6 +10,36 @@
   white-space: nowrap;
 }
 
+/* ---------- Large displays ----------
+   Everything is sized in rem, so stepping the root size up scales type,
+   spacing, and the demo together; the content column widens with it. */
+
+@media (min-width: 1680px) {
+  html {
+    font-size: 17px;
+  }
+
+  :root {
+    --pm-page-max: 86rem;
+  }
+}
+
+@media (min-width: 2200px) {
+  html {
+    font-size: 19px;
+  }
+
+  :root {
+    --pm-page-max: 92rem;
+  }
+}
+
+@media (min-width: 3000px) {
+  html {
+    font-size: 23px;
+  }
+}
+
 /* ---------- Hero ---------- */
 
 .home-hero {
@@ -38,7 +68,7 @@
 }
 
 .home-hero__copy {
-  max-width: 54rem;
+  max-width: 64rem;
 }
 
 .home-hero h1 {
@@ -72,6 +102,26 @@
   justify-content: center;
 }
 
+/* Small text sits on a soft plate so the dithered field never competes
+   with it. */
+.home-hero .eyebrow,
+.home-hero .hero-proof {
+  width: fit-content;
+  margin-inline: auto;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pm-bg) 82%, transparent);
+  box-shadow: 0 0 0 1px var(--pm-line);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.home-hero .hero-proof {
+  margin-top: 1.5rem;
+  color: var(--pm-ink-soft);
+  font-size: 0.75rem;
+}
+
 /* ---------- Live demo ---------- */
 
 .demo {
@@ -79,7 +129,9 @@
 }
 
 .demo-stage {
-  max-width: 76rem;
+  /* As wide as the page allows, but short enough that the pinned window
+     and its tour fit on screen (the app is 1180 × 740). */
+  max-width: min(var(--pm-page-max), calc((100vh - 15rem) * 1180 / 740));
   margin: 0 auto;
 }
 

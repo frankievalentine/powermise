@@ -19,7 +19,8 @@ export function HealthView({ context }: { context: AppContext }) {
   const info = mise.info;
   const problems = [...(doctor.data?.errors ?? []), ...(doctor.data?.warnings ?? [])];
   const shell = activationCommand(doctor.data?.shell?.name ?? "zsh");
-  const healthy = !!doctor.data && problems.length === 0 && doctor.data.activated && !!info?.supported;
+  const healthy =
+    !!doctor.data && problems.length === 0 && doctor.data.activated && !!info?.recommendedMet;
 
   return (
     <div className="content">
@@ -47,7 +48,7 @@ export function HealthView({ context }: { context: AppContext }) {
             <span>
               {healthy
                 ? "mise is installed, up to date enough, and hooked into your shell."
-                : `${problems.length + (doctor.data.activated ? 0 : 1) + (info?.supported ? 0 : 1)} thing(s) need attention.`}
+                : `${problems.length + (doctor.data.activated ? 0 : 1) + (info?.recommendedMet ? 0 : 1)} thing(s) need attention.`}
             </span>
           </div>
         )}
@@ -60,10 +61,17 @@ export function HealthView({ context }: { context: AppContext }) {
                 <div className="row-subtitle selectable">{info?.version ?? "Not found"}</div>
               </div>
               <div className="row-trailing">
-                {info?.supported ? (
-                  <span className="badge green">Supported</span>
+                {!info?.supported ? (
+                  <span className="badge red">Needs {info?.minimum} or newer</span>
+                ) : info.recommendedMet ? (
+                  <span className="badge green">Up to date</span>
                 ) : (
-                  <span className="badge orange">Needs {info?.minimum} or newer</span>
+                  <span
+                    className="badge orange"
+                    title={`Powermise works with this version. Some features need ${info.recommended} or newer.`}
+                  >
+                    Update recommended
+                  </span>
                 )}
                 {doctor.data?.self_update_available && (
                   <button
@@ -82,6 +90,17 @@ export function HealthView({ context }: { context: AppContext }) {
                 )}
               </div>
             </div>
+            {info?.supported && !info.recommendedMet && (
+              <div className="list-row">
+                <Info size={15} color="var(--orange)" />
+                <div className="row-main">
+                  <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
+                    Powermise works with your mise, but is designed around {info.recommended} or newer.
+                    Updating turns on project-vs-global updates, automatic updates, and more.
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="list-row">
               <div className="row-main">
                 <div className="row-title">Location</div>

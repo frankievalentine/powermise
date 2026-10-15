@@ -58,7 +58,7 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
 - [x] `powermise-mise`: typed models for `ls`, `outdated`, `registry`, `ls-remote`,
       `config ls`, `tasks ls`, `env`, `doctor`, `version`; fixture tests captured from
       real mise.
-- [x] Minimum supported mise version (2026.7.18), checked at launch.
+- [x] mise version policy, checked at launch: **2026.7.18 minimum, 2026.10 recommended**.
 - [x] New navigation: mise (Installed, Discover, Updates, Activity, Health) and AI Setups.
 - [x] Move the existing harness screens under **AI Setups**.
 - [x] **Installed**: every tool mise manages — active version, where it's configured,
@@ -127,7 +127,8 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
 - [ ] First run: detect a missing mise and guide installation; offer to bring over
       versions from nvm, pyenv, or Homebrew (`mise sync node|python|ruby`, `mise link`).
 - [ ] Gate features by mise version (several above need 2026.10.x) and explain why a
-      control is disabled.
+      control is disabled. Capture a second fixture set from 2026.10 so both ends of
+      the supported range stay tested.
 
 ### M5 — Marketing site & docs
 
@@ -212,10 +213,9 @@ Continues as one section of the app and the `powermise` CLI.
 | Audience | People less comfortable in a terminal |
 | Writing mise config | Only through mise's commands, with the command shown |
 | Project discovery | Manual add + recents |
+| mise versions | 2026.7.18 minimum; 2026.10 recommended; newer features gated by version |
 | Name | Powermise ("mise-en-place", chef's hat) |
 
 ## Open questions
 
-- Minimum mise version: 2026.7.18 today. Many M2–M4 features need 2026.10.x — raise
-  the minimum, or gate those features by version?
 - Whether "Setups" (app) and "selections" (CLI) should share one name.

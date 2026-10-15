@@ -197,7 +197,11 @@ export interface MiseInfo {
   version: string | null;
   latest: string | null;
   minimum: string;
+  recommended: string;
+  /** New enough for Powermise at all. */
   supported: boolean;
+  /** Meets the recommended version, so every feature is available. */
+  recommendedMet: boolean;
 }
 
 export interface ConfigSource {

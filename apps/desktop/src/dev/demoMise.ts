@@ -248,7 +248,9 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
         version: `${miseVersion} macos-arm64 (demo)`,
         latest: "2026.10.10",
         minimum: "2026.7.18",
+        recommended: "2026.10.0",
         supported: true,
+        recommendedMet: miseVersion.startsWith("2026.10"),
       } satisfies MiseInfo;
     case "installed_tools":
       return inventory();

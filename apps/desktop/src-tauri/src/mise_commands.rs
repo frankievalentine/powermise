@@ -58,34 +58,41 @@ pub struct MiseInfo {
     version: Option<String>,
     latest: Option<String>,
     minimum: String,
-    /// Whether the installed mise is new enough for Powermise.
+    recommended: String,
+    /// Whether the installed mise is new enough for Powermise at all.
     supported: bool,
+    /// Whether it meets the recommended version, so every feature is on.
+    recommended_met: bool,
 }
 
 #[tauri::command]
 pub async fn mise_info() -> CommandResult<MiseInfo> {
     blocking(|| {
         let minimum = MiseVersion::MINIMUM.to_string();
+        let recommended = MiseVersion::RECOMMENDED.to_string();
         let Ok(client) = client() else {
             return Ok(MiseInfo {
                 path: None,
                 version: None,
                 latest: None,
                 minimum,
+                recommended,
                 supported: false,
+                recommended_met: false,
             });
         };
         let info = client.version_info().ok();
-        let supported = info
+        let installed = info
             .as_ref()
-            .and_then(|info| MiseVersion::parse(&info.version))
-            .is_some_and(|version| version >= MiseVersion::MINIMUM);
+            .and_then(|info| MiseVersion::parse(&info.version));
         Ok(MiseInfo {
             path: Some(client.executable().to_path_buf()),
             version: info.as_ref().map(|info| info.version.clone()),
             latest: info.and_then(|info| info.latest),
             minimum,
-            supported,
+            recommended,
+            supported: installed.is_some_and(|version| version >= MiseVersion::MINIMUM),
+            recommended_met: installed.is_some_and(|version| version >= MiseVersion::RECOMMENDED),
         })
     })
     .await

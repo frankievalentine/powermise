@@ -12,10 +12,10 @@ Architecture Decision in the build plan). It depends on a small, stable surface:
 - `mise --env <environment> bootstrap --yes`
 - `mise --env <environment> exec -- <command>`
 
-The desktop app enforces a minimum of **mise 2026.7.18**
-(`MiseVersion::MINIMUM` in `powermise-mise`): the release its `--json` contract
-fixtures were captured from. Whether to raise it for 2026.10 features is an open
-question in [`ROADMAP.md`](../ROADMAP.md). The support matrix in `setup.md`
+The desktop app supports **mise 2026.7.18** and newer
+(`MiseVersion::MINIMUM` in `powermise-mise`, the release its `--json` contract
+fixtures were captured from) and recommends **2026.10** (`MiseVersion::RECOMMENDED`).
+Features that need newer mise are gated by version rather than raising the floor. The support matrix in `setup.md`
 reflects what has been clean-machine verified.
 
 A future Powermise release must:

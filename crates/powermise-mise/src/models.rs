@@ -159,6 +159,15 @@ impl MiseVersion {
         patch: 18,
     };
 
+    /// The release Powermise recommends and is designed around. Older
+    /// supported versions work, but features that need newer mise (for
+    /// example `outdated --global`, auto-updates, `[vars]`) are disabled.
+    pub const RECOMMENDED: Self = Self {
+        year: 2026,
+        minor: 10,
+        patch: 0,
+    };
+
     /// Parses the leading `YYYY.M.P` of a mise version string.
     pub fn parse(text: &str) -> Option<Self> {
         let mut parts = text.split_whitespace().next()?.split('.');

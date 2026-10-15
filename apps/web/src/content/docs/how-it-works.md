@@ -42,10 +42,14 @@ Powermise can't see `MISE_*` variables you export there. Put mise settings in
 terminals will use them. Powermise does add the usual install locations —
 `~/.local/bin`, Homebrew — to its own `PATH` so it can find mise.
 
-### Minimum mise version
+### Which mise version
 
-Powermise needs mise **2026.7.18** or newer — the release its JSON parsing is
-tested against. Health shows your version and offers `mise self-update`.
+- **2026.10 or newer is recommended.** Powermise is designed around it, and every
+  feature is available.
+- **2026.7.18 is the minimum.** Older-but-supported versions work; features that
+  need newer mise are switched off with a note saying why.
+
+Health shows your version and offers `mise self-update`.
 
 ### Which config Powermise changes
 

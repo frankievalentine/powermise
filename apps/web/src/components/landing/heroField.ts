@@ -71,7 +71,7 @@ const fragmentShader = /* glsl */ `
     // Fade toward the edges and the bottom so content stays readable.
     float vignette = smoothstep(0.0, 0.55, vUv.y) * smoothstep(1.15, 0.35, length((vUv - vec2(0.5, 0.62)) * vec2(1.25, 1.6)));
     // Keep a calm, mostly clear space behind the headline and copy.
-    float copyClearing = smoothstep(0.24, 0.7, length((vUv - vec2(0.5, 0.5)) * vec2(1.0, 2.1)));
+    float copyClearing = smoothstep(0.3, 0.78, length((vUv - vec2(0.5, 0.52)) * vec2(0.95, 1.7)));
     vignette *= mix(0.06, 1.0, copyClearing);
     float intensity = clamp((field - 0.42) * 1.7, 0.0, 1.0) * vignette * uStrength + pull * 0.12 * vignette;
 

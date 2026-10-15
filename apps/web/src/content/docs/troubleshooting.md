@@ -40,10 +40,11 @@ Apps opened from the Dock don't read `~/.zshrc`, so exported `MISE_*` variables
 don't reach Powermise. Move them to `[settings]` in `~/.config/mise/config.toml`.
 See [How Powermise uses mise](/how-it-works/#settings-in-your-shell-files).
 
-## Health says my mise is too old
+## Health says my mise is too old, or recommends an update
 
 Click **Update** on the Health screen, or run `mise self-update`. Powermise
-needs mise 2026.7.18 or newer.
+needs mise 2026.7.18 or newer and recommends 2026.10 or newer; on versions in
+between it works, with a few newer features switched off.
 
 ## AI Setups CLI
 

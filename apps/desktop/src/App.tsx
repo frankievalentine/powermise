@@ -341,7 +341,13 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
       kind: "health" as const,
       label: "Health",
       icon: HeartPulse,
-      trailing: mise.info && !mise.info.supported ? <span className="status-dot attention" /> : null,
+      trailing:
+        mise.info && !mise.info.recommendedMet ? (
+          <span
+            className="status-dot attention"
+            title={mise.info.supported ? "Update recommended" : "mise is too old"}
+          />
+        ) : null,
     },
   ];
   const aiItems = [
