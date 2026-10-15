@@ -78,7 +78,6 @@ body {
   transition: background-color 240ms var(--pm-ease-out), color 240ms var(--pm-ease-out);
 }
 
-
 a {
   color: inherit;
 }
@@ -269,7 +268,6 @@ main {
   isolation: isolate;
 }
 
-
 .eyebrow,
 .section-label,
 .build-layer__eyebrow {
@@ -300,8 +298,7 @@ main {
 }
 
 .hero h1,
-.section-heading,
-.cta-inner h2 {
+.section-heading {
   font-family: var(--pm-font-display);
   font-weight: 650;
   letter-spacing: -0.065em;
@@ -329,8 +326,7 @@ main {
   line-height: 1.75;
 }
 
-.hero-actions,
-.cta-actions {
+.hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
@@ -496,42 +492,6 @@ main {
   margin-block-start: 0;
 }
 
-/* Closing call to action */
-.cta-section {
-  border-block-end: 0;
-}
-
-.cta-inner {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 2rem;
-  padding: clamp(2.5rem, 6vw, 5rem);
-  border: 1px solid var(--pm-line-strong);
-  border-radius: var(--pm-radius-lg);
-  background:
-    radial-gradient(circle at 82% 20%, color-mix(in srgb, var(--pm-violet) 14%, transparent), transparent 35%),
-    color-mix(in srgb, var(--pm-panel) 80%, transparent);
-  box-shadow: var(--pm-shadow-lg);
-}
-
-.cta-inner h2 {
-  max-width: 12ch;
-  font-size: clamp(2.5rem, 5vw, 5.4rem);
-  line-height: 0.96;
-}
-
-.cta-inner p:not(.section-label) {
-  max-width: 30rem;
-  margin-block-start: 1rem;
-  color: var(--pm-ink-soft);
-}
-
-.cta-actions {
-  flex-shrink: 0;
-  margin-block-start: 0;
-}
-
 /* Footer */
 .site-footer {
   display: grid;
@@ -611,11 +571,6 @@ main {
   .why-section,
   .catalog-heading {
     grid-template-columns: 1fr;
-  }
-
-  .cta-inner {
-    align-items: start;
-    flex-direction: column;
   }
 
   .site-footer {
@@ -910,7 +865,6 @@ main {
 :root {
   --pm-type-hero: clamp(3rem, 5vw, 5.6rem);
   --pm-type-section: clamp(2.25rem, 3.8vw, 4.2rem);
-  --pm-type-cta: clamp(2.5rem, 4.2vw, 4.6rem);
 }
 
 body {
@@ -923,12 +877,6 @@ body {
 .section-heading {
   max-width: 18ch;
   font-size: var(--pm-type-section);
-  line-height: 1.1;
-}
-
-.cta-inner h2 {
-  max-width: 14ch;
-  font-size: var(--pm-type-cta);
   line-height: 1.1;
 }
 
@@ -946,7 +894,6 @@ body {
   :root {
     --pm-type-hero: clamp(2.8rem, 12vw, 4.5rem);
     --pm-type-section: clamp(2.1rem, 9vw, 3.4rem);
-    --pm-type-cta: clamp(2.25rem, 10vw, 3.6rem);
   }
 }
 

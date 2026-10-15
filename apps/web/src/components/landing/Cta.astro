@@ -2,18 +2,17 @@
 import DitheredChefHat from './DitheredChefHat.astro';
 ---
 
-<section class="section cta-section cta-section--hat" aria-labelledby="cta-heading" data-reveal>
-  <div class="cta-hat" aria-hidden="true">
+<section class="closing" aria-labelledby="closing-heading" data-reveal>
+  <div class="closing__hat" aria-hidden="true">
     <DitheredChefHat showCaption={false} />
   </div>
-  <div class="cta-inner">
-    <div>
-      <h2 id="cta-heading">Everything in its place, before you start cooking.</h2>
-      <p>powermise is free, open source, and built on the mise you already trust. It’s an independent project — not made by the mise team.</p>
-    </div>
-    <div class="cta-actions">
-      <a class="button button-primary" href="/getting-started/">Get powermise <span aria-hidden="true">→</span></a>
-      <a class="button button-secondary" href="/what-is-powermise/">Read the docs</a>
-    </div>
+  <h2 class="closing__title" id="closing-heading">Everything in its place, before you start cooking.</h2>
+  <p class="closing__body">
+    powermise is free, open source, and built on the mise you already trust. It’s an independent
+    project — not made by the mise team.
+  </p>
+  <div class="closing__actions">
+    <a class="button button-primary" href="/getting-started/">Get powermise <span aria-hidden="true">→</span></a>
+    <a class="button button-secondary" href="/what-is-powermise/">Read the docs</a>
   </div>
 </section>

@@ -94,9 +94,10 @@
 .home-hero .hero-proof {
   width: fit-content;
   margin-inline: auto;
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.9rem;
   background: color-mix(in srgb, var(--pm-bg) 82%, transparent);
+  text-align: center;
   box-shadow: 0 0 0 1px var(--pm-line);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -490,43 +491,55 @@
   }
 }
 
-/* ---------- Closing CTA with the dithered hat ---------- */
+/* ---------- Closing section ----------
+   One centered column at every width: hat, headline, body, actions. */
 
-.cta-section--hat {
-  display: grid;
-  justify-items: center;
+.closing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(100% - 2.5rem, 44rem);
+  margin: 0 auto;
+  padding: clamp(4rem, 10vw, 7rem) 0 clamp(4rem, 9vw, 6rem);
   text-align: center;
 }
 
-.cta-hat {
-  width: min(320px, 70vw);
+.closing__hat {
+  width: clamp(160px, 26vw, 260px);
   aspect-ratio: 1;
-  margin-bottom: -1rem;
+  margin-bottom: -0.5rem;
 }
 
-.cta-hat .dithered-chef-hat {
+.closing__hat .dithered-chef-hat {
   width: 100%;
   height: 100%;
 }
 
-.cta-section--hat .cta-inner {
-  display: grid;
-  grid-template-columns: 1fr;
-  justify-items: center;
-  gap: 1.5rem;
-  max-width: 44rem;
-  padding: 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
-  text-align: center;
+.closing__title {
+  margin: 0;
+  max-width: 18ch;
+  font-family: var(--pm-font-display);
+  font-size: clamp(2rem, 5.2vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
 }
 
-.cta-section--hat .cta-inner::before,
-.cta-section--hat .cta-inner::after {
-  display: none;
+.closing__body {
+  margin: 0;
+  max-width: 36rem;
+  color: var(--pm-ink-soft);
+  font-size: clamp(0.98rem, 1.6vw, 1.08rem);
+  line-height: 1.6;
+  text-wrap: pretty;
 }
 
-.cta-section--hat .cta-actions {
+.closing__actions {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
