@@ -108,10 +108,12 @@ function hasCurrentEntry(entries: StarlightRouteData['sidebar']): boolean {
 </script>
 
 <style>
+  /* Group labels read like the site's section labels: small, mono, uppercase.
+     Links are plain text; the current page gets coral text and a coral rule
+     on the group's guide line. */
   .sidebar-group {
     display: flex;
     flex-direction: column;
-    gap: var(--pm-space-1);
   }
 
   .group-label {
@@ -120,17 +122,24 @@ function hasCurrentEntry(entries: StarlightRouteData['sidebar']): boolean {
     justify-content: space-between;
     gap: var(--pm-space-2);
     box-sizing: border-box;
-    min-height: var(--pm-control-height);
-    padding: var(--pm-space-1) var(--pm-space-3);
-    border: 1px solid transparent;
-    border-radius: var(--pm-radius-md);
+    min-height: 1.75rem;
+    padding: var(--pm-space-1) var(--pm-space-2);
+    border-radius: var(--pm-radius-sm);
+    color: var(--sl-color-gray-3);
     cursor: pointer;
-    font-size: var(--pm-text-sm);
-    font-weight: 600;
-    line-height: var(--pm-line-height-sm);
+    font-family: var(--sl-font-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    line-height: 1.2;
     list-style: none;
-    transition: background-color var(--pm-transition-fast), border-color var(--pm-transition-fast), color var(--pm-transition-fast);
+    text-transform: uppercase;
+    transition: color var(--pm-transition-fast);
     user-select: none;
+  }
+
+  .group-label:hover {
+    color: var(--sl-color-white);
   }
 
   .group-label::-webkit-details-marker {
@@ -138,20 +147,14 @@ function hasCurrentEntry(entries: StarlightRouteData['sidebar']): boolean {
   }
 
   .group-label:focus-visible {
-    border-color: color-mix(in srgb, var(--sl-color-accent) 16%, transparent);
-    color: var(--sl-color-text-accent);
     outline: 2px solid var(--sl-color-accent);
-    outline-offset: var(--pm-space-1);
+    outline-offset: 2px;
   }
 
   .chevron {
     flex-shrink: 0;
-    opacity: 0.45;
-    transition: opacity var(--pm-transition-fast), transform var(--pm-transition-fast);
-  }
-
-  .group-label:focus-visible .chevron {
-    opacity: 0.75;
+    opacity: 0.5;
+    transition: transform var(--pm-transition-fast);
   }
 
   details[open] > .group-label .chevron {
@@ -160,16 +163,17 @@ function hasCurrentEntry(entries: StarlightRouteData['sidebar']): boolean {
 
   .group-items {
     display: grid;
-    gap: var(--pm-space-1);
-    margin-top: var(--pm-space-1);
-    margin-left: var(--pm-space-3);
-    padding-left: var(--pm-space-3);
-    border-left: 1px solid color-mix(in srgb, var(--sl-color-gray-4) 58%, transparent);
+    gap: 1px;
+    margin: var(--pm-space-1) 0 var(--pm-space-2) var(--pm-space-2);
+    border-left: 1px solid var(--pm-docs-line);
   }
 
   .nested > .group-label {
+    font-family: var(--sl-font);
     font-size: var(--pm-text-sm);
     font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
   }
 
   .entry-link {
@@ -177,43 +181,42 @@ function hasCurrentEntry(entries: StarlightRouteData['sidebar']): boolean {
     align-items: center;
     box-sizing: border-box;
     width: 100%;
-    min-height: var(--pm-control-height);
-    padding: var(--pm-space-1) var(--pm-space-3);
-    border: 1px solid transparent;
-    border-radius: var(--pm-radius-md);
-    color: inherit;
+    min-height: 2rem;
+    margin-left: -1px;
+    padding: 0.3rem var(--pm-space-3);
+    border-left: 2px solid transparent;
+    color: var(--sl-color-gray-2);
     font-size: var(--pm-text-sm);
     font-weight: 500;
-    line-height: var(--pm-line-height-sm);
-    text-decoration: inherit;
-    text-underline-offset: var(--pm-space-1);
-    transition: background-color var(--pm-transition-fast), border-color var(--pm-transition-fast), color var(--pm-transition-fast);
+    line-height: 1.35;
+    text-decoration: none;
+    transition: color var(--pm-transition-fast), border-color var(--pm-transition-fast);
+  }
+
+  .entry-link:hover {
+    border-left-color: var(--pm-docs-line-strong);
+    color: var(--sl-color-white);
   }
 
   .entry-link[aria-current='page'] {
-    border-color: color-mix(in srgb, var(--sl-color-accent) 24%, transparent);
-    background-color: color-mix(in srgb, var(--sl-color-accent) 14%, transparent);
-    color: var(--sl-color-text-accent);
+    border-left-color: var(--sl-color-accent);
+    color: var(--sl-color-accent);
+    font-weight: 600;
   }
 
   .entry-link:focus-visible {
-    border-color: color-mix(in srgb, var(--sl-color-accent) 16%, transparent);
-    color: var(--sl-color-text-accent);
     outline: 2px solid var(--sl-color-accent);
-    outline-offset: var(--pm-space-1);
-  }
-
-  .entry-link[aria-current='page']:focus-visible {
-    border-color: color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
+    outline-offset: 2px;
   }
 
   .entry-badge {
     margin-left: var(--pm-space-2);
-    padding: var(--pm-space-1) var(--pm-space-2);
+    padding: 0.2rem 0.4rem;
     border-radius: var(--pm-radius-sm);
-    background-color: var(--sl-color-accent);
-    color: var(--sl-color-black);
-    font-size: var(--pm-text-xs);
+    background-color: var(--sl-color-accent-low);
+    color: var(--sl-color-accent-high);
+    font-family: var(--sl-font-mono);
+    font-size: 0.68rem;
     line-height: 1;
   }
 </style>
