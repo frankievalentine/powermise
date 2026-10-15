@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "bun@1.4.2",
   "scripts": {
-    "check": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets --locked && bun run web:check",
+    "check": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets --locked && bun run web:check && bun run desktop:check",
     "build": "cargo build --workspace --locked && bun run web:build",
     "build:release": "cargo build --workspace --locked --release",
     "test": "cargo test --workspace --locked",
@@ -14,7 +14,12 @@
     "web:check": "bun run --cwd apps/web check",
     "web:build": "bun run --cwd apps/web build",
     "clean": "cargo clean && rm -rf apps/web/dist apps/web/.astro",
-    "test:mise-spike": "scripts/verify-mise-spike.sh"
+    "test:mise-spike": "scripts/verify-mise-spike.sh",
+    "desktop:dev": "bun run --cwd apps/desktop app:dev",
+    "desktop:build": "bun run --cwd apps/desktop app:build",
+    "desktop:check": "bun run --cwd apps/desktop check && cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --locked"
   },
-  "workspaces": ["apps/*"]
+  "workspaces": [
+    "apps/*"
+  ]
 }

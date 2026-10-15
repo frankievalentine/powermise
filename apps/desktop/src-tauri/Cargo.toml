@@ -1,0 +1,33 @@
+[package]
+name = "powermise-desktop"
+version = "0.1.0"
+description = "Powermise desktop app: browse AI harnesses, build setups, and apply them with mise."
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/frankievalentine/powermise"
+publish = false
+
+[lib]
+name = "powermise_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["macos-private-api"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+toml = "0.9.8"
+powermise-domain = { path = "../../../crates/powermise-domain" }
+powermise-registry = { path = "../../../crates/powermise-registry" }
+powermise-compiler = { path = "../../../crates/powermise-compiler" }
+powermise-state = { path = "../../../crates/powermise-state" }
+powermise-mise = { path = "../../../crates/powermise-mise" }
+powermise-lifecycle = { path = "../../../crates/powermise-lifecycle" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
