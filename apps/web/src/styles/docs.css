@@ -187,6 +187,20 @@ h1#_top + p {
 
 /* ---------- Reading ---------- */
 
+/* App screenshots: framed like a window on the page. */
+.sl-markdown-content p:has(> img) {
+  margin-block: 1.5rem;
+}
+
+.sl-markdown-content img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--pm-docs-line-strong);
+  border-radius: var(--pm-radius-lg);
+  box-shadow: 0 12px 32px -16px rgba(22, 30, 44, 0.28);
+}
+
 .sl-markdown-content {
   color: var(--sl-color-gray-1);
 }

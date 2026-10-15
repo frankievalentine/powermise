@@ -16,6 +16,8 @@ versions from other managers, sign in GitHub downloads, set up AI agents — and
 with recent changes below. Press **⌘K** (Ctrl+K) anywhere to search pages, tools,
 projects, setups, and settings at once.
 
+![Home, with the getting-started checklist and an at-a-glance summary of tools, health, projects, and AI agents](../../assets/app-tour/home.png)
+
 ## Welcome
 
 The first time powermise opens, it walks through four steps, each checked off
@@ -35,6 +37,8 @@ when it's already true:
    **Bring Over + Use** makes it your mise default too (`mise use -g`).
 4. **Sign in GitHub downloads** (optional) — see [Health](#health).
 
+![The Welcome steps: mise installed, turned on in the terminal, versions to bring over, and GitHub downloads](../../assets/app-tour/welcome.png)
+
 ## My Tools
 
 Every tool mise manages on this computer:
@@ -42,6 +46,8 @@ Every tool mise manages on this computer:
 - **In use** — tools a config file asks for, with the active version and where
   it's set (**Global** means your `~/.config/mise/config.toml`).
 - **Installed, not in use** — older versions nothing asks for anymore.
+
+![My Tools, listing each installed tool, its version, and where it's set](../../assets/app-tour/my-tools.png)
 
 A blue badge means a newer version is available. Click a tool to open its page.
 
@@ -59,6 +65,8 @@ public install counts for the past year). **Popular** shows the top tools, and
 the category chips narrow the list: languages, package and build tools, cloud
 and DevOps, containers and Kubernetes, databases, command-line essentials,
 editors, AI, media, and mobile. Search matches names, aliases, and descriptions.
+
+![Discover, showing the mise registry's most popular tools and its categories](../../assets/app-tour/discover.png)
 
 - **System utilities** (macOS and Linux) — everyday tools mise doesn't version,
   like wget, tree, htop, gnupg, and rsync, installed as system packages
@@ -83,6 +91,8 @@ Reads: `mise registry --json`, `mise backends ls`, `mise bootstrap status --json
   2026.10+, **Update automatically** lets mise upgrade that global tool in the
   background (`mise config set --global tools.<tool>.auto_update true`).
 
+![Node's tool page: change version, installed versions, and where it installs from](../../assets/app-tour/tool-page.png)
+
 | Action | Command |
 |---|---|
 | Install or switch version | `mise use -g <tool>@<version>` |
@@ -103,6 +113,7 @@ version (`mise link`).
 
 The **Updates** tab of My Tools.
 
+![Updates, with newer versions of global and project tools and Upgrade All](../../assets/app-tour/updates.png)
 
 Everything with a newer version — including tools pinned to an exact version,
 which a plain `mise outdated` leaves out. Upgrading a pinned tool moves the pin
@@ -123,6 +134,7 @@ mise), `mise upgrade --local --bump [<tool>]` in a project.
 
 Open it with the clock button in the toolbar.
 
+![History, listing the commands powermise ran, each with its result and a copy button](../../assets/app-tour/history.png)
 
 Every command powermise has run, kept between launches (the newest 500), with
 how long it took and whether it worked. Copy any of them to run it yourself.
@@ -131,6 +143,8 @@ how long it took and whether it worked. Copy any of them to run it yourself.
 
 Add a folder with **+** next to **Projects** in the sidebar (or drop it on the
 window). powermise never scans your disk; it only shows folders you add.
+
+![A project's page, with its tools, tasks, and environment](../../assets/app-tour/projects.png)
 
 - **Terminal** opens your terminal app in the folder with the project's tools
   and environment ready (`mise en`).
@@ -231,6 +245,8 @@ already have, in one list with a dry run before anything changes:
   tools come over; the rest are listed so you know to keep them.
 - **Installed another way** — install scripts, `go install`, Snap, and so on.
 
+![Import, grouping what was found by source with what each becomes in mise, and Dry Run and Review & Import](../../assets/app-tour/import.png)
+
 Brewfile and export-file entries are checked to start; things only found
 installed aren't.
 Each row says what it becomes in mise and whether it's already installed.
@@ -275,6 +291,8 @@ and keeps the rest under **More details**:
   (`mise cache prune`) and **Clear All** (`mise cache clear`), plus unused
   versions and **Clean Up…**.
 
+![Health, leading with what needs attention and its fix](../../assets/app-tour/health.png)
+
 The **Health** badge in the sidebar counts what needs attention: amber for
 warnings, red when something is broken.
 
@@ -285,6 +303,8 @@ Reads: `mise doctor --json`, `mise version --json`, `mise token github`
 What your global mise config sets up on this computer beyond tools — system
 packages, dotfiles, Git repositories, services, macOS settings, and more — from
 its `[bootstrap]` and `[dotfiles]` sections, with the state of each item.
+
+![This Computer, with system packages, dotfiles, and settings mise bootstrap manages](../../assets/app-tour/this-computer.png)
 
 - **Preview** shows what applying would change, without changing anything
   (`mise bootstrap --dry-run`); **Apply** sets it up (`mise bootstrap --yes`).
@@ -333,6 +353,8 @@ it's at mise's default, changed by you, or set by a project or AI setup, with
 (`mise settings set auto_install false`) with **Undo**, and every change is in
 Activity. Search finds everyday words too: "nvmrc", "offline", "update".
 
+![Settings, with everyday mise settings in plain words](../../assets/app-tour/settings.png)
+
 **Advanced settings**, folded away below, lists everything else by mise's own
 setting name — never the ones above again — grouped as mise groups them, with
 **Changed** to show only what you've set. Changes there show the command and ask
@@ -344,3 +366,7 @@ Reads: `mise settings ls --all --json-extended`
 
 The second section of the sidebar: a catalog of AI coding harnesses and a setup
 editor that installs everything they need. See [AI Setups](/ai-setups/).
+
+![Browse Agents, the catalog of AI coding agents](../../assets/app-tour/ai-agents.png)
+
+![A saved AI setup, showing its agents and what's installed on this computer](../../assets/app-tour/ai-setup.png)

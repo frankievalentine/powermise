@@ -88,7 +88,7 @@ const machine = new Map<string, { version: string; global: boolean }[]>([
 
 const selfUpdateAvailable = true;
 const autoUpdate = new Set<string>();
-let miseVersion = "2026.7.18";
+let miseVersion = "2026.10.8";
 const activityLog: ActivityEntry[] = [];
 let nextJob = 0;
 
