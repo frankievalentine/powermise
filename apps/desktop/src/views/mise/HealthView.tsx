@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw } from "lucide-react";
 import { api } from "../../api";
 import type { AppContext } from "../../App";
-import { useAsync } from "../../hooks";
+import { healthSummary } from "../../health";
 import { usePlatform } from "../../platform";
 import { CommandBlock, Section } from "../../components/ui";
 
@@ -19,12 +20,23 @@ export function HealthView({ context }: { context: AppContext }) {
   const platform = usePlatform();
   const launchedFrom =
     platform === "darwin" ? "the Dock or Finder" : platform === "win32" ? "the Start menu" : "your app launcher";
-  const doctor = useAsync(() => api.doctor(), [mise.revision]);
+  // Shared with the sidebar badge, which reloads it after every change.
+  const [checking, setChecking] = useState(false);
+  const doctor = {
+    data: mise.doctor,
+    error: mise.doctorError,
+    loading: checking || (!mise.doctor && !mise.doctorError),
+    reload: async () => {
+      setChecking(true);
+      await mise.reloadDoctor();
+      setChecking(false);
+    },
+  };
   const info = mise.info;
   const problems = [...(doctor.data?.errors ?? []), ...(doctor.data?.warnings ?? [])];
   const shell = activationCommand(doctor.data?.shell?.name ?? "zsh");
-  const healthy =
-    !!doctor.data && problems.length === 0 && doctor.data.activated && !!info?.recommendedMet;
+  const summary = healthSummary(info, doctor.data);
+  const healthy = !!doctor.data && summary.count === 0;
 
   return (
     <div className="content">
@@ -52,7 +64,7 @@ export function HealthView({ context }: { context: AppContext }) {
             <span>
               {healthy
                 ? "mise is installed, up to date enough, and hooked into your shell."
-                : `${problems.length + (doctor.data.activated ? 0 : 1) + (info?.recommendedMet ? 0 : 1)} thing(s) need attention.`}
+                : `${summary.count} ${summary.count === 1 ? "thing needs" : "things need"} attention.`}
             </span>
           </div>
         )}

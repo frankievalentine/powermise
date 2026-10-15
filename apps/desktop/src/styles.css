@@ -38,6 +38,8 @@
   --green-soft: rgba(47, 138, 76, 0.13);
   --orange: #a86200;
   --orange-soft: rgba(230, 150, 30, 0.16);
+  --amber: #eaa514;
+  --on-amber: #2a1c00;
   --red: #c93a2f;
   --red-soft: rgba(201, 58, 47, 0.11);
 
@@ -85,6 +87,8 @@
     --green-soft: rgba(76, 199, 119, 0.15);
     --orange: #ffb477;
     --orange-soft: rgba(255, 180, 119, 0.15);
+    --amber: #f5b83d;
+    --on-amber: #2a1c00;
     --red: #ff7a6e;
     --red-soft: rgba(255, 122, 110, 0.15);
 
@@ -124,6 +128,8 @@
   --green-soft: rgba(76, 199, 119, 0.15);
   --orange: #ffb477;
   --orange-soft: rgba(255, 180, 119, 0.15);
+  --amber: #f5b83d;
+  --on-amber: #2a1c00;
   --red: #ff7a6e;
   --red-soft: rgba(255, 122, 110, 0.15);
 
@@ -161,6 +167,8 @@
   --green-soft: rgba(47, 138, 76, 0.13);
   --orange: #a86200;
   --orange-soft: rgba(230, 150, 30, 0.16);
+  --amber: #eaa514;
+  --on-amber: #2a1c00;
   --red: #c93a2f;
   --red-soft: rgba(201, 58, 47, 0.11);
 
@@ -312,6 +320,7 @@ button {
   place-items: center;
   width: 22px;
   height: 22px;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -470,6 +479,7 @@ button {
   place-items: center;
   width: 28px;
   height: 28px;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1418,6 +1428,51 @@ button {
   line-height: 16px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* Health: amber for warnings (distinct from the coral Updates badge), red
+   when something is broken, with a slow ring so it reads as "look at me"
+   rather than a count to work through. */
+.sidebar-badge.health {
+  position: relative;
+  color: #fff;
+}
+
+.sidebar-badge.health.warning {
+  background: var(--amber);
+  color: var(--on-amber);
+  --pulse: var(--amber);
+}
+
+.sidebar-badge.health.error {
+  background: var(--red);
+  --pulse: var(--red);
+}
+
+.sidebar-badge.health::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 var(--pulse);
+  animation: health-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes health-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--pulse) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--pulse) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-badge.health::after {
+    animation: none;
+  }
 }
 
 .version-pill {

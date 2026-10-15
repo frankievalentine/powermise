@@ -22,6 +22,7 @@ import {
   inTauri,
   onMiseFinished,
   PLATFORM_LABEL,
+  type Doctor,
   type EnvironmentInfo,
   type MiseInfo,
   type ProjectEntry,
@@ -31,6 +32,7 @@ import {
   type ToolInventory,
 } from "./api";
 import { indexCatalog, type CatalogIndex } from "./catalog";
+import { healthSummary } from "./health";
 import { RunSheet, type RunRequest } from "./components/RunSheet";
 import { PlatformSwitcher, WindowChrome } from "./components/WindowChrome";
 import { hasPrimaryModifier, shortcutLabel, usePlatform } from "./platform";
@@ -74,6 +76,10 @@ export interface MiseData {
   registry: RegistryEntry[] | null;
   registryByName: Map<string, RegistryEntry>;
   error: string | null;
+  /** `mise doctor`, for Health and its sidebar badge. */
+  doctor: Doctor | null;
+  doctorError: string | null;
+  reloadDoctor: () => Promise<void>;
   /** Increments whenever a change finishes; screens reload on it. */
   revision: number;
 }
@@ -139,6 +145,8 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const [outdated, setOutdated] = useState<OutdatedReport | null>(null);
   const [registry, setRegistry] = useState<RegistryEntry[] | null>(null);
   const [miseError, setMiseError] = useState<string | null>(null);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [doctorError, setDoctorError] = useState<string | null>(null);
 
   const route = history[history.length - 1];
   const platform = usePlatform();
@@ -182,8 +190,18 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
     api.registry().then(setRegistry).catch(() => setRegistry([]));
   }, []);
 
+  const reloadDoctor = useCallback(async () => {
+    try {
+      setDoctor(await api.doctor());
+      setDoctorError(null);
+    } catch (reason) {
+      setDoctorError((reason as Error).message);
+    }
+  }, []);
+
   // mise state reloads at start and after every finished change.
   useEffect(() => {
+    void reloadDoctor();
     api.miseInfo().then(setMiseInfo).catch(() => setMiseInfo(null));
     Promise.all([api.installed(), api.outdated()])
       .then(([tools, report]) => {
@@ -192,7 +210,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
         setMiseError(null);
       })
       .catch((reason: Error) => setMiseError(reason.message));
-  }, [revision]);
+  }, [revision, reloadDoctor]);
 
   useEffect(() => {
     const stop = onMiseFinished(() => setRevision((value) => value + 1));
@@ -255,9 +273,12 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
       registry,
       registryByName: new Map((registry ?? []).map((entry) => [entry.short, entry])),
       error: miseError,
+      doctor,
+      doctorError,
+      reloadDoctor,
       revision,
     }),
-    [miseInfo, inventory, outdated, registry, miseError, revision],
+    [miseInfo, inventory, outdated, registry, miseError, doctor, doctorError, reloadDoctor, revision],
   );
 
   const context = useMemo<AppContext | null>(
@@ -413,6 +434,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
   const platform = usePlatform();
   const installedCount = Object.keys(mise.inventory ?? {}).length;
   const updateCount = Object.keys(mise.outdated ?? {}).length;
+  const health = healthSummary(mise.info, mise.doctor);
 
   const miseItems = [
     { kind: "installed" as const, label: "Installed", icon: Layers, trailing: installedCount || null },
@@ -428,13 +450,14 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
       kind: "health" as const,
       label: "Health",
       icon: HeartPulse,
-      trailing:
-        mise.info && !mise.info.recommendedMet ? (
-          <span
-            className="status-dot attention"
-            title={mise.info.supported ? "Update recommended" : "mise is too old"}
-          />
-        ) : null,
+      trailing: health.severity ? (
+        <span
+          className={`sidebar-badge health ${health.severity}`}
+          title={`${health.count} ${health.count === 1 ? "thing needs" : "things need"} attention`}
+        >
+          {health.count}
+        </span>
+      ) : null,
     },
   ];
   const aiItems = [
