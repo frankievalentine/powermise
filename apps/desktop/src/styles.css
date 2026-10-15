@@ -2516,16 +2516,29 @@ button {
 .import-bar {
   position: sticky;
   bottom: 12px;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-top: 20px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md, 10px);
-  background: var(--surface-raised, var(--surface));
-  box-shadow:
-    0 0 0 1px var(--separator),
-    0 10px 30px -12px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px 10px 14px;
+  border-radius: var(--radius-lg);
+  /* Opaque, so the rows scrolling under it don't show through. */
+  background: var(--sheet);
+  box-shadow: var(--shadow-sheet);
   font-size: 13px;
+}
+
+.import-bar > span {
+  min-width: 0;
+  color: var(--text-secondary);
+}
+
+.import-bar > span strong {
+  color: var(--text);
+}
+
+.import-bar .detail-actions {
+  flex-shrink: 0;
 }
