@@ -15,7 +15,7 @@ import { api } from "../api";
 import { pendingImports } from "../components/machine";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
-import { healthSummary } from "../health";
+import { healthSummary, systemIssues } from "../health";
 
 const CHECKLIST_HIDDEN = "powermise.checklistHidden";
 
@@ -37,7 +37,7 @@ export function HomeView({ context }: { context: AppContext }) {
 
   const installed = Object.keys(mise.inventory ?? {}).length;
   const updates = Object.keys(mise.outdated ?? {}).length;
-  const health = healthSummary(mise.info, mise.doctor, mise.shellConflicts);
+  const health = healthSummary(mise.info, mise.doctor, mise.shellConflicts, systemIssues(mise.systemChecks));
 
   const steps: Step[] = [
     {

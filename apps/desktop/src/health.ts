@@ -1,4 +1,4 @@
-import type { Doctor, MiseInfo, Platform } from "./api";
+import type { Doctor, MiseInfo, Platform, SystemCheck } from "./api";
 
 export interface HealthSummary {
   /** Things that need attention: mise's own errors and warnings, an inactive
@@ -10,15 +10,26 @@ export interface HealthSummary {
 }
 
 /** What the Health screen reports, summarized for the sidebar badge. */
-export function healthSummary(info: MiseInfo | null, doctor: Doctor | null, shellConflicts = 0): HealthSummary {
+export function healthSummary(
+  info: MiseInfo | null,
+  doctor: Doctor | null,
+  shellConflicts = 0,
+  systemIssues = 0,
+): HealthSummary {
   const errors = (doctor?.errors.length ?? 0) + (info && !info.supported ? 1 : 0);
   const warnings =
     (doctor?.warnings.length ?? 0) +
     shellConflicts +
+    systemIssues +
     (doctor && !doctor.activated ? 1 : 0) +
     (info && info.supported && !info.recommendedMet ? 1 : 0);
   const count = errors + warnings;
   return { count, severity: errors ? "error" : warnings ? "warning" : null };
+}
+
+/** Developer basics that are missing. */
+export function systemIssues(checks: SystemCheck[] | null): number {
+  return (checks ?? []).filter((check) => !check.ok).length;
 }
 
 /** How to turn mise on in a shell: mise's own setup commands
@@ -37,7 +48,12 @@ export interface Activation {
   note?: string;
   /** A second command some setups need (bash on macOS). */
   extra?: { text: string; command: string };
+  /** A shell powermise has no steps for: point to mise's guide instead. */
+  unsupported?: boolean;
 }
+
+/** mise's own guide to turning it on in every shell it supports. */
+export const SHELL_SETUP_URL = "https://mise.jdx.dev/shell-setup.html";
 
 /** With no shell reported (apps on Windows don't get `SHELL`), the platform's
  *  default shell. `misePath` matters when mise lives in `~/.local/bin`, which
@@ -47,7 +63,10 @@ export function activationCommand(
   platform: Platform,
   misePath?: string | null,
 ): Activation {
-  const name = (shellName ?? (platform === "win32" ? "pwsh" : platform === "darwin" ? "zsh" : "bash")).toLowerCase();
+  const name = (shellName ?? (platform === "win32" ? "pwsh" : platform === "darwin" ? "zsh" : "bash"))
+    .toLowerCase()
+    .split(/[\\/]/)
+    .pop()!;
   const local = platform !== "win32" && !!misePath && /[\\/]\.local[\\/]bin[\\/]mise$/.test(misePath);
   const mise = local ? "~/.local/bin/mise" : "mise";
   const once = (line: string, file: string) =>
@@ -83,6 +102,23 @@ export function activationCommand(
       note: "If fish came from Homebrew, mise may already turn itself on there; open a new window first to check.",
     };
   }
+  if (name === "nu" || name === "nu.exe" || name === "nushell") {
+    // mise's Nushell setup: env.nu writes the mise module at every start (so it
+    // follows mise upgrades), and config.nu loads it.
+    const run = local ? '^($env.HOME | path join ".local/bin/mise")' : "^mise";
+    const lines = ["let mise_path = $nu.default-config-dir | path join mise.nu", `${run} activate nu | save $mise_path --force`];
+    const use = "use ($nu.default-config-dir | path join mise.nu)";
+    return {
+      shell: "Nushell",
+      file: "env.nu and config.nu",
+      prompt: ">",
+      command:
+        `let lines = [${lines.map((line) => `'${line}'`).join(", ")}]; let use = '${use}'; ` +
+        "mkdir ($nu.env-path | path dirname); " +
+        'if not (($nu.env-path | path exists) and (open --raw $nu.env-path | str contains ($lines | last))) { $"\\n($lines | str join "\\n")\\n" | save --append $nu.env-path }; ' +
+        'if not (($nu.config-path | path exists) and (open --raw $nu.config-path | str contains $use)) { $"\\n($use)\\n" | save --append $nu.config-path }',
+    };
+  }
   if (name.includes("bash")) {
     const line = `eval "$(${mise} activate bash)"`;
     return {
@@ -98,6 +134,9 @@ export function activationCommand(
             }
           : undefined,
     };
+  }
+  if (!name.includes("zsh")) {
+    return { shell: name, file: "", prompt: "$", command: "", unsupported: true };
   }
   const line = `eval "$(${mise} activate zsh)"`;
   return {

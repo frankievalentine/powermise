@@ -15,6 +15,7 @@ mod plugins;
 mod projects;
 mod setups;
 mod skills;
+mod system;
 mod terminal;
 
 use std::{
@@ -230,6 +231,8 @@ pub fn run() {
             setups::list_selections,
             setups::save_selection,
             setups::export_setup,
+            system::system_checks,
+            system::system_fix_in_terminal,
             setups::read_setup_file,
             setups::preview_selection,
             setups::write_setup,

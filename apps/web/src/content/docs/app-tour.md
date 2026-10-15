@@ -9,22 +9,27 @@ time. When it finishes, every screen refreshes from mise.
 
 ## Welcome
 
-The first time powermise opens, it walks through four steps, each checked off
+The first time powermise opens, it walks through five steps, each checked off
 when it's already true:
 
 1. **Install mise**, if it's missing — mise's install script (`curl
    https://mise.run | sh`) first on macOS and Linux, since that build updates
    itself without a password, or Homebrew; winget or Scoop on Windows. The
    sheet shows the exact command.
-2. **Turn mise on in your terminal** — the line to add to your shell's startup file.
-3. **Bring over versions you already have** opens [Import](#import), so mise uses them without
+2. **Developer basics** — what git and anything that compiles need (see
+   [Health](#health)), with a fix for whatever's missing.
+3. **Turn mise on in your terminal** — the line to add to your shell's startup
+   file: zsh, bash, fish, PowerShell, or Nushell. Command Prompt gets mise's
+   shims on your Path instead; for any other shell, powermise links to mise's
+   shell setup guide.
+4. **Bring over versions you already have** opens [Import](#import), so mise uses them without
    downloading them again: nvm, nodenv, pyenv, uv, and Homebrew with
    `mise sync`; fnm, Volta, n, nvm for Windows, rbenv, RVM, chruby, goenv, and
    asdf (every tool it manages) with `mise link`, one version at a time.
    Versions mise already has are skipped. When that manager had a default —
    `nvm alias default`, `pyenv global`, asdf's `~/.tool-versions`, and so on —
    **Bring Over + Use** makes it your mise default too (`mise use -g`).
-4. **Sign in GitHub downloads** (optional) — see [Health](#health).
+5. **Sign in GitHub downloads** (optional) — see [Health](#health).
 
 ![The Welcome steps: mise installed, turned on in the terminal, versions to bring over, and GitHub downloads](../../assets/app-tour/welcome.png)
 
@@ -265,6 +270,21 @@ and keeps the rest under **More details**:
 
 - **mise** — your version, the minimum powermise needs, and an update button
   when a newer mise is out (`mise self-update`).
+- **Developer basics** — mise's Node, Python, Ruby, and Go come ready-built,
+  but git, and anything that compiles (gems and npm packages with native code,
+  `cargo install`), needs more:
+  - **macOS:** Apple's Command Line Tools. **Install…** opens Apple's own
+    installer (`xcode-select --install`).
+  - **Linux:** a C compiler, make, git, and curl. **Install in Terminal…** runs
+    `mise bootstrap packages apply --update` with your distribution's packages
+    (`apt:build-essential`, `dnf:gcc`, `pacman:base-devel`, …) in your
+    terminal, where `sudo` can ask for your password.
+  - **Windows:** Git for Windows (`winget:Git.Git` through mise), and
+    PowerShell's script policy. Windows ships with `Restricted`, which skips
+    `$PROFILE` — and the line that turns mise on with it. **Allow Profile
+    Scripts** sets `RemoteSigned` for your account
+    (`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`). When your
+    organization sets the policy, Health says so instead.
 - **Your shell** — whether mise is activated. If it isn't, powermise shows the
   line to add to your shell's startup file. It won't edit that file for you.
 - **Problems mise found** and the **config files** it reads.
@@ -272,9 +292,10 @@ and keeps the rest under **More details**:
   to give it one you already have: your GitHub CLI login
   (`github.credential_command = "gh auth token"`) or Git's saved login
   (`github.use_git_credentials`).
-- **Other version managers still turned on** — a `.zshrc`, `.bashrc`,
-  `.profile`, or fish line that starts nvm, pyenv, rbenv, asdf, fnm, Volta, or
-  another manager, which fights mise over `PATH`. Health shows the file and line
+- **Other version managers still turned on** — a line in `.zshrc`, `.bashrc`,
+  `.profile`, fish's `config.fish`, a PowerShell profile, or Nushell's `env.nu`
+  or `config.nu` that starts nvm, pyenv, rbenv, asdf, fnm, Volta, or another
+  manager, which fights mise over `PATH`. Health shows the file and line
   to remove once your versions are brought over; it won't edit the file for you.
 - **Bring over what you already have** — a link to [Import](#import) when it
   finds something.

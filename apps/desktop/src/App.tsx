@@ -29,10 +29,11 @@ import {
   type RegistryEntry,
   type SavedSelection,
   type SetupFile,
+  type SystemCheck,
   type ToolInventory,
 } from "./api";
 import { indexCatalog, type CatalogIndex } from "./catalog";
-import { healthSummary } from "./health";
+import { healthSummary, systemIssues } from "./health";
 import { RunSheet, type RunRequest } from "./components/RunSheet";
 import { CommandPalette } from "./components/CommandPalette";
 import { PlatformSwitcher, WindowChrome } from "./components/WindowChrome";
@@ -98,6 +99,9 @@ export interface MiseData {
   /** Shell startup lines that turn on another version manager; Health
    *  counts them, so its badge does too. */
   shellConflicts: number;
+  /** Developer basics (Command Line Tools, build tools, git, PowerShell's
+   *  script policy); the missing ones count toward Health. */
+  systemChecks: SystemCheck[] | null;
   reloadDoctor: () => Promise<void>;
   /** Increments whenever a change finishes; screens reload on it. */
   revision: number;
@@ -176,6 +180,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [doctorError, setDoctorError] = useState<string | null>(null);
   const [shellConflicts, setShellConflicts] = useState(0);
+  const [systemChecks, setSystemChecks] = useState<SystemCheck[] | null>(null);
 
   const route = history[history.length - 1];
   const platform = usePlatform();
@@ -230,6 +235,10 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
       .shellConflicts()
       .then((conflicts) => setShellConflicts(conflicts.length))
       .catch(() => setShellConflicts(0));
+    api
+      .systemChecks()
+      .then(setSystemChecks)
+      .catch(() => setSystemChecks([]));
     try {
       setDoctor(await api.doctor());
       setDoctorError(null);
@@ -319,10 +328,11 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
       doctor,
       doctorError,
       shellConflicts,
+      systemChecks,
       reloadDoctor,
       revision,
     }),
-    [miseInfo, inventory, outdated, registry, miseError, doctor, doctorError, shellConflicts, reloadDoctor, revision],
+    [miseInfo, inventory, outdated, registry, miseError, doctor, doctorError, shellConflicts, systemChecks, reloadDoctor, revision],
   );
 
   const context = useMemo<AppContext | null>(
@@ -550,7 +560,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
   const platform = usePlatform();
   const installedCount = Object.keys(mise.inventory ?? {}).length;
   const updateCount = Object.keys(mise.outdated ?? {}).length;
-  const health = healthSummary(mise.info, mise.doctor, mise.shellConflicts);
+  const health = healthSummary(mise.info, mise.doctor, mise.shellConflicts, systemIssues(mise.systemChecks));
   // Detail pages keep the section they were opened from highlighted.
   const isActive = (...kinds: Route["kind"][]) => kinds.includes(root.kind);
 

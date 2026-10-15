@@ -4,7 +4,7 @@ import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { activationCommand } from "../../health";
 import { useAsync } from "../../hooks";
-import { ActivationSteps, ExternalLinkButton, GithubCard, pendingImports } from "../../components/machine";
+import { ActivationSteps, ExternalLinkButton, GithubCard, SystemCheckRows, pendingImports } from "../../components/machine";
 import { CommandBlock } from "../../components/ui";
 
 export const WELCOMED_KEY = "powermise.welcomed";
@@ -123,8 +123,27 @@ export function WelcomeView({ context }: { context: AppContext }) {
           )}
         </Step>
 
+        {hasMise && mise.systemChecks && mise.systemChecks.length > 0 && (
+          <Step
+            number={2}
+            done={mise.systemChecks.every((check) => check.ok)}
+            title="Developer basics"
+            note={
+              mise.systemChecks.every((check) => check.ok)
+                ? `${mise.systemChecks.map((check) => check.title).join(", ")}: all set.`
+                : "mise’s Node, Python, Ruby, and Go come ready-built, but git, and anything that compiles, needs these."
+            }
+          >
+            {mise.systemChecks.some((check) => !check.ok) && (
+              <div className="list prose">
+                <SystemCheckRows context={context} checks={mise.systemChecks} />
+              </div>
+            )}
+          </Step>
+        )}
+
         <Step
-          number={2}
+          number={hasMise && mise.systemChecks?.length ? 3 : 2}
           done={hasMise && activated}
           title="Turn mise on in your terminal"
           note={
@@ -138,7 +157,7 @@ export function WelcomeView({ context }: { context: AppContext }) {
 
         {hasMise && (
           <Step
-            number={3}
+            number={mise.systemChecks?.length ? 4 : 3}
             done={!!imports.data && pendingImports(context, imports.data).length === 0}
             title="Bring over versions you already have"
             note={
@@ -158,7 +177,9 @@ export function WelcomeView({ context }: { context: AppContext }) {
         )}
 
         {hasMise && (
-          <Step number={4} title="Sign in GitHub downloads (optional)" note="Avoids rate limits on busy days.">
+          <Step
+            number={mise.systemChecks?.length ? 5 : 4}
+            title="Sign in GitHub downloads (optional)" note="Avoids rate limits on busy days.">
             <GithubCard context={context} />
           </Step>
         )}

@@ -1,6 +1,7 @@
 // Demo state for machine-wide screens: settings, GitHub downloads, versions
 // from other managers, and installing mise (`?nomise` starts without it).
 import { enableIdiomatic } from "./demoProjects";
+import { currentPlatform } from "../platform";
 import type {
   DetectedImport,
   GlobalPackage,
@@ -11,6 +12,7 @@ import type {
   MiseAction,
   Setting,
   ShellConflict,
+  SystemCheck,
 } from "../api";
 
 const GLOBAL_CONFIG = "/Users/demo/.config/mise/config.toml";
@@ -198,6 +200,33 @@ const importScan: ImportScan = {
   ],
 };
 
+/** Developer basics on the demo computer, by the platform it's previewed as.
+ *  Windows starts with PowerShell's default script policy, which most
+ *  Windows computers have. */
+let powershellAllowed = false;
+function systemChecks(): SystemCheck[] {
+  const platform = currentPlatform();
+  if (platform === "darwin") {
+    return [{ id: "command-line-tools", title: "Apple’s Command Line Tools", ok: true, detail: "git, clang, and make are installed.", fix: null }];
+  }
+  if (platform === "linux") {
+    return [{ id: "build-tools", title: "Build tools", ok: true, detail: "A C compiler, make, git, and curl are installed.", fix: null }];
+  }
+  return [
+    { id: "git", title: "Git for Windows", ok: true, detail: "git is installed.", fix: null },
+    powershellAllowed
+      ? { id: "powershell-policy", title: "PowerShell script policy", ok: true, detail: "PowerShell runs $PROFILE, where the line that turns mise on goes.", fix: null }
+      : {
+          id: "powershell-policy",
+          title: "PowerShell script policy",
+          ok: false,
+          detail: "Windows PowerShell won’t run $PROFILE (its script policy is Restricted), so the line that turns mise on is skipped. RemoteSigned for your account runs your own scripts and signed downloaded ones.",
+          fix: { label: "Allow Profile Scripts", command: POWERSHELL_FIX, terminal: false },
+        },
+  ];
+}
+const POWERSHELL_FIX = 'powershell -NoProfile -Command "Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force"';
+
 /** Whether the demo machine already has a package (Homebrew or App Store). */
 export function demoInstalledPackage(spec: string): boolean {
   const name = spec.slice(spec.indexOf(":") + 1);
@@ -310,6 +339,8 @@ export function describeMachineAction(action: MiseAction): string | null {
       return "mise dotfiles undo --yes";
     case "usePackage":
       return `mise bootstrap packages use -g --yes ${action.spec}`;
+    case "systemFix":
+      return POWERSHELL_FIX;
     case "relaunchApp":
       return `killall ${action.app.includes(" ") ? `'${action.app}'` : action.app}`;
     case "setToolAlias":
@@ -365,6 +396,9 @@ export function performMachineAction(action: MiseAction): string[] | null {
       ]);
     }
     case "relaunchApp":
+      return [];
+    case "systemFix":
+      powershellAllowed = true;
       return [];
     case "usePackage":
       packageStates[action.spec] = "installed";
@@ -442,6 +476,10 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
       return githubStatus();
     case "detect_imports":
       return imports.map((entry) => ({ ...entry, versions: entry.versions.map((item) => ({ ...item })) }));
+    case "system_checks":
+      return systemChecks();
+    case "system_fix_in_terminal":
+      return undefined;
     case "shell_conflicts":
       return shellConflicts;
     case "global_packages":

@@ -7,10 +7,12 @@ import {
   type InstalledProgram,
   type RegistryEntry,
   type ShellConflict,
+  type SystemCheck,
 } from "../api";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
-import type { Activation } from "../health";
+import { usePlatform } from "../platform";
+import { SHELL_SETUP_URL, type Activation } from "../health";
 import { isGlobalPath, prettyPath } from "../mise";
 import { CommandBlock } from "./ui";
 import { Sheet } from "./Sheet";
@@ -335,6 +337,79 @@ export function ShellConflictRows({ conflicts }: { conflicts: ShellConflict[] })
   );
 }
 
+/** Developer basics, each with its fix: in powermise, or in your terminal
+ *  when it needs your password. `all` lists the ones already there too. */
+export function SystemCheckRows({
+  context,
+  checks,
+  all = false,
+}: {
+  context: AppContext;
+  checks: SystemCheck[];
+  all?: boolean;
+}) {
+  const [inTerminal, setInTerminal] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const prompt = usePlatform() === "win32" ? "PS>" : "$";
+  const fix = (check: SystemCheck) => {
+    if (!check.fix) return;
+    setError(null);
+    if (check.fix.terminal) {
+      api
+        .systemFixInTerminal(check.id)
+        .then(() => setInTerminal(check.id))
+        .catch((reason: Error) => setError(reason.message));
+      return;
+    }
+    context.run({
+      action: { kind: "systemFix", id: check.id },
+      title: check.fix.label.startsWith("Install") ? `Install ${check.title}?` : `${check.fix.label}?`,
+      description:
+        check.id === "command-line-tools"
+          ? "Apple’s installer opens in its own window. When it finishes, click Check Again in Health."
+          : check.detail,
+      verb: check.fix.label.replace(/…$/, ""),
+    });
+  };
+  return (
+    <>
+      {checks
+        .filter((check) => all || !check.ok)
+        .map((check) => (
+          <div className="list-row setting-row" key={check.id}>
+            {check.ok ? (
+              <CheckCircle2 size={16} color="var(--green)" />
+            ) : (
+              <AlertTriangle size={16} color="var(--orange)" />
+            )}
+            <div className="row-main">
+              <div className="row-title">{check.title}</div>
+              <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
+                {check.detail}
+              </div>
+              {!check.ok && check.fix && (
+                <div style={{ marginTop: 8 }}>
+                  <CommandBlock command={check.fix.command} prompt={prompt} />
+                </div>
+              )}
+              {inTerminal === check.id && (
+                <p className="field-hint">
+                  Finish in the terminal window that opened — it asks for your password — then click Check Again.
+                </p>
+              )}
+              {error && <p className="field-hint error">{error}</p>}
+            </div>
+            {!check.ok && check.fix && (
+              <button className="button" onClick={() => fix(check)}>
+                {check.fix.label}
+              </button>
+            )}
+          </div>
+        ))}
+    </>
+  );
+}
+
 /** The mise tool a global package becomes: the registry's short name when
  *  mise has one for it, otherwise `<backend>:<name>`. */
 export function packageTool(
@@ -599,6 +674,17 @@ export function UpdateMise({ context, label = "Update mise" }: { context: AppCon
 /** mise's setup command for the current shell, plus anything else that shell
  *  needs. powermise doesn't edit shell files itself. */
 export function ActivationSteps({ activation }: { activation: Activation }) {
+  if (activation.unsupported) {
+    return (
+      <div className="activation-steps">
+        <p className="section-note">
+          powermise doesn’t have steps for {activation.shell}.{" "}
+          <ExternalLinkButton url={SHELL_SETUP_URL}>mise’s shell setup guide</ExternalLinkButton> covers bash, zsh,
+          fish, PowerShell, Nushell, and more.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="activation-steps">
       <p className="section-note">

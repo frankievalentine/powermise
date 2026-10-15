@@ -471,6 +471,29 @@ pub fn shell_conflicts(home: &Path) -> Vec<ShellConflict> {
         home.join(".profile"),
         home.join(".config/fish/config.fish"),
     ];
+    // PowerShell profiles: PowerShell 7 and Windows PowerShell 5.1, for every
+    // host, in Documents (which OneDrive may move) or, on macOS and Linux,
+    // ~/.config/powershell.
+    let config = env_dir("XDG_CONFIG_HOME").unwrap_or_else(|| home.join(".config"));
+    for folder in [
+        home.join("Documents/PowerShell"),
+        home.join("Documents/WindowsPowerShell"),
+        home.join("OneDrive/Documents/PowerShell"),
+        home.join("OneDrive/Documents/WindowsPowerShell"),
+        config.join("powershell"),
+    ] {
+        files.push(folder.join("Microsoft.PowerShell_profile.ps1"));
+        files.push(folder.join("profile.ps1"));
+    }
+    // Nushell's env.nu and config.nu.
+    for folder in [
+        config.join("nushell"),
+        home.join("Library/Application Support/nushell"),
+        home.join("AppData/Roaming/nushell"),
+    ] {
+        files.push(folder.join("env.nu"));
+        files.push(folder.join("config.nu"));
+    }
     files.dedup();
     let mut conflicts = Vec::new();
     for file in files {
@@ -985,6 +1008,34 @@ mod tests {
         fs::remove_dir_all(&home).unwrap();
         let found: Vec<_> = conflicts.iter().map(|c| (c.manager, c.line)).collect();
         assert_eq!(found, [("pyenv", 3), ("nvm", 4)]);
+    }
+
+    #[test]
+    fn spots_other_managers_in_powershell_and_nushell() {
+        let home = temp("shell-more");
+        let profile = home.join("Documents/PowerShell/Microsoft.PowerShell_profile.ps1");
+        fs::create_dir_all(profile.parent().unwrap()).unwrap();
+        fs::write(
+            &profile,
+            "# fnm env --use-on-cd | Out-String | Invoke-Expression\nfnm env --use-on-cd | Out-String | Invoke-Expression\n",
+        )
+        .unwrap();
+        let nushell = home.join("AppData/Roaming/nushell/env.nu");
+        fs::create_dir_all(nushell.parent().unwrap()).unwrap();
+        fs::write(&nushell, "fnm env --json | from json | load-env\n").unwrap();
+        let conflicts = shell_conflicts(&home);
+        fs::remove_dir_all(&home).unwrap();
+        let found: Vec<_> = conflicts
+            .iter()
+            .map(|c| (c.file.file_name().unwrap().to_owned(), c.line))
+            .collect();
+        assert_eq!(
+            found,
+            [
+                ("Microsoft.PowerShell_profile.ps1".into(), 2),
+                ("env.nu".into(), 1)
+            ]
+        );
     }
 
     #[test]

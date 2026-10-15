@@ -455,6 +455,7 @@ export type MiseAction =
   | { kind: "unsetToolAlias"; tool: string; alias: string }
   | { kind: "formatConfig"; project: string }
   | { kind: "relaunchApp"; app: string }
+  | { kind: "systemFix"; id: string }
   | { kind: "usePackage"; spec: string }
   | { kind: "cachePrune" }
   | { kind: "cacheClear" }
@@ -599,6 +600,17 @@ export interface ImportFile {
   path: string;
   contents: string;
   change: FileChange;
+}
+
+/** A developer basic mise and the tools it installs rely on (Apple's
+ *  Command Line Tools, Linux build tools, Git for Windows, PowerShell's
+ *  script policy), with its fix. */
+export interface SystemCheck {
+  id: string;
+  title: string;
+  ok: boolean;
+  detail: string;
+  fix: { label: string; command: string; terminal: boolean } | null;
 }
 
 /** A command-line package installed globally outside mise. */
@@ -871,6 +883,8 @@ export const api = {
   prunableVersions: () => call<PrunableVersion[]>("prunable_versions"),
   detectImports: () => call<DetectedImport[]>("detect_imports"),
   shellConflicts: () => call<ShellConflict[]>("shell_conflicts"),
+  systemChecks: () => call<SystemCheck[]>("system_checks"),
+  systemFixInTerminal: (id: string) => call<void>("system_fix_in_terminal", { id }),
   globalPackages: () => call<GlobalPackage[]>("global_packages"),
   installedPrograms: () => call<InstalledProgram[]>("installed_programs"),
   importScan: () => call<ImportScan>("import_scan"),

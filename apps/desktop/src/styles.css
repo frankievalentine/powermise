@@ -1454,7 +1454,8 @@ button {
 /* Welcome: numbered steps with a check when each is already true. */
 .welcome-step {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  /* minmax lets a long command scroll inside its block instead of widening the page. */
+  grid-template-columns: 28px minmax(0, 1fr);
   gap: 12px;
   margin-top: 22px;
 }

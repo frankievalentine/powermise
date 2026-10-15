@@ -268,6 +268,10 @@ pub enum MiseAction {
     SelfUpdate,
     /// Updates mise with the package manager that installed it.
     UpdateMiseWithManager,
+    /// The fix for a missing developer basic (src/system.rs), by check id.
+    SystemFix {
+        id: String,
+    },
     // Project actions run inside the project folder.
     InstallProject {
         project: PathBuf,
@@ -600,6 +604,7 @@ impl MiseAction {
             | Self::ApplyImport { .. }
             | Self::RelaunchApp { .. }
             | Self::UpdateMiseWithManager
+            | Self::SystemFix { .. }
             | Self::ApplySetup { .. } => {
                 return Err("this action doesn't run mise".into());
             }
@@ -751,6 +756,26 @@ impl MiseAction {
             }
             return Ok(Job::Steps(steps));
         }
+        if let Self::SystemFix { id } = self {
+            let plan = crate::system::fix_plan(id)?;
+            if plan.terminal {
+                return Err("this fix runs in your terminal".into());
+            }
+            let mut steps: Vec<Job> = plan
+                .steps
+                .into_iter()
+                .map(|step| Job::Program {
+                    program: step.program,
+                    arguments: step.arguments,
+                    display: step.display,
+                })
+                .collect();
+            return Ok(if steps.len() == 1 {
+                steps.remove(0)
+            } else {
+                Job::Steps(steps)
+            });
+        }
         if let Self::UpdateMiseWithManager = self {
             let mise = find_mise().ok_or("mise is not installed")?;
             let updater = powermise_mise::mise_updater(&mise);
@@ -788,7 +813,10 @@ pub fn describe_action(action: MiseAction) -> CommandResult<String> {
     if let MiseAction::InstallMise { installer } = action {
         return Ok(installer.display());
     }
-    if matches!(action, MiseAction::RelaunchApp { .. }) {
+    if matches!(
+        action,
+        MiseAction::RelaunchApp { .. } | MiseAction::SystemFix { .. }
+    ) {
         return Ok(action.job()?.display());
     }
     Ok(action.command()?.display())

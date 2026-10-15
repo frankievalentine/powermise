@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw } from "lucide-react";
 import { api } from "../../api";
 import type { AppContext } from "../../App";
-import { activationCommand, healthSummary } from "../../health";
+import { activationCommand, healthSummary, systemIssues } from "../../health";
 import { CORE_TOOLS, prettyPath } from "../../mise";
 import { useAsync } from "../../hooks";
 import { usePlatform } from "../../platform";
@@ -11,6 +11,7 @@ import {
   CleanupSheet,
   GithubCard,
   ShellConflictRows,
+  SystemCheckRows,
   UpdateMise,
   formatBytes,
   pendingImports,
@@ -42,7 +43,7 @@ export function HealthView({ context, section }: { context: AppContext; section?
   const shell = activationCommand(doctor.data?.shell?.name, context.env.hostTarget, context.env.misePath);
   const imports = useAsync(() => api.detectImports(), [mise.revision]);
   const conflicts = useAsync(() => api.shellConflicts(), [mise.revision]);
-  const summary = healthSummary(info, doctor.data, conflicts.data?.length ?? 0);
+  const summary = healthSummary(info, doctor.data, conflicts.data?.length ?? 0, systemIssues(mise.systemChecks));
   const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
   const disk = useAsync(() => api.diskUsage(), [mise.revision]);
   const trust = useAsync(() => api.trustedFolders(), [mise.revision]);
@@ -122,6 +123,7 @@ export function HealthView({ context, section }: { context: AppContext; section?
                 </div>
               )}
               {conflicts.data && <ShellConflictRows conflicts={conflicts.data} />}
+              {mise.systemChecks && <SystemCheckRows context={context} checks={mise.systemChecks} />}
               {problems.map((problem) => (
                 <div className="list-row" key={problem}>
                   <AlertTriangle size={16} color="var(--orange)" />
@@ -182,6 +184,17 @@ export function HealthView({ context, section }: { context: AppContext; section?
               </div>
             </div>
           </Section>
+
+          {mise.systemChecks && mise.systemChecks.length > 0 && (
+            <Section
+              title="Developer basics"
+              note="mise’s Node, Python, Ruby, and Go come ready-built. git, and anything that compiles — gems and npm packages with native code, cargo install — needs these."
+            >
+              <div className="list prose">
+                <SystemCheckRows context={context} checks={mise.systemChecks} all />
+              </div>
+            </Section>
+          )}
 
           {doctor.data && (
             <Section title="Your shell">
