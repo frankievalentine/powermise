@@ -416,3 +416,333 @@ mod tests {
         assert!(preview.parse_error.is_some());
     }
 }
+
+/// Environment names a project has config for (`mise.<env>.toml` and the
+/// other config locations), for `MISE_ENV`. `local` files aren't environments.
+pub fn project_environments(project: &Path) -> Vec<String> {
+    let mut names = Vec::new();
+    let mut scan = |directory: &Path, prefixes: &[&str]| {
+        let Ok(entries) = fs::read_dir(directory) else {
+            return;
+        };
+        for entry in entries.filter_map(Result::ok) {
+            let Ok(file) = entry.file_name().into_string() else {
+                continue;
+            };
+            for prefix in prefixes {
+                let name = file
+                    .strip_prefix(prefix)
+                    .and_then(|rest| rest.strip_suffix(".toml"))
+                    // `mise.staging.local.toml` is staging's local override.
+                    .map(|rest| rest.trim_end_matches(".local"));
+                if let Some(name) = name
+                    && !name.is_empty()
+                    && name != "local"
+                    && name.chars().all(|character| {
+                        character.is_ascii_alphanumeric() || "-_".contains(character)
+                    })
+                {
+                    names.push(name.to_owned());
+                }
+            }
+        }
+    };
+    scan(project, &["mise.", ".mise."]);
+    scan(&project.join("mise"), &["config."]);
+    scan(&project.join(".mise"), &["config."]);
+    scan(&project.join(".config/mise"), &["config."]);
+    names.sort();
+    names.dedup();
+    names
+}
+
+/// A version file another tool uses (`.nvmrc`, `.python-version`, …), which
+/// mise reads only for tools listed in `idiomatic_version_file_enable_tools`.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IdiomaticFile {
+    pub file: String,
+    pub tool: String,
+    pub version: String,
+}
+
+/// Idiomatic version files in a project folder, with the version they ask for.
+pub fn idiomatic_files(project: &Path) -> Vec<IdiomaticFile> {
+    const FILES: &[(&str, &str)] = &[
+        (".nvmrc", "node"),
+        (".node-version", "node"),
+        (".python-version", "python"),
+        (".ruby-version", "ruby"),
+        (".go-version", "go"),
+        (".java-version", "java"),
+        (".terraform-version", "terraform"),
+        (".bun-version", "bun"),
+        (".deno-version", "deno"),
+    ];
+    FILES
+        .iter()
+        .filter_map(|(file, tool)| {
+            let contents = fs::read_to_string(project.join(file)).ok()?;
+            let version = contents
+                .lines()
+                .map(str::trim)
+                .find(|line| !line.is_empty() && !line.starts_with('#'))?
+                .to_owned();
+            Some(IdiomaticFile {
+                file: (*file).into(),
+                tool: (*tool).into(),
+                version,
+            })
+        })
+        .collect()
+}
+
+/// One tool's pending lockfile change (`mise lock --dry-run --json`).
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct LockChange {
+    pub name: String,
+    #[serde(default)]
+    pub backend: Option<String>,
+    #[serde(default)]
+    pub lockfile: Option<String>,
+    #[serde(default)]
+    pub old_versions: Vec<String>,
+    #[serde(default)]
+    pub new_versions: Vec<String>,
+}
+
+/// One `[vars]` entry from `mise vars ls`: `name  value  source`.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VarEntry {
+    pub name: String,
+    pub value: String,
+    pub source: Option<String>,
+}
+
+/// Parses `mise vars ls --no-header`: the name, padded by at least two
+/// spaces; then the value; then the file it comes from as the last word
+/// (a path), when there is one.
+pub fn parse_vars(output: &str) -> Vec<VarEntry> {
+    let looks_like_path = |word: &str| {
+        word.starts_with('~') || word.starts_with('/') || word.get(1..3) == Some(":\\")
+    };
+    output
+        .lines()
+        .filter_map(|line| {
+            let (name, rest) = line.split_once("  ")?;
+            let rest = rest.trim();
+            let (value, source) = match rest.rsplit_once(' ') {
+                Some((value, last)) if looks_like_path(last) => {
+                    (value.trim_end(), Some(last.to_owned()))
+                }
+                _ if looks_like_path(rest) => ("", Some(rest.to_owned())),
+                _ => (rest, None),
+            };
+            Some(VarEntry {
+                name: name.trim().to_owned(),
+                value: value.to_owned(),
+                source,
+            })
+        })
+        .collect()
+}
+
+/// A `[vars.<name>]` table that takes a per-machine value: it has a
+/// `prompt`, a `default`, or is `required`. Plain `[vars] name = "value"`
+/// entries are fixed by the config and aren't listed.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VarDeclaration {
+    pub name: String,
+    pub prompt: Option<String>,
+    pub default: Option<String>,
+    pub required: bool,
+    pub file: PathBuf,
+}
+
+/// Reads the `[vars]` tables of a project's config files without executing
+/// anything.
+pub fn declared_vars(project: &Path) -> Vec<VarDeclaration> {
+    let mut declarations = Vec::new();
+    for name in PROJECT_CONFIG_FILES {
+        let file = project.join(name);
+        let Ok(table) = fs::read_to_string(&file)
+            .ok()
+            .map(|contents| contents.parse::<toml::Table>())
+            .transpose()
+        else {
+            continue;
+        };
+        let Some(vars) = table
+            .as_ref()
+            .and_then(|table| table.get("vars"))
+            .and_then(toml::Value::as_table)
+        else {
+            continue;
+        };
+        for (var, value) in vars {
+            let Some(spec) = value.as_table() else {
+                continue;
+            };
+            let text = |key: &str| {
+                spec.get(key)
+                    .and_then(toml::Value::as_str)
+                    .map(str::to_owned)
+            };
+            let required = spec
+                .get("required")
+                .and_then(toml::Value::as_bool)
+                .unwrap_or(false);
+            let (prompt, default) = (text("prompt"), text("default"));
+            if prompt.is_some() || default.is_some() || required {
+                declarations.push(VarDeclaration {
+                    name: var.clone(),
+                    prompt,
+                    default,
+                    required,
+                    file: file.clone(),
+                });
+            }
+        }
+    }
+    declarations
+}
+
+/// The names of a project's secrets and where they come from — never values.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SecretsReport {
+    pub source: Option<String>,
+    pub keys: Vec<String>,
+}
+
+impl SecretsReport {
+    /// Reads `mise secrets ls --json` (experimental, so read defensively:
+    /// keys may be names or objects with a `name`).
+    pub fn from_json(json: &serde_json::Value) -> Self {
+        let source = match json.get("source") {
+            Some(serde_json::Value::String(text)) => Some(text.clone()),
+            Some(serde_json::Value::Null) | None => None,
+            Some(other) => Some(other.to_string()),
+        };
+        let keys = json
+            .get("keys")
+            .and_then(serde_json::Value::as_array)
+            .map(|keys| {
+                keys.iter()
+                    .filter_map(|key| {
+                        key.as_str().map(str::to_owned).or_else(|| {
+                            key.get("name")
+                                .and_then(serde_json::Value::as_str)
+                                .map(str::to_owned)
+                        })
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        Self { source, keys }
+    }
+}
+
+/// Files `mise generate` can add to a project.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Generator {
+    GithubAction,
+    GitPreCommit,
+    Devcontainer,
+}
+
+impl Generator {
+    pub fn subcommand(self) -> &'static str {
+        match self {
+            Self::GithubAction => "github-action",
+            Self::GitPreCommit => "git-pre-commit",
+            Self::Devcontainer => "devcontainer",
+        }
+    }
+
+    /// Whether it runs a project task (`--task`).
+    pub fn takes_task(self) -> bool {
+        matches!(self, Self::GithubAction | Self::GitPreCommit)
+    }
+}
+
+#[cfg(test)]
+mod extra_tests {
+    use super::*;
+
+    fn scratch(name: &str) -> PathBuf {
+        let path =
+            std::env::temp_dir().join(format!("powermise-project-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&path);
+        fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn environments_come_from_every_config_location() {
+        let project = scratch("envs");
+        for file in [
+            "mise.staging.toml",
+            ".mise.production.toml",
+            "mise.local.toml",
+            "mise.staging.local.toml",
+            "mise.toml",
+        ] {
+            fs::write(project.join(file), "").unwrap();
+        }
+        fs::create_dir_all(project.join(".config/mise")).unwrap();
+        fs::write(project.join(".config/mise/config.test.toml"), "").unwrap();
+        assert_eq!(
+            project_environments(&project),
+            ["production", "staging", "test"]
+        );
+        let _ = fs::remove_dir_all(project);
+    }
+
+    #[test]
+    fn idiomatic_files_read_the_first_version_line() {
+        let project = scratch("idiomatic");
+        fs::write(project.join(".nvmrc"), "# comment\n22\n").unwrap();
+        fs::write(project.join(".python-version"), "3.12.4\n").unwrap();
+        let files = idiomatic_files(&project);
+        assert_eq!(files.len(), 2);
+        assert_eq!(files[0].tool, "node");
+        assert_eq!(files[0].version, "22");
+        assert_eq!(files[1].version, "3.12.4");
+        let _ = fs::remove_dir_all(project);
+    }
+
+    #[test]
+    fn declared_vars_are_the_tables_that_take_a_machine_value() {
+        let project = scratch("vars");
+        fs::write(
+            project.join("mise.toml"),
+            "[vars]\nregion = \"us-east-1\"\n\n[vars.api_url]\ndefault = \"http://localhost\"\nprompt = \"API URL?\"\n\n[vars.token]\nrequired = true\n",
+        )
+        .unwrap();
+        let vars = declared_vars(&project);
+        let names: Vec<_> = vars.iter().map(|var| var.name.as_str()).collect();
+        assert_eq!(names, ["api_url", "token"]);
+        assert_eq!(vars[0].prompt.as_deref(), Some("API URL?"));
+        assert!(vars[1].required);
+        let _ = fs::remove_dir_all(project);
+    }
+
+    #[test]
+    fn vars_lines_parse() {
+        // Captured from mise 2026.10.10.
+        let output = "region              us-east-1 ~/m3/mise.toml\n\
+                      long_variable_name  x         ~/m3/mise.toml\n\
+                      with_space          two words ~/m3/mise.toml\n";
+        let vars = parse_vars(output);
+        assert_eq!(vars.len(), 3);
+        assert_eq!(vars[0].name, "region");
+        assert_eq!(vars[0].value, "us-east-1");
+        assert_eq!(vars[0].source.as_deref(), Some("~/m3/mise.toml"));
+        assert_eq!(vars[1].value, "x");
+        assert_eq!(vars[2].value, "two words");
+    }
+}

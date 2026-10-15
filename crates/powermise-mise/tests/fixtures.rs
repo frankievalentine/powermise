@@ -274,3 +274,25 @@ fn tool_info_reports_backend_options_and_verification() {
         assert_eq!(info.security[0].details["algorithm"], "sha256", "{version}");
     }
 }
+
+#[test]
+fn lock_changes_and_vars_parse() {
+    for version in VERSIONS {
+        let changes: Vec<powermise_mise::LockChange> = fixture(version, "lock-dry-run.json");
+        let jq = changes.iter().find(|change| change.name == "jq").unwrap();
+        assert!(jq.old_versions.is_empty(), "{version}");
+        assert_eq!(jq.new_versions, ["1.8.2"], "{version}");
+    }
+    // `mise vars` arrived in 2026.10.6.
+    let vars = powermise_mise::parse_vars(&text("2026.10.10", "vars-ls.txt"));
+    assert_eq!(vars.len(), 2);
+    assert_eq!(vars[0].name, "region");
+    assert_eq!(vars[0].value, "us-east-1");
+    assert!(
+        vars[0]
+            .source
+            .as_deref()
+            .is_some_and(|source| source.ends_with("mise.toml"))
+    );
+    assert_eq!(vars[1].value, "http://localhost");
+}

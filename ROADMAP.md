@@ -90,7 +90,8 @@ apps/web (Astro)          marketing site + docs; hosts the interactive app demo
       `outdated|upgrade --local` in each added project).
 - [x] Automatic updates: `tool_update.global_auto` and `self_update.auto`
       switches, shown when the installed mise has them.
-- [ ] Per-tool `auto_update` (a tool option in the config, not a setting).
+- [x] Per-tool `auto_update` on tool pages (`mise config set --global
+      tools.<tool>.auto_update`), when the installed mise has the option.
 - [x] Persist the activity log across launches (newest 500, in powermise's state).
 
 ### M3 — Projects (first pass ✅)
@@ -98,29 +99,33 @@ apps/web (Astro)          marketing site + docs; hosts the interactive app demo
 - [x] Add project folders (picker, drag and drop, recents; no disk scanning).
 - [x] Tools per project (project vs. inherited), **Install Missing** (`mise install`),
       **Add Tool** (`mise use` in the folder).
-- [ ] Call out idiomatic version files (`.nvmrc`, `.python-version`) as sources.
+- [x] Call out idiomatic version files (`.nvmrc`, `.python-version`, …) mise
+      isn't reading, and turn them on (`mise settings add
+      idiomatic_version_file_enable_tools <tool>`).
 - [x] Config files (`mise config ls`) in precedence order with plain-language roles.
-- [ ] Edit config values through `mise config set`.
-- [ ] **Environments** (`MISE_ENV`, `mise.<env>.toml`): a switcher showing what changes
-      in `development` vs. `staging` vs. `production`.
+- [x] Edit config values through `mise config set --file`.
+- [x] **Environments** (`MISE_ENV`, `mise.<env>.toml`): a picker that previews what
+      mise loads for each environment.
 - [x] Environment variables from `mise env --json-extended` with their source file;
       `redact = true` and secret-looking names masked until revealed; add to
       `mise.toml` or `mise.local.toml` and remove from the defining file
       (`mise set|unset --file`); values never shown in the activity log.
 - [x] **Tasks**: list, run with live output and Stop, and a form for arguments,
       flags, and choices generated from `mise tasks info --json`; dependencies noted.
-- [ ] Dependency graph (`mise tasks deps`), "Run on change" (`mise watch`), and
-      opening interactive tasks in a terminal.
+- [x] Dependency tree (built from `tasks ls --json`, since `tasks deps` has no
+      JSON), "Watch" (`mise watch`, installing watchexec first), and opening
+      interactive tasks in the terminal app.
 - [x] Trust flow: untrusted folders show a read-only preview of hooks, loaded files,
       variables, tools, and tasks before a user-confirmed `mise trust`.
 - [x] Untrust (`mise untrust`) from the project page.
-- [ ] Lockfiles: show whether `mise.lock` is current and refresh it (`mise lock`,
-      which supports `--dry-run` and `--json`).
-- [ ] "Open a terminal with this project's tools" (`mise en`).
-- [ ] Generators: add a GitHub Actions workflow, git pre-commit hook, or devcontainer
-      (`mise generate …`), previewing the file first.
-- [ ] Per-machine `[vars]` prompts (`mise vars`, 2026.10.6+) and secrets sources
-      (`mise secrets ls --json`, experimental) shown read-only at first.
+- [x] Lockfiles: whether `mise.lock` is current (`mise lock --dry-run --json`), and
+      create or update it (`mise lock`).
+- [x] "Open a terminal with this project's tools" (`mise en`).
+- [x] Generators: GitHub Actions workflow, git pre-commit hook, and devcontainer
+      (`mise generate …`), previewed before `--write`.
+- [x] Per-machine `[vars]` (`mise vars`, 2026.10.6+): save and forget values for
+      vars declared with a prompt, default, or `required`. Secret names and
+      source (`mise secrets ls --json`, experimental), read-only.
 
 ### M4 — Health, settings & onboarding
 

@@ -123,7 +123,7 @@ pub struct ConfigFile {
 }
 
 /// One task of `mise tasks ls --json` (the fields powermise shows).
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Task {
     pub name: String,
     #[serde(default)]
@@ -137,6 +137,15 @@ pub struct Task {
     pub hide: bool,
     #[serde(default)]
     pub run: Vec<String>,
+    /// Tasks that run first: names, or `name arg…` strings and arrays.
+    #[serde(default)]
+    pub depends: Vec<serde_json::Value>,
+    /// Needs a real terminal (it reads input).
+    #[serde(default)]
+    pub interactive: bool,
+    /// Files whose changes make the task stale; what `mise watch` watches.
+    #[serde(default)]
+    pub sources: Vec<String>,
 }
 
 /// `mise doctor --json` (the fields powermise shows).
@@ -313,6 +322,13 @@ impl MiseVersion {
         year: 2026,
         minor: 10,
         patch: 7,
+    };
+
+    /// `mise vars` (per-machine `[vars]` values).
+    pub const VARS: Self = Self {
+        year: 2026,
+        minor: 10,
+        patch: 6,
     };
 
     /// Parses the leading `YYYY.M.P` of a mise version string.

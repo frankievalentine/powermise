@@ -20,9 +20,10 @@ pub use models::{
     ToolInfo, ToolInventory, ToolStatus, ToolVersion, VersionInfo,
 };
 pub use project::{
-    ConfigPreview, EnvReport, EnvVar, PROJECT_CONFIG_FILES, TaskDetails, TaskInput, TrustStatus,
-    is_untrusted_error, looks_secret, parse_task_details, parse_trust_show, preview_config,
-    preview_project_configs,
+    ConfigPreview, EnvReport, EnvVar, Generator, IdiomaticFile, LockChange, PROJECT_CONFIG_FILES,
+    SecretsReport, TaskDetails, TaskInput, TrustStatus, VarDeclaration, VarEntry, declared_vars,
+    idiomatic_files, is_untrusted_error, looks_secret, parse_task_details, parse_trust_show,
+    parse_vars, preview_config, preview_project_configs, project_environments,
 };
 
 use thiserror::Error;

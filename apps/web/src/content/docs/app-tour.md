@@ -54,7 +54,9 @@ Reads: `mise registry --json`, `mise backends ls`
   tool from your global config, or uninstall a version that nothing uses.
 - **Details** — where mise installs it from (the source it actually uses is
   highlighted), how it checks downloads (checksums, GitHub attestations, SLSA,
-  signatures), tool options, aliases, the homepage, and release notes.
+  signatures), tool options, aliases, the homepage, and release notes. On mise
+  2026.10+, **Update automatically** lets mise upgrade that global tool in the
+  background (`mise config set --global tools.<tool>.auto_update true`).
 
 | Action | Command |
 |---|---|
@@ -96,6 +98,12 @@ how long it took and whether it worked. Copy any of them to run it yourself.
 Add a folder with **+** next to **Projects** in the sidebar (or drop it on the
 window). powermise never scans your disk; it only shows folders you add.
 
+- **Terminal** opens your terminal app in the folder with the project's tools
+  and environment ready (`mise en`).
+- **Environment** (when the project has `mise.staging.toml` and similar) previews
+  what mise loads with `MISE_ENV=staging` — tools, variables, and tasks.
+- **Untrust…** revokes trust for a folder mise trusts by name (`mise untrust`).
+
 ### Trust comes first
 
 mise won't load a project's config until you trust it, because a config can
@@ -111,6 +119,11 @@ What the project asks for, and what it inherits from your global config.
 **Install Missing** runs `mise install` in the folder; **Add Tool** runs
 `mise use <tool>@<version>` there, which adds it to the project's `mise.toml`.
 
+Version files from other tools — `.nvmrc`, `.python-version`, `.ruby-version`,
+and so on — are listed when mise isn't reading them. **Use .nvmrc** turns them on
+for that tool in every project (`mise settings add
+idiomatic_version_file_enable_tools node`).
+
 ### Tasks
 
 Every task the project defines. **Run** opens a form generated from the task's
@@ -122,6 +135,13 @@ cd ~/code/web-app && mise run deploy -- staging --dry-run
 
 Arguments go after `--`, so one like `--force` always reaches the task.
 
+- A task's dependencies are listed with it, and **What runs first** shows the
+  whole tree.
+- **Watch** reruns a task whenever its `sources` change (`mise watch <task>`),
+  until you stop it. It needs watchexec; powermise offers to install it first.
+- Interactive tasks open in your terminal app (**Run in Terminal**), since they
+  need a real terminal to read input.
+
 ### Environment
 
 The variables mise sets in the folder and the file each comes from. Values mise
@@ -130,10 +150,23 @@ reveal them. Add a variable to `mise.toml` (shared with the project) or
 `mise.local.toml` (this machine only; the default for secret-looking names).
 Values are never shown in the activity log: `mise set --file mise.local.toml API_TOKEN=•••`.
 
+**Vars** (mise 2026.10.6+) lists the project's `[vars]`. Ones declared with a
+`prompt`, `default`, or `required` can be saved on this computer
+(`mise vars NAME=VALUE`) and forgotten again (`mise vars unset NAME`); values
+written in the config are fixed. **Secrets** lists secret names and their source
+when mise's experimental secrets support reports them — never their values.
+
 ### Config files
 
 The files mise reads in the folder, most specific first — when two ask for the
-same tool, the higher one wins.
+same tool, the higher one wins. **Edit a Value…** sets one dotted key in a
+project file (`mise config set --file mise.toml tools.node 22`).
+
+- **Lockfile** — whether `mise.lock` matches the config (`mise lock --dry-run
+  --json`), with **Update** or **Create Lockfile** (`mise lock`).
+- **Add to this project** — a GitHub Actions workflow, a Git pre-commit hook, or
+  a dev container, previewed before mise writes it (`mise generate … --write`).
+  The workflow and hook need a Git repository.
 
 ## Health
 

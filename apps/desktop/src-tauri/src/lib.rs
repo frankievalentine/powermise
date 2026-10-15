@@ -12,6 +12,7 @@ mod machine;
 mod mise_commands;
 mod projects;
 mod setups;
+mod terminal;
 
 use std::{
     env,
@@ -208,6 +209,8 @@ pub fn run() {
             projects::project_overview,
             projects::task_details,
             projects::project_updates,
+            projects::generate_preview,
+            projects::open_terminal,
             setups::get_catalog,
             setups::list_selections,
             setups::save_selection,

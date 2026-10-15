@@ -1,0 +1,20 @@
+[
+  {
+    "name": "jq",
+    "backend": "aqua:jqlang/jq",
+    "lockfile": "/Users/demo/code/app/mise.lock",
+    "old_versions": [],
+    "new_versions": [
+      "1.8.2"
+    ]
+  },
+  {
+    "name": "shellcheck",
+    "backend": "aqua:koalaman/shellcheck",
+    "lockfile": "/Users/demo/code/app/mise.lock",
+    "old_versions": [],
+    "new_versions": [
+      "0.10.0"
+    ]
+  }
+]

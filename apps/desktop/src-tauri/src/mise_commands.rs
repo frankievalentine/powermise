@@ -300,6 +300,42 @@ pub enum MiseAction {
     Untrust {
         path: PathBuf,
     },
+    Lock {
+        project: PathBuf,
+    },
+    ConfigSet {
+        project: PathBuf,
+        file: PathBuf,
+        key: String,
+        value: String,
+        value_type: Option<String>,
+    },
+    Generate {
+        project: PathBuf,
+        generator: powermise_mise::Generator,
+        task: Option<String>,
+    },
+    Watch {
+        project: PathBuf,
+        task: String,
+    },
+    SetVar {
+        project: PathBuf,
+        name: String,
+        value: String,
+    },
+    UnsetVar {
+        project: PathBuf,
+        name: String,
+    },
+    AddSetting {
+        key: String,
+        value: String,
+    },
+    ToolAutoUpdate {
+        tool: String,
+        on: bool,
+    },
     CachePrune,
     CacheClear,
     Reshim,
@@ -376,6 +412,28 @@ impl MiseAction {
             Self::UnsetSetting { key } => MiseCommand::unset_setting(key),
             Self::SyncVersions { source } => Ok(MiseCommand::sync(*source)),
             Self::Untrust { path } => MiseCommand::untrust(path),
+            Self::Lock { project } => Ok(MiseCommand::lock(project)),
+            Self::ConfigSet {
+                project,
+                file,
+                key,
+                value,
+                value_type,
+            } => MiseCommand::config_set(project, file, key, value, value_type.as_deref()),
+            Self::Generate {
+                project,
+                generator,
+                task,
+            } => MiseCommand::generate(project, *generator, task.as_deref()),
+            Self::Watch { project, task } => MiseCommand::watch(task, project),
+            Self::SetVar {
+                project,
+                name,
+                value,
+            } => MiseCommand::set_var(name, value, project),
+            Self::UnsetVar { project, name } => MiseCommand::unset_var(name, project),
+            Self::AddSetting { key, value } => MiseCommand::add_setting(key, value),
+            Self::ToolAutoUpdate { tool, on } => MiseCommand::tool_auto_update(tool, *on),
             Self::CachePrune => Ok(MiseCommand::cache_prune()),
             Self::CacheClear => Ok(MiseCommand::cache_clear()),
             Self::Reshim => Ok(MiseCommand::reshim()),

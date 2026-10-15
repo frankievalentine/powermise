@@ -39,6 +39,9 @@ function task(
     dir: project,
     hide: false,
     run: [run],
+    depends: extra.depends ?? [],
+    interactive: false,
+    sources: name === "test" || name === "build" ? ["src/**/*.ts"] : [],
     details: { name, description, run: [run], depends: [], args: [], flags: [], ...extra },
   };
 }
@@ -120,6 +123,18 @@ const projects: DemoProject[] = [
   },
 ];
 
+/** Tools whose idiomatic version files mise reads (the demo's setting). */
+const idiomaticEnabled = new Set<string>();
+export function enableIdiomatic(tool: string) {
+  idiomaticEnabled.add(tool);
+}
+let webLockStale = true;
+const webVars = [
+  { name: "region", value: "us-east-1" as string | null, source: `~/code/web-app/mise.toml`, saved: false, settable: false, prompt: null as string | null, required: false },
+  { name: "api_url", value: "http://localhost:4000" as string | null, source: `~/code/web-app/mise.toml`, saved: false, settable: true, prompt: "Which API should the app talk to?" as string | null, required: false },
+  { name: "deploy_token_name", value: null as string | null, source: `~/code/web-app/mise.toml`, saved: false, settable: true, prompt: "Name of your deploy token" as string | null, required: true },
+];
+
 const find = (path: string) => projects.find((project) => project.path === path);
 const nameOf = (path: string) => path.split("/").filter(Boolean).pop() ?? path;
 
@@ -127,11 +142,33 @@ function entry(project: DemoProject): ProjectEntry {
   return { path: project.path, name: nameOf(project.path), exists: true, lastOpenedAt: project.lastOpenedAt };
 }
 
-function overview(path: string): ProjectOverview {
+function overview(path: string, environment: string | null): ProjectOverview {
   const project = find(path);
   if (!project) throw new Error(`${path} no longer exists`);
   project.lastOpenedAt = Date.now();
-  const base = { path, name: nameOf(path), trust: { path, trusted: project.trusted }, problems: [] };
+  const isWeb = path === WEB;
+  const environments = isWeb ? ["production", "staging"] : [];
+  const env = environments.includes(environment ?? "") ? environment : null;
+  const base = {
+    path,
+    name: nameOf(path),
+    trust: { path, trusted: project.trusted },
+    problems: [],
+    environments,
+    environment: env,
+    idiomatic: isWeb ? [{ file: ".nvmrc", tool: "node", version: "22", enabled: idiomaticEnabled.has("node") }] : [],
+    lockfile: isWeb
+      ? {
+          path: `${WEB}/mise.lock`,
+          changes: webLockStale
+            ? [{ name: "pnpm", backend: "aqua:pnpm/pnpm", lockfile: "~/code/web-app/mise.lock", old_versions: ["10.17.1"], new_versions: ["10.18.2"] }]
+            : [],
+        }
+      : null,
+    vars: isWeb ? webVars.map((entry) => ({ ...entry })) : null,
+    isGitRepo: isWeb,
+    secrets: null,
+  };
   if (!project.trusted) {
     return { ...base, previews: [project.preview], tools: null, configFiles: null, tasks: null, env: null };
   }
@@ -168,7 +205,11 @@ function overview(path: string): ProjectOverview {
       { path: GLOBAL, tools: ["jq"] },
     ],
     tasks: project.tasks.map(({ details: _details, ...rest }) => rest),
-    env: project.env,
+    env: env
+      ? project.env.map((entry) =>
+          entry.name === "NODE_ENV" ? { ...entry, value: env, source: `${path}/mise.${env}.toml` } : entry,
+        )
+      : project.env,
   };
 }
 
@@ -190,6 +231,18 @@ export function describeProjectAction(action: MiseAction): string | undefined {
       return `${at(action.project)}mise set${fileFlag(action.project, action.file)} ${action.key}=•••`;
     case "unsetEnv":
       return `${at(action.project)}mise unset${fileFlag(action.project, action.file)} ${action.key}`;
+    case "lock":
+      return `${at(action.project)}mise lock`;
+    case "configSet":
+      return `${at(action.project)}mise config set${fileFlag(action.project, action.file)}${action.valueType ? ` --type ${action.valueType}` : ""} ${action.key} ${action.value}`;
+    case "generate":
+      return `${at(action.project)}mise generate ${action.generator} --write${action.task ? ` --task ${action.task}` : ""}`;
+    case "watch":
+      return `${at(action.project)}mise watch ${action.task}`;
+    case "setVar":
+      return `${at(action.project)}mise vars ${action.name}=${action.value}`;
+    case "unsetVar":
+      return `${at(action.project)}mise vars unset ${action.name}`;
     default:
       return undefined;
   }
@@ -236,6 +289,32 @@ export function performProjectAction(action: MiseAction): string[] | undefined {
     case "unsetEnv":
       project.env = project.env.filter((entry) => entry.name !== action.key);
       return [`mise ${project.path.replace(HOME, "~")}/mise.toml removed env: ${action.key}`];
+    case "lock":
+      webLockStale = false;
+      return ["mise pnpm@10.18.2  locked", "mise updated ~/code/web-app/mise.lock"];
+    case "configSet":
+      return [];
+    case "generate":
+      return [`mise wrote ${action.generator === "github-action" ? ".github/workflows/ci.yml" : action.generator === "devcontainer" ? ".devcontainer/devcontainer.json" : ".git/hooks/pre-commit"}`];
+    case "watch":
+      return [
+        `[watch] watching src/**/*.ts`,
+        `[${action.task}] $ pnpm vitest run`,
+        " ✓ src/app.test.ts (12 tests)",
+        "[watch] src/app.ts changed",
+        `[${action.task}] $ pnpm vitest run`,
+        " ✓ src/app.test.ts (12 tests)",
+      ];
+    case "setVar": {
+      const existing = webVars.find((entry) => entry.name === action.name);
+      if (existing) Object.assign(existing, { value: action.value, saved: true, source: "~/.local/state/mise/vars.toml" });
+      return [];
+    }
+    case "unsetVar": {
+      const existing = webVars.find((entry) => entry.name === action.name);
+      if (existing) Object.assign(existing, { value: existing.name === "api_url" ? "http://localhost:4000" : null, saved: false, source: "~/code/web-app/mise.toml" });
+      return [];
+    }
     default:
       return undefined;
   }
@@ -269,7 +348,15 @@ export function demoProjects(command: string, args: Record<string, unknown>): un
       return undefined;
     }
     case "project_overview":
-      return overview(args.path as string);
+      return overview(args.path as string, (args.environment as string | null) ?? null);
+    case "generate_preview":
+      return args.generator === "github-action"
+        ? `name: ${args.task ?? "ci"}\non:\n  push:\n  pull_request:\njobs:\n  ${args.task ?? "ci"}:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: jdx/mise-action@v3\n      - run: mise run ${args.task ?? "test"}\n`
+        : args.generator === "devcontainer"
+          ? `{\n  "name": "mise",\n  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",\n  "features": {\n    "ghcr.io/devcontainers-extra/features/mise:1": {}\n  }\n}\n`
+          : `#!/bin/sh\nmise run ${args.task ?? "pre-commit"}\n`;
+    case "open_terminal":
+      return undefined;
     case "task_details": {
       const details = find(args.path as string)?.tasks.find((entry) => entry.name === args.task)?.details;
       if (!details) throw new Error(`task ${args.task} not found`);

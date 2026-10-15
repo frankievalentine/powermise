@@ -88,6 +88,7 @@ capture tool-jq.json "$MISE" tool --json jq
 "$MISE" env --json-extended </dev/null 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); d.pop("PATH",None); print(json.dumps(d, indent=2))' | sanitize >"$OUT/env-extended.json"
 capture env-redacted.json "$MISE" env --json --redacted
 capture trust-show-trusted.txt "$MISE" trust --show
+capture lock-dry-run.json "$MISE" lock --dry-run --json
 
 cd "$SANDBOX/untrusted"
 capture trust-show-untrusted.txt "$MISE" trust --show
@@ -102,8 +103,16 @@ cd "$SANDBOX/home"
 capture ls-prunable.json "$MISE" ls --prunable --json
 env -u GITHUB_TOKEN -u GH_TOKEN -u MISE_GITHUB_TOKEN -u GITHUB_API_TOKEN "$MISE" token github </dev/null 2>/dev/null | sanitize >"$OUT/token-github-none.txt"
 
-# AI Setups: a conf.d fragment, as powermise writes one (mise 2026.10+).
 version="$("$MISE" version --json </dev/null 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"].split()[0])')"
+
+# Per-machine [vars] (mise 2026.10.6+).
+if [[ "$(printf '%s\n2026.10.6\n' "$version" | sort -V | head -n1)" == "2026.10.6" ]]; then
+  printf '\n[vars]\nregion = "us-east-1"\n\n[vars.api_url]\ndefault = "http://localhost"\n' >>"$SANDBOX/proj/mise.toml"
+  (cd "$SANDBOX/proj" && "$MISE" trust >/dev/null 2>&1)
+  (cd "$SANDBOX/proj" && "$MISE" vars ls --no-header </dev/null 2>/dev/null) | sanitize >"$OUT/vars-ls.txt"
+fi
+
+# AI Setups: a conf.d fragment, as powermise writes one (mise 2026.10+).
 if [[ "$(printf '%s\n2026.10.0\n' "$version" | sort -V | head -n1)" == "2026.10.0" ]]; then
   mkdir -p "$SANDBOX/config/conf.d"
   printf '[tools]\njq = "1.7.1"\n\n[bootstrap.packages]\n"brew:hello" = "latest"\n' >"$SANDBOX/config/conf.d/powermise-demo.toml"

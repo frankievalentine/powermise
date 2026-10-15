@@ -4,7 +4,7 @@ import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { backendLabel, homeFrom, isGlobalPath, sourceLabel, upgradeTarget } from "../../mise";
-import { CommandBlock, Monogram, Section } from "../../components/ui";
+import { CommandBlock, Monogram, Section, Switch } from "../../components/ui";
 import { ExternalLinkButton, LinkSheet, canOpen } from "../../components/machine";
 
 const SECURITY_LABEL: Record<string, string> = {
@@ -35,7 +35,8 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
   const info = useAsync(() => api.toolInfo(name), [name, mise.revision]);
   // Options mise reports for this tool, leaving out unset and empty ones.
   const options = Object.entries(info.data?.tool_options ?? {}).filter(
-    ([, value]) =>
+    ([key, value]) =>
+      key !== "auto_update" &&
       value !== null &&
       value !== false &&
       !(Array.isArray(value) && value.length === 0) &&
@@ -253,6 +254,26 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
                       <span className="badge orange">Not verified</span>
                     )}
                   </div>
+                </div>
+              )}
+              {info.data && "auto_update" in info.data.tool_options && global && (
+                <div className="list-row">
+                  <div className="row-main">
+                    <div className="row-title">Update automatically</div>
+                    <div className="row-subtitle">mise upgrades {name} in the background, within the version you asked for.</div>
+                  </div>
+                  <Switch
+                    checked={info.data.tool_options.auto_update === true || info.data.tool_options.auto_update === "true"}
+                    label={`Update ${name} automatically`}
+                    onChange={(on) =>
+                      run({
+                        action: { kind: "toolAutoUpdate", tool: name, on },
+                        title: `${on ? "Turn on" : "Turn off"} automatic updates for ${name}?`,
+                        description: "mise writes this to the tool’s entry in your global config.",
+                        verb: on ? "Turn On" : "Turn Off",
+                      })
+                    }
+                  />
                 </div>
               )}
               {options.length > 0 && (

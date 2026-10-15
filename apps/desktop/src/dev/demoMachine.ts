@@ -1,5 +1,6 @@
 // Demo state for machine-wide screens: settings, GitHub downloads, versions
 // from other managers, and installing mise (`?nomise` starts without it).
+import { enableIdiomatic } from "./demoProjects";
 import type {
   DetectedImport,
   GithubStatus,
@@ -107,6 +108,8 @@ export function describeMachineAction(action: MiseAction): string | null {
       return "mise reshim";
     case "link":
       return `mise link ${action.tool}@${action.version} ${action.path}`;
+    case "addSetting":
+      return `mise settings add ${action.key} ${action.value}`;
     default:
       return null;
   }
@@ -156,6 +159,15 @@ export function performMachineAction(action: MiseAction): string[] | null {
       return [];
     case "link":
       return [`mise linked ${action.tool}@${action.version} → ${action.path}`];
+    case "addSetting": {
+      const entry = settings.find((candidate) => candidate.key === action.key);
+      if (entry && Array.isArray(entry.value)) {
+        entry.value = [...entry.value, action.value];
+        entry.source = GLOBAL_CONFIG;
+      }
+      if (action.key === "idiomatic_version_file_enable_tools") enableIdiomatic(action.value);
+      return [];
+    }
     case "installMise":
       demoHasMise = true;
       return [

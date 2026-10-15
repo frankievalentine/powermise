@@ -1,0 +1,2 @@
+region   us-east-1        /Users/demo/code/app/mise.toml
+api_url  http://localhost /Users/demo/code/app/mise.toml

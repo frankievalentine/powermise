@@ -983,6 +983,59 @@ button {
   font-size: 12px;
 }
 
+/* Project extras */
+.project-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.environment-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.environment-picker .select {
+  width: auto;
+  min-width: 140px;
+}
+
+.dependency-tree,
+.dependency-tree ul {
+  margin: 0;
+  padding-left: 18px;
+  list-style: none;
+}
+
+.dependency-tree {
+  padding: 10px 14px;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius);
+}
+
+.dependency-tree li {
+  position: relative;
+  padding: 2px 0;
+}
+
+.dependency-tree ul li::before {
+  content: "↳";
+  position: absolute;
+  left: -14px;
+  color: var(--text-tertiary);
+}
+
+.generated-file {
+  max-height: 320px;
+  overflow: auto;
+}
+
 .section-heading-row {
   display: flex;
   align-items: center;
@@ -1162,8 +1215,14 @@ button {
 
 .detail-hero {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18px;
+}
+
+/* The title keeps its line; actions wrap below it when space runs out. */
+.detail-hero > div:not(.detail-actions):not(.monogram) {
+  flex: 1 1 200px;
 }
 
 .detail-hero .page-title {
@@ -1172,6 +1231,8 @@ button {
 
 .detail-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
   margin-left: auto;
   align-self: center;

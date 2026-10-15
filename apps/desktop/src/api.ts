@@ -251,6 +251,21 @@ export type MiseAction =
   | { kind: "syncVersions"; source: ImportSource }
   | { kind: "installMise"; installer: MiseInstaller }
   | { kind: "untrust"; path: string }
+  | { kind: "lock"; project: string }
+  | {
+      kind: "configSet";
+      project: string;
+      file: string;
+      key: string;
+      value: string;
+      valueType: "string" | "integer" | "float" | "bool" | "list" | null;
+    }
+  | { kind: "generate"; project: string; generator: Generator; task: string | null }
+  | { kind: "watch"; project: string; task: string }
+  | { kind: "setVar"; project: string; name: string; value: string }
+  | { kind: "unsetVar"; project: string; name: string }
+  | { kind: "addSetting"; key: string; value: string }
+  | { kind: "toolAutoUpdate"; tool: string; on: boolean }
   | { kind: "cachePrune" }
   | { kind: "cacheClear" }
   | { kind: "reshim" }
@@ -359,6 +374,12 @@ export interface Task {
   dir: string | null;
   hide: boolean;
   run: string[];
+  /** Tasks that run first: names, `name arg…` strings, or arrays. */
+  depends: (string | string[])[];
+  /** Needs a real terminal. */
+  interactive: boolean;
+  /** Files whose changes `mise watch` reacts to. */
+  sources: string[];
 }
 
 export interface EnvVarView {
@@ -388,8 +409,43 @@ export interface ProjectOverview {
   configFiles: ConfigFile[] | null;
   tasks: Task[] | null;
   env: EnvVarView[] | null;
+  /** Environments with config (`mise.<env>.toml`), for `MISE_ENV`. */
+  environments: string[];
+  /** The environment this overview previews, if any. */
+  environment: string | null;
+  idiomatic: { file: string; tool: string; version: string; enabled: boolean }[];
+  lockfile: { path: string; changes: LockChange[] } | null;
+  /** `[vars]` on mise 2026.10.6+, null on older mise. */
+  vars: VarView[] | null;
+  /** Secret names and their source (experimental in mise); never values. */
+  secrets: { source: string | null; keys: string[] } | null;
+  /** The workflow and pre-commit generators need a Git repository. */
+  isGitRepo: boolean;
   problems: string[];
 }
+
+export interface VarView {
+  name: string;
+  /** null when a required var has no value yet. */
+  value: string | null;
+  source: string | null;
+  /** Saved on this computer with `mise vars NAME=VALUE`. */
+  saved: boolean;
+  /** Declared with a prompt, default, or required — a saved value applies. */
+  settable: boolean;
+  prompt: string | null;
+  required: boolean;
+}
+
+export interface LockChange {
+  name: string;
+  backend: string | null;
+  lockfile: string | null;
+  old_versions: string[];
+  new_versions: string[];
+}
+
+export type Generator = "github-action" | "git-pre-commit" | "devcontainer";
 
 export interface TaskInput {
   name: string;
@@ -488,7 +544,11 @@ export const api = {
   /** Opens the system folder picker unless a path is given. `null` = cancelled. */
   addProject: (path?: string) => call<ProjectEntry | null>("add_project", { path: path ?? null }),
   forgetProject: (path: string) => call<void>("forget_project", { path }),
-  projectOverview: (path: string) => call<ProjectOverview>("project_overview", { path }),
+  projectOverview: (path: string, environment: string | null = null) =>
+    call<ProjectOverview>("project_overview", { path, environment }),
+  generatePreview: (path: string, generator: Generator, task: string | null) =>
+    call<string>("generate_preview", { path, generator, task }),
+  openTerminal: (path: string, task: string | null = null) => call<void>("open_terminal", { path, task }),
   taskDetails: (path: string, task: string) => call<TaskDetails>("task_details", { path, task }),
 };
 

@@ -10,6 +10,7 @@ import {
   Plus,
   ShieldAlert,
   ShieldCheck,
+  SquareTerminal,
   Trash2,
 } from "lucide-react";
 import { api, type ConfigPreview, type ProjectOverview, type ToolVersion } from "../../api";
@@ -19,12 +20,25 @@ import { homeFrom } from "../../mise";
 import { CommandBlock, Monogram, Section, Segmented } from "../../components/ui";
 import { Sheet } from "../../components/Sheet";
 import { TaskRunSheet } from "../../components/TaskRunSheet";
+import {
+  ConfigSetSheet,
+  DependencyTree,
+  EnvironmentBanner,
+  EnvironmentPicker,
+  GeneratorsSection,
+  IdiomaticCallout,
+  LockfileSection,
+  SecretsSection,
+  VarsSection,
+  dependencyNames,
+} from "./ProjectExtras";
 
 type Tab = "tools" | "tasks" | "env" | "config";
 
 export function ProjectView({ context, path }: { context: AppContext; path: string }) {
   const { mise, env, run } = context;
-  const overview = useAsync(() => api.projectOverview(path), [path, mise.revision]);
+  const [environment, setEnvironment] = useState<string | null>(null);
+  const overview = useAsync(() => api.projectOverview(path, environment), [path, environment, mise.revision]);
   const trusted = useAsync(() => api.trustedFolders(), [mise.revision]);
   const [tab, setTab] = useState<Tab>("tools");
   const home = homeFrom(env.miseConfigDir);
@@ -77,6 +91,15 @@ export function ProjectView({ context, path }: { context: AppContext; path: stri
             <button className="button large" onClick={() => api.reveal(data.path)}>
               <FolderOpen size={14} /> Show
             </button>
+            {data.trust.trusted && (
+              <button
+                className="button large"
+                onClick={() => void api.openTerminal(data.path).catch((reason: Error) => window.alert(reason.message))}
+                title="Open a terminal here with this project’s tools (mise en)"
+              >
+                <SquareTerminal size={14} /> Terminal
+              </button>
+            )}
             {explicitlyTrusted && (
               <button
                 className="button large"
@@ -116,6 +139,8 @@ export function ProjectView({ context, path }: { context: AppContext; path: stri
           <TrustReview data={data} pretty={pretty} context={context} />
         ) : (
           <>
+            <EnvironmentBanner environment={data.environment} />
+            <IdiomaticCallout data={data} context={context} />
             {data.problems.length > 0 && (
               <div className="callout warn selectable" style={{ marginTop: 18 }}>
                 <AlertTriangle size={14} />
@@ -126,7 +151,7 @@ export function ProjectView({ context, path }: { context: AppContext; path: stri
                 </div>
               </div>
             )}
-            <div style={{ marginTop: 22 }}>
+            <div className="project-tabs">
               <Segmented
                 label="Project section"
                 value={tab}
@@ -138,11 +163,12 @@ export function ProjectView({ context, path }: { context: AppContext; path: stri
                   { value: "config", label: `Config files ${data.configFiles?.length ?? 0}` },
                 ]}
               />
+              <EnvironmentPicker data={data} value={data.environment} onChange={setEnvironment} />
             </div>
             {tab === "tools" && <ToolsTab data={data} context={context} pretty={pretty} />}
             {tab === "tasks" && <TasksTab data={data} context={context} pretty={pretty} />}
             {tab === "env" && <EnvTab data={data} context={context} pretty={pretty} />}
-            {tab === "config" && <ConfigTab data={data} pretty={pretty} />}
+            {tab === "config" && <ConfigTab data={data} context={context} pretty={pretty} />}
           </>
         )}
 
@@ -365,15 +391,54 @@ function TasksTab({ data, context, pretty }: TabProps) {
                 <div className="row-title mono">{task.name}</div>
                 <div className="row-subtitle">
                   {task.description || task.run[0]} · {pretty(task.source)}
+                  {task.depends.length > 0 && ` · runs ${dependencyNames(task).join(", ")} first`}
                 </div>
               </div>
-              <button className="button" onClick={() => setRunning(task.name)}>
-                <Play size={13} /> Run
-              </button>
+              {task.sources.length > 0 && !task.interactive && (
+                <button
+                  className="button"
+                  title={`Rerun when ${task.sources.join(", ")} change`}
+                  onClick={() =>
+                    // `mise watch` runs watchexec, which may not be installed yet.
+                    context.mise.inventory && !context.mise.inventory.watchexec
+                      ? context.run({
+                          action: { kind: "useGlobal", tool: "watchexec", version: "latest" },
+                          title: "Install watchexec first?",
+                          description:
+                            "mise watch uses watchexec to notice file changes. mise installs it as a global tool; then click Watch again.",
+                          verb: "Install",
+                        })
+                      : context.run({
+                          action: { kind: "watch", project: data.path, task: task.name },
+                          title: `Watch ${task.name}?`,
+                          description: `mise runs ${task.name} now and again whenever ${task.sources.join(", ")} change, until you stop it.`,
+                          verb: "Watch",
+                        })
+                  }
+                >
+                  <Eye size={13} /> Watch
+                </button>
+              )}
+              {task.interactive ? (
+                <button
+                  className="button"
+                  title="This task needs a real terminal"
+                  onClick={() =>
+                    void api.openTerminal(data.path, task.name).catch((reason: Error) => window.alert(reason.message))
+                  }
+                >
+                  <SquareTerminal size={13} /> Run in Terminal
+                </button>
+              ) : (
+                <button className="button" onClick={() => setRunning(task.name)}>
+                  <Play size={13} /> Run
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
+      <DependencyTree tasks={tasks} />
       <TaskRunSheet
         project={data.path}
         task={running}
@@ -501,44 +566,57 @@ function EnvTab({ data, context, pretty }: TabProps) {
         </div>
         {key && !keyValid && <p className="field-hint error">Use letters, numbers, and underscores, not starting with a number.</p>}
       </Section>
+      <VarsSection data={data} context={context} pretty={pretty} />
+      <SecretsSection data={data} />
     </>
   );
 }
 
-function ConfigTab({ data, pretty }: { data: ProjectOverview; pretty: (value: string) => string }) {
+function ConfigTab({ data, context, pretty }: TabProps) {
   const files = data.configFiles ?? [];
+  const [editing, setEditing] = useState<string | null>(null);
   return (
-    <Section
-      title="Config files"
-      note="The files mise reads here, most specific first. When two ask for the same tool, the one higher in this list wins."
-    >
-      <div className="list">
-        {files.map((file, index) => {
-          const global = !file.path.startsWith(`${data.path}/`);
-          return (
-            <div className="list-row" key={file.path}>
-              <span className="config-rank mono">{index + 1}</span>
-              <div className="row-main">
-                <div className="row-title mono selectable">{pretty(file.path)}</div>
-                <div className="row-subtitle">
-                  {file.path.endsWith(".local.toml")
-                    ? "Local overrides — usually not committed"
-                    : global
-                      ? "Outside this project"
-                      : file.path.endsWith(".tool-versions")
-                        ? "asdf-style version file"
-                        : "Project config"}
-                  {file.tools.length > 0 && ` · ${file.tools.join(", ")}`}
+    <>
+      <Section
+        title="Config files"
+        note="The files mise reads here, most specific first. When two ask for the same tool, the one higher in this list wins."
+      >
+        <div className="list">
+          {files.map((file, index) => {
+            const global = !file.path.startsWith(`${data.path}/`);
+            return (
+              <div className="list-row" key={file.path}>
+                <span className="config-rank mono">{index + 1}</span>
+                <div className="row-main">
+                  <div className="row-title mono selectable">{pretty(file.path)}</div>
+                  <div className="row-subtitle">
+                    {file.path.endsWith(".local.toml")
+                      ? "Local overrides — usually not committed"
+                      : global
+                        ? "Outside this project"
+                        : file.path.endsWith(".tool-versions")
+                          ? "asdf-style version file"
+                          : "Project config"}
+                    {file.tools.length > 0 && ` · ${file.tools.join(", ")}`}
+                  </div>
                 </div>
+                {!global && file.path.endsWith(".toml") && (
+                  <button className="button" onClick={() => setEditing(file.path)}>
+                    Edit a Value…
+                  </button>
+                )}
+                <button className="icon-button" aria-label="Show in folder" onClick={() => api.reveal(file.path)}>
+                  <FolderOpen size={14} />
+                </button>
               </div>
-              <button className="icon-button" aria-label="Show in folder" onClick={() => api.reveal(file.path)}>
-                <FolderOpen size={14} />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </Section>
+            );
+          })}
+        </div>
+      </Section>
+      <LockfileSection data={data} context={context} pretty={pretty} />
+      <GeneratorsSection data={data} context={context} />
+      <ConfigSetSheet file={editing} data={data} context={context} onClose={() => setEditing(null)} pretty={pretty} />
+    </>
   );
 }
 

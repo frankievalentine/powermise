@@ -84,6 +84,7 @@ const machine = new Map<string, { version: string; global: boolean }[]>([
 ]);
 
 let selfUpdateAvailable = true;
+const autoUpdate = new Set<string>();
 let miseVersion = "2026.7.18";
 const activityLog: ActivityEntry[] = [];
 let nextJob = 0;
@@ -174,6 +175,8 @@ function describe(action: MiseAction): string {
       return `cd ${action.project.replace("/Users/demo", "~")} && mise upgrade --local --bump${action.tool ? ` ${action.tool}` : ""}`;
     case "selfUpdate":
       return "mise self-update --yes";
+    case "toolAutoUpdate":
+      return `mise config set --global tools.${action.tool}.auto_update ${action.on}`;
     default:
       return "mise";
   }
@@ -244,6 +247,10 @@ function perform(action: MiseAction): string[] {
       }
       return lines.length ? lines : ["mise All tools are up to date"];
     }
+    case "toolAutoUpdate":
+      if (action.on) autoUpdate.add(action.tool);
+      else autoUpdate.delete(action.tool);
+      return [];
     case "selfUpdate":
       selfUpdateAvailable = false;
       miseVersion = "2026.10.10";
@@ -333,7 +340,7 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
         requested_versions: versions.filter((version) => version.global).map((version) => version.version),
         active_versions: versions.filter((version) => version.global).map((version) => version.version),
         config_source: versions.some((version) => version.global) ? { type: "mise.toml", path: GLOBAL_CONFIG } : null,
-        tool_options: { os: null, depends: null, install_env: {} },
+        tool_options: { os: null, depends: null, install_env: {}, auto_update: autoUpdate.has(tool) ? true : null },
         security: tool.startsWith("npm:")
           ? []
           : [

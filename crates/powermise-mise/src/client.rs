@@ -23,9 +23,10 @@ use crate::{
         BootstrapPlan, BootstrapStatus, ConfigFile, Doctor, OutdatedReport, RegistryEntry,
         RemoteVersion, Task, ToolInfo, ToolInventory, VersionInfo,
     },
+    project::SecretsReport,
     project::{
-        EnvReport, TaskDetails, TrustStatus, is_untrusted_error, parse_task_details,
-        parse_trust_show,
+        EnvReport, Generator, LockChange, TaskDetails, TrustStatus, VarEntry, is_untrusted_error,
+        parse_task_details, parse_trust_show, parse_vars,
     },
 };
 
@@ -34,6 +35,8 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct MiseClient {
     executable: PathBuf,
+    /// `MISE_ENV` for reads, to preview an environment's config.
+    environment: Option<String>,
     /// The directory reads run in when no project is given (the home directory,
     /// so the global view isn't shaped by wherever powermise was launched).
     home: PathBuf,
@@ -43,8 +46,25 @@ impl MiseClient {
     pub fn new(executable: impl Into<PathBuf>, home: impl Into<PathBuf>) -> Self {
         Self {
             executable: executable.into(),
+            environment: None,
             home: home.into(),
         }
+    }
+
+    /// The same mise, reading as if `MISE_ENV=<environment>` were set — to
+    /// preview what an environment's config changes. Names are letters,
+    /// digits, `-`, and `_`.
+    pub fn with_environment(mut self, environment: Option<&str>) -> Result<Self, MiseAdapterError> {
+        if let Some(name) = environment
+            && (name.is_empty()
+                || !name
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric() || "-_".contains(character)))
+        {
+            return Err(MiseAdapterError::InvalidArgument { value: name.into() });
+        }
+        self.environment = environment.map(str::to_owned);
+        Ok(self)
     }
 
     pub fn executable(&self) -> &Path {
@@ -63,7 +83,73 @@ impl MiseClient {
             // silently trusting an untrusted config on a plain read. Trust is
             // the person's decision, so never inherit it from their shell.
             .env_remove("MISE_YES");
+        if let Some(environment) = &self.environment {
+            command.env("MISE_ENV", environment);
+        }
         command
+    }
+
+    fn read_text(
+        &self,
+        arguments: &[&str],
+        cwd: Option<&Path>,
+    ) -> Result<String, MiseAdapterError> {
+        let output = self.base(cwd).args(arguments).output().map_err(|source| {
+            MiseAdapterError::Execute {
+                executable: self.executable.clone(),
+                source,
+            }
+        })?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+            if is_untrusted_error(&stderr) {
+                return Err(MiseAdapterError::Untrusted { stderr });
+            }
+            return Err(MiseAdapterError::Failed {
+                executable: self.executable.clone(),
+                status: output.status.code(),
+                stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+                stderr,
+            });
+        }
+        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    }
+
+    /// `mise lock --dry-run --json` in a project: what `mise lock` would
+    /// change in its lockfile. Empty means the lockfile is current.
+    pub fn lock_changes(&self, project: &Path) -> Result<Vec<LockChange>, MiseAdapterError> {
+        self.read_json(&["lock", "--dry-run", "--json"], Some(project))
+    }
+
+    /// `mise secrets ls --json` in a project (experimental, 2026.10): where
+    /// secrets come from and their names — never their values.
+    pub fn secrets(&self, project: &Path) -> Result<SecretsReport, MiseAdapterError> {
+        let json: serde_json::Value =
+            self.read_json(&["secrets", "ls", "--json"], Some(project))?;
+        Ok(SecretsReport::from_json(&json))
+    }
+
+    /// `mise vars ls --no-header` in a project (2026.10.6+).
+    pub fn vars(&self, project: &Path) -> Result<Vec<VarEntry>, MiseAdapterError> {
+        Ok(parse_vars(&self.read_text(
+            &["vars", "ls", "--no-header"],
+            Some(project),
+        )?))
+    }
+
+    /// `mise generate <kind>` without `--write`: the file it would add.
+    pub fn generate_preview(
+        &self,
+        project: &Path,
+        generator: Generator,
+        task: Option<&str>,
+    ) -> Result<String, MiseAdapterError> {
+        let mut arguments = vec!["generate", generator.subcommand()];
+        if let (true, Some(task)) = (generator.takes_task(), task) {
+            validate_argument(task)?;
+            arguments.extend(["--task", task]);
+        }
+        self.read_text(&arguments, Some(project))
     }
 
     fn read_json<T: DeserializeOwned>(
@@ -652,6 +738,123 @@ impl MiseCommand {
         ]))
     }
 
+    /// `mise lock` in a project: write or refresh its lockfile.
+    pub fn lock(project: impl Into<PathBuf>) -> Self {
+        Self::new(vec!["lock".into()]).in_project(project)
+    }
+
+    /// `mise config set --file <file> <key> <value> [--type <type>]` in a
+    /// project: edit one value in one of its config files.
+    pub fn config_set(
+        project: impl Into<PathBuf>,
+        file: &Path,
+        key: &str,
+        value: &str,
+        value_type: Option<&str>,
+    ) -> Result<Self, MiseAdapterError> {
+        let project = project.into();
+        let valid_key = !key.is_empty()
+            && key.split('.').all(|part| {
+                !part.is_empty()
+                    && part.chars().all(|character| {
+                        character.is_ascii_alphanumeric() || "-_".contains(character)
+                    })
+            });
+        if !valid_key {
+            return Err(MiseAdapterError::InvalidArgument { value: key.into() });
+        }
+        if value.starts_with('-') || value.chars().any(char::is_control) {
+            return Err(MiseAdapterError::InvalidArgument {
+                value: value.into(),
+            });
+        }
+        let mut arguments = vec![
+            "config".into(),
+            "set".into(),
+            "--file".into(),
+            project_file(&project, file)?,
+        ];
+        if let Some(value_type) = value_type {
+            if !["string", "integer", "float", "bool", "list"].contains(&value_type) {
+                return Err(MiseAdapterError::InvalidArgument {
+                    value: value_type.into(),
+                });
+            }
+            arguments.extend(["--type".into(), value_type.into()]);
+        }
+        arguments.extend([key.into(), value.into()]);
+        Ok(Self::new(arguments).in_project(project))
+    }
+
+    /// `mise config set --global tools.<tool>.auto_update <on>` (2026.10+):
+    /// let mise upgrade one global tool in the background.
+    pub fn tool_auto_update(tool: &str, on: bool) -> Result<Self, MiseAdapterError> {
+        validate_argument(tool)?;
+        if tool.contains('.') {
+            return Err(MiseAdapterError::InvalidArgument { value: tool.into() });
+        }
+        Ok(Self::new(vec![
+            "config".into(),
+            "set".into(),
+            "--global".into(),
+            format!("tools.{tool}.auto_update"),
+            on.to_string(),
+        ]))
+    }
+
+    /// `mise generate <kind> --write [--task <task>]` in a project.
+    pub fn generate(
+        project: impl Into<PathBuf>,
+        generator: Generator,
+        task: Option<&str>,
+    ) -> Result<Self, MiseAdapterError> {
+        let mut arguments = vec![
+            "generate".into(),
+            generator.subcommand().into(),
+            "--write".into(),
+        ];
+        if let (true, Some(task)) = (generator.takes_task(), task) {
+            validate_argument(task)?;
+            arguments.extend(["--task".into(), task.into()]);
+        }
+        Ok(Self::new(arguments).in_project(project))
+    }
+
+    /// `mise watch <task>` in a project: rerun the task whenever its sources
+    /// change, until stopped.
+    pub fn watch(task: &str, project: impl Into<PathBuf>) -> Result<Self, MiseAdapterError> {
+        validate_argument(task)?;
+        Ok(Self::new(vec!["watch".into(), task.into()]).in_project(project))
+    }
+
+    /// `mise vars <name>=<value>` in a project: save a value on this machine.
+    pub fn set_var(
+        name: &str,
+        value: &str,
+        project: impl Into<PathBuf>,
+    ) -> Result<Self, MiseAdapterError> {
+        validate_env_key(name)?;
+        if value.chars().any(char::is_control) {
+            return Err(MiseAdapterError::InvalidArgument {
+                value: value.into(),
+            });
+        }
+        Ok(Self::new(vec!["vars".into(), format!("{name}={value}")]).in_project(project))
+    }
+
+    /// `mise vars unset <name>` in a project: forget the saved value.
+    pub fn unset_var(name: &str, project: impl Into<PathBuf>) -> Result<Self, MiseAdapterError> {
+        validate_env_key(name)?;
+        Ok(Self::new(vec!["vars".into(), "unset".into(), name.into()]).in_project(project))
+    }
+
+    /// `mise settings add <key> <value>`: append to a list setting.
+    pub fn add_setting(key: &str, value: &str) -> Result<Self, MiseAdapterError> {
+        let mut command = Self::set_setting(key, value)?;
+        command.arguments[1] = "add".into();
+        Ok(command)
+    }
+
     /// `mise untrust <path>`: revoke trust for a config file or folder.
     pub fn untrust(path: &Path) -> Result<Self, MiseAdapterError> {
         Ok(Self::new(vec!["untrust".into(), absolute_path(path)?]))
@@ -924,6 +1127,51 @@ mod tests {
         );
         assert!(MiseCommand::link("node", "20", Path::new("relative")).is_err());
         assert!(MiseCommand::untrust(Path::new("-rf")).is_err());
+        assert_eq!(
+            MiseCommand::tool_auto_update("jq", true).unwrap().display(),
+            "mise config set --global tools.jq.auto_update true"
+        );
+        assert_eq!(
+            MiseCommand::config_set(
+                "/code/app",
+                Path::new("/code/app/mise.toml"),
+                "tools.node",
+                "22",
+                None
+            )
+            .unwrap()
+            .display(),
+            "cd /code/app && mise config set --file mise.toml tools.node 22"
+        );
+        assert!(
+            MiseCommand::config_set("/code/app", Path::new("/etc/passwd"), "a", "b", None).is_err()
+        );
+        assert!(
+            MiseCommand::config_set("/code/app", Path::new("mise.toml"), "a b", "c", None).is_err()
+        );
+        assert_eq!(
+            MiseCommand::generate("/code/app", crate::Generator::GithubAction, Some("ci"))
+                .unwrap()
+                .display(),
+            "cd /code/app && mise generate github-action --write --task ci"
+        );
+        assert_eq!(
+            MiseCommand::add_setting("idiomatic_version_file_enable_tools", "node")
+                .unwrap()
+                .display(),
+            "mise settings add idiomatic_version_file_enable_tools node"
+        );
+        assert_eq!(
+            MiseCommand::set_var("region", "eu west", "/code/app")
+                .unwrap()
+                .display(),
+            "cd /code/app && mise vars 'region=eu west'"
+        );
+        assert!(
+            MiseClient::new("/bin/mise", "/home")
+                .with_environment(Some("staging;rm"))
+                .is_err()
+        );
         assert_eq!(
             MiseCommand::upgrade_global(Some("node")).unwrap().display(),
             "mise upgrade --global --bump node"
