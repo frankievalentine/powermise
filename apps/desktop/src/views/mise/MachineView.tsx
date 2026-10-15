@@ -1,5 +1,17 @@
 import { useState } from "react";
-import { CheckCircle2, CircleAlert, Eye, History, Loader2, MonitorCog, RefreshCw, Save } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleAlert,
+  Eye,
+  GitCompare,
+  History,
+  Loader2,
+  MonitorCog,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  Undo2,
+} from "lucide-react";
 import { api, type MachineStatus } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
@@ -258,6 +270,87 @@ function DotfilesHistory({ data, context }: { data: MachineStatus; context: AppC
           )}
         </div>
       </div>
+
+      {data.checkpoints.length > 0 && (
+        <>
+          <div className="section-heading-row" style={{ marginTop: 18 }}>
+            <h3 className="section-title" style={{ fontSize: 13 }}>
+              Recent checkpoints
+            </h3>
+            <div className="detail-actions">
+              <button
+                className="button"
+                onClick={() =>
+                  context.run({
+                    action: { kind: "dotfilesUndo" },
+                    title: "Undo the latest change?",
+                    description: "mise reverses the most recent operation on your tracked files.",
+                    verb: "Undo",
+                  })
+                }
+              >
+                <Undo2 size={13} /> Undo Latest
+              </button>
+              <button
+                className="button"
+                onClick={() =>
+                  void api.resolveDotfileConflicts().catch((reason: Error) => window.alert(reason.message))
+                }
+                title="Opens mise dotfiles conflicts in your terminal app"
+              >
+                <GitCompare size={13} /> Resolve Conflicts
+              </button>
+            </div>
+          </div>
+          <div className="list">
+            {data.checkpoints.map((checkpoint) => (
+              <div className="list-row" key={checkpoint.id}>
+                <span className="config-rank mono">{checkpoint.id}</span>
+                <div className="row-main">
+                  <div className="row-title">{checkpoint.summary ?? checkpoint.trigger ?? `Checkpoint ${checkpoint.id}`}</div>
+                  <div className="row-subtitle">
+                    {[
+                      checkpoint.createdAt && new Date(checkpoint.createdAt).toLocaleString(),
+                      checkpoint.trigger,
+                      checkpoint.machine && `on ${checkpoint.machine}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
+                </div>
+                <button
+                  className="button"
+                  onClick={() =>
+                    context.run({
+                      action: { kind: "dotfilesRollback", checkpoint: checkpoint.id, dryRun: true },
+                      title: `Preview rolling back to checkpoint ${checkpoint.id}?`,
+                      description: "mise lists what would change. Nothing changes yet.",
+                      verb: "Preview",
+                    })
+                  }
+                >
+                  Preview
+                </button>
+                <button
+                  className="button"
+                  onClick={() =>
+                    context.run({
+                      action: { kind: "dotfilesRollback", checkpoint: checkpoint.id, dryRun: false },
+                      title: `Roll back to checkpoint ${checkpoint.id}?`,
+                      description:
+                        "mise returns every tracked file to this checkpoint. It saves the current versions first, so you can undo it.",
+                      verb: "Roll Back",
+                      destructive: true,
+                    })
+                  }
+                >
+                  <RotateCcw size={13} /> Roll Back…
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </Section>
   );
 }

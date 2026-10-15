@@ -271,6 +271,8 @@ export type MiseAction =
   | { kind: "dotfilesSave" }
   | { kind: "dotfilesSync" }
   | { kind: "dotfilesOriginSet"; url: string }
+  | { kind: "dotfilesRollback"; checkpoint: number; dryRun: boolean }
+  | { kind: "dotfilesUndo" }
   | { kind: "cachePrune" }
   | { kind: "cacheClear" }
   | { kind: "reshim" }
@@ -347,6 +349,14 @@ export interface MachineStatus {
   } | null;
   origin: string | null;
   supportsHistory: boolean;
+  checkpoints: {
+    id: number;
+    createdAt: string | null;
+    trigger: string | null;
+    summary: string | null;
+    machine: string | null;
+    changed: string[];
+  }[];
 }
 
 export interface DiskUsage {
@@ -550,6 +560,7 @@ export const api = {
   openUrl: (url: string) => call<void>("open_url", { url }),
   diskUsage: () => call<DiskUsage>("disk_usage"),
   machineStatus: () => call<MachineStatus>("machine_status"),
+  resolveDotfileConflicts: () => call<void>("resolve_dotfile_conflicts"),
   toolInfo: (tool: string) => call<ToolInfo>("tool_info", { tool }),
   backends: () => call<string[]>("backends"),
   projectUpdates: () => call<ProjectUpdates[]>("project_updates"),

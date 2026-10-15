@@ -187,6 +187,15 @@ pub async fn trusted_folders() -> CommandResult<TrustReport> {
     .await
 }
 
+/// Opens the terminal app on `mise dotfiles conflicts`, which compares both
+/// sides of a sync conflict interactively.
+#[tauri::command]
+pub fn resolve_dotfile_conflicts() -> CommandResult<()> {
+    let home = home_dir().ok_or("could not determine your home directory")?;
+    let mise = crate::find_mise().ok_or("mise is not installed")?;
+    crate::terminal::open(&home, &mise, &["dotfiles".into(), "conflicts".into()]).map_err(message)
+}
+
 /// A folder picker, for linking an install made outside mise.
 #[tauri::command]
 pub async fn pick_folder(app: AppHandle) -> CommandResult<Option<PathBuf>> {
@@ -210,6 +219,8 @@ pub struct MachineStatus {
     origin: Option<String>,
     /// Whether this mise has dotfile history at all (2026.10+).
     supports_history: bool,
+    /// The newest checkpoints, when history is on.
+    checkpoints: Vec<powermise_mise::DotfileCheckpoint>,
 }
 
 /// What the global config's `[bootstrap]` and `[dotfiles]` set up on this
@@ -232,11 +243,17 @@ pub async fn machine_status() -> CommandResult<MachineStatus> {
         } else {
             (None, None)
         };
+        let checkpoints = if history.is_some() {
+            client.dotfile_checkpoints(10).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
         Ok(MachineStatus {
             sections,
             history,
             origin,
             supports_history,
+            checkpoints,
         })
     })
     .await

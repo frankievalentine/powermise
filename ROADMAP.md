@@ -210,8 +210,10 @@ login items, and launchd/systemd services. AI Setups already compiles to
       history (`mise dotfiles status --json`), save, sync, and connecting an origin.
 - [x] AI Setups are bootstrap templates: each compiles to a `conf.d` file whose
       `[bootstrap.packages]` show up in the Machine view.
-- [ ] Dotfile history browsing, rollback, and conflict resolution (`mise dot
-      history|rollback|conflicts`) — interactive today; revisit when they gain JSON.
+- [x] Dotfile history: recent checkpoints (`mise dotfiles history --json`), preview
+      and roll back to one (`rollback --to <id> --all --dry-run|--yes`), undo the
+      latest operation, and resolve sync conflicts in the terminal app
+      (`mise dotfiles conflicts` is interactive).
 
 ## mise coverage
 

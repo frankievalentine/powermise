@@ -344,6 +344,11 @@ pub enum MiseAction {
     },
     DotfilesSave,
     DotfilesSync,
+    DotfilesRollback {
+        checkpoint: u64,
+        dry_run: bool,
+    },
+    DotfilesUndo,
     DotfilesOriginSet {
         url: String,
     },
@@ -449,6 +454,11 @@ impl MiseAction {
             Self::BootstrapApply { only } => MiseCommand::bootstrap_apply(only.as_deref()),
             Self::DotfilesSave => Ok(MiseCommand::dotfiles_save()),
             Self::DotfilesSync => Ok(MiseCommand::dotfiles_sync()),
+            Self::DotfilesRollback {
+                checkpoint,
+                dry_run,
+            } => Ok(MiseCommand::dotfiles_rollback(*checkpoint, *dry_run)),
+            Self::DotfilesUndo => Ok(MiseCommand::dotfiles_undo()),
             Self::DotfilesOriginSet { url } => MiseCommand::dotfiles_origin_set(url),
             Self::CachePrune => Ok(MiseCommand::cache_prune()),
             Self::CacheClear => Ok(MiseCommand::cache_clear()),

@@ -19,8 +19,8 @@ use serde::de::DeserializeOwned;
 use crate::{
     MiseAdapterError,
     machine::{
-        DotfilesHistory, ImportSource, MachineSection, Setting, TokenStatus, parse_machine_status,
-        parse_settings, parse_token_status,
+        DotfileCheckpoint, DotfilesHistory, ImportSource, MachineSection, Setting, TokenStatus,
+        parse_checkpoints, parse_machine_status, parse_settings, parse_token_status,
     },
     models::{
         BootstrapPlan, BootstrapStatus, ConfigFile, Doctor, OutdatedReport, RegistryEntry,
@@ -354,6 +354,17 @@ impl MiseClient {
             .find(|line| !line.is_empty())
             .unwrap_or_default();
         Ok((!line.is_empty() && !line.starts_with("no setup repository")).then(|| line.to_owned()))
+    }
+
+    /// The newest `limit` dotfile checkpoints (`mise dotfiles history --json`, 2026.10+).
+    pub fn dotfile_checkpoints(
+        &self,
+        limit: u32,
+    ) -> Result<Vec<DotfileCheckpoint>, MiseAdapterError> {
+        let limit = limit.to_string();
+        let json: serde_json::Value =
+            self.read_json(&["dotfiles", "history", "--json", "--limit", &limit], None)?;
+        Ok(parse_checkpoints(&json))
     }
 
     /// `mise doctor --json`.
@@ -788,6 +799,24 @@ impl MiseCommand {
     /// `mise dotfiles sync`: push checkpoints and fetch other machines' changes.
     pub fn dotfiles_sync() -> Self {
         Self::new(vec!["dotfiles".into(), "sync".into()])
+    }
+
+    /// `mise dotfiles rollback --to <id> --all [--dry-run | --yes]`: return
+    /// every tracked file to a checkpoint (or show what that would change).
+    pub fn dotfiles_rollback(checkpoint: u64, dry_run: bool) -> Self {
+        Self::new(vec![
+            "dotfiles".into(),
+            "rollback".into(),
+            "--to".into(),
+            checkpoint.to_string(),
+            "--all".into(),
+            if dry_run { "--dry-run" } else { "--yes" }.into(),
+        ])
+    }
+
+    /// `mise dotfiles undo --yes`: reverse the latest tracked-file operation.
+    pub fn dotfiles_undo() -> Self {
+        Self::new(vec!["dotfiles".into(), "undo".into(), "--yes".into()])
     }
 
     /// `mise dotfiles origin set <url>`: connect the repository to sync with.
@@ -1239,6 +1268,10 @@ mod tests {
         );
         assert!(MiseCommand::bootstrap_apply(Some("task")).is_err());
         assert!(MiseCommand::dotfiles_origin_set("file:///etc").is_err());
+        assert_eq!(
+            MiseCommand::dotfiles_rollback(3, true).display(),
+            "mise dotfiles rollback --to 3 --all --dry-run"
+        );
         assert_eq!(
             MiseCommand::tool_auto_update("jq", true).unwrap().display(),
             "mise config set --global tools.jq.auto_update true"

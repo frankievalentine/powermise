@@ -306,6 +306,22 @@ mod tests {
     }
 
     #[test]
+    fn checkpoints_parse_from_history_json() {
+        // Shape captured from mise 2026.10.10 (trimmed).
+        let json = serde_json::json!([
+            {"id": 4, "created_at": "2026-10-14T23:20:43-07:00", "trigger": "save",
+             "summary": "edited ~/.zshrc", "machine": {"id": "git", "name": "git"},
+             "changes": {"since": "cdc9", "modified": ["~/.zshrc"], "truncated": false}},
+            {"id": 3, "trigger": "baseline", "description": "tracked ~/.zshrc"}
+        ]);
+        let checkpoints = parse_checkpoints(&json);
+        assert_eq!(checkpoints.len(), 2);
+        assert_eq!(checkpoints[0].changed, ["~/.zshrc"]);
+        assert_eq!(checkpoints[0].machine.as_deref(), Some("git"));
+        assert_eq!(checkpoints[1].summary.as_deref(), Some("tracked ~/.zshrc"));
+    }
+
+    #[test]
     fn token_lines_parse() {
         assert_eq!(
             parse_token_status("github.com: (none)\n"),
@@ -492,4 +508,58 @@ pub struct DotfilesHistory {
     pub unsaved: Option<serde_json::Value>,
     #[serde(default, alias = "pending_operations")]
     pub pending_operations: u64,
+}
+
+/// One saved checkpoint from `mise dotfiles history --json` (2026.10+).
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DotfileCheckpoint {
+    pub id: u64,
+    pub created_at: Option<String>,
+    /// `save`, `edit`, `baseline`, `apply`, …
+    pub trigger: Option<String>,
+    pub summary: Option<String>,
+    pub machine: Option<String>,
+    /// Paths it changed (modified, added, or removed), as mise lists them.
+    pub changed: Vec<String>,
+}
+
+/// Reads `mise dotfiles history --json` defensively: it's new, so only the
+/// fields the app shows are required to look the way they do today.
+pub fn parse_checkpoints(json: &serde_json::Value) -> Vec<DotfileCheckpoint> {
+    let text = |value: &serde_json::Value, key: &str| {
+        value
+            .get(key)
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned)
+    };
+    json.as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| {
+            let id = entry.get("id")?.as_u64()?;
+            let changed = entry
+                .get("changes")
+                .and_then(serde_json::Value::as_object)
+                .map(|changes| {
+                    changes
+                        .values()
+                        .filter_map(serde_json::Value::as_array)
+                        .flatten()
+                        .filter_map(|path| path.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default();
+            Some(DotfileCheckpoint {
+                id,
+                created_at: text(entry, "created_at"),
+                trigger: text(entry, "trigger"),
+                summary: text(entry, "summary").or_else(|| text(entry, "description")),
+                machine: entry
+                    .get("machine")
+                    .and_then(|machine| text(machine, "name")),
+                changed,
+            })
+        })
+        .collect()
 }

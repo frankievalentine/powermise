@@ -73,6 +73,11 @@ const machineSections = [
 ];
 const dotHistory = { enabled: true, trackedFiles: 12, checkpoints: 4, latest: null, unsaved: true as unknown, pendingOperations: 0 };
 let dotOrigin: string | null = null;
+const checkpoints = [
+  { id: 4, createdAt: "2026-10-14T21:02:00-07:00", trigger: "save", summary: "edited ~/.zshrc", machine: "studio", changed: ["~/.zshrc"] },
+  { id: 3, createdAt: "2026-10-13T09:15:00-07:00", trigger: "edit", summary: "edited ~/.gitconfig", machine: "laptop", changed: ["~/.gitconfig"] },
+  { id: 2, createdAt: "2026-10-10T18:40:00-07:00", trigger: "baseline", summary: "tracked ~/.zshrc", machine: "studio", changed: [] },
+];
 const trusted = ["/Users/demo/code/web-app", "/Users/demo/code/old-prototype"];
 
 const imports: DetectedImport[] = [
@@ -142,6 +147,10 @@ export function describeMachineAction(action: MiseAction): string | null {
       return "mise dotfiles sync";
     case "dotfilesOriginSet":
       return `mise dotfiles origin set ${action.url}`;
+    case "dotfilesRollback":
+      return `mise dotfiles rollback --to ${action.checkpoint} --all ${action.dryRun ? "--dry-run" : "--yes"}`;
+    case "dotfilesUndo":
+      return "mise dotfiles undo --yes";
     default:
       return null;
   }
@@ -215,6 +224,12 @@ export function performMachineAction(action: MiseAction): string[] | null {
       return ["mise history: saved checkpoint 5 (12 files)"];
     case "dotfilesSync":
       return ["mise history: pushed 1 checkpoint", "mise history: nothing to fetch"];
+    case "dotfilesRollback":
+      return action.dryRun
+        ? ["~/.zshrc  write  a file 8395334  a file 8538864", "history: dry run; nothing was changed"]
+        : ["mise history: saved checkpoint 5 before rolling back", `mise history: restored checkpoint ${action.checkpoint}`];
+    case "dotfilesUndo":
+      return ["mise history: undid the latest operation"];
     case "dotfilesOriginSet":
       dotOrigin = action.url;
       return [`mise history: origin set to ${action.url}`];
@@ -271,7 +286,10 @@ export function demoMachine(command: string): unknown {
         history: { ...dotHistory },
         origin: dotOrigin,
         supportsHistory: true,
+        checkpoints: checkpoints.map((checkpoint) => ({ ...checkpoint })),
       };
+    case "resolve_dotfile_conflicts":
+      return undefined;
     case "pick_folder":
       return "/Users/demo/src/node-v24.11.0";
     default:

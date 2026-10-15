@@ -204,7 +204,11 @@ its `[bootstrap]` and `[dotfiles]` sections, with the state of each item.
   Both work for everything or for one part (`--only dotfiles`, for example).
 - **Dotfile history** (mise 2026.10+) — checkpoints of the files mise tracks,
   **Save Checkpoint** (`mise dotfiles save`), and syncing with a Git repository
-  (`mise dotfiles origin set <url>`, then `mise dotfiles sync`).
+  (`mise dotfiles origin set <url>`, then `mise dotfiles sync`). Recent
+  checkpoints can be previewed and rolled back to (`mise dotfiles rollback --to
+  <id> --all`); mise records the state before a rollback, so **Undo Latest**
+  (`mise dotfiles undo`) reverses it. **Resolve Conflicts** opens
+  `mise dotfiles conflicts` in your terminal app.
 
 Steps that need an administrator password (like apt packages) are best run from
 a terminal: `mise bootstrap --yes`.
