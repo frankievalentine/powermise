@@ -196,6 +196,69 @@ pub fn resolve_dotfile_conflicts() -> CommandResult<()> {
     crate::terminal::open(&home, &mise, &["dotfiles".into(), "conflicts".into()]).map_err(message)
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AliasView {
+    alias: String,
+    version: String,
+    /// Set in your global config (so it can be removed), not built into mise.
+    custom: bool,
+}
+
+/// Version aliases for a tool, marking the ones your global config defines
+/// (`[tool_alias.<tool>]`, or the older `[alias.<tool>]`).
+#[tauri::command]
+pub async fn tool_aliases(tool: String) -> CommandResult<Vec<AliasView>> {
+    blocking(move || {
+        let aliases = client()?.tool_aliases(&tool).map_err(message)?;
+        let config = crate::mise_config_dir()?.join("config.toml");
+        // `mise tool-alias set` writes `[tool_alias.<tool>.versions]`; older
+        // configs put string values right under `[tool_alias.<tool>]` or
+        // `[alias.<tool>]`.
+        let custom: Vec<String> = std::fs::read_to_string(config)
+            .ok()
+            .and_then(|contents| contents.parse::<toml::Table>().ok())
+            .map(|table| {
+                let mut names = Vec::new();
+                for section in ["tool_alias", "alias"] {
+                    let Some(entry) = table
+                        .get(section)
+                        .and_then(|value| value.get(&tool))
+                        .and_then(toml::Value::as_table)
+                    else {
+                        continue;
+                    };
+                    if let Some(versions) = entry.get("versions").and_then(toml::Value::as_table) {
+                        names.extend(versions.keys().cloned());
+                    }
+                    names.extend(
+                        entry
+                            .iter()
+                            .filter(|(_, value)| value.is_str())
+                            .map(|(name, _)| name.clone()),
+                    );
+                }
+                names
+            })
+            .unwrap_or_default();
+        Ok(aliases
+            .into_iter()
+            .map(|alias| AliasView {
+                custom: custom.contains(&alias.alias),
+                alias: alias.alias,
+                version: alias.version,
+            })
+            .collect())
+    })
+    .await
+}
+
+/// Legacy asdf/vfox plugins, read-only.
+#[tauri::command]
+pub async fn plugins() -> CommandResult<Vec<powermise_mise::Plugin>> {
+    blocking(|| client()?.plugins().map_err(message)).await
+}
+
 /// A folder picker, for linking an install made outside mise.
 #[tauri::command]
 pub async fn pick_folder(app: AppHandle) -> CommandResult<Option<PathBuf>> {

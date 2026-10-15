@@ -333,6 +333,8 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
           </Section>
         )}
 
+        <AliasesSection tool={name} context={context} />
+
         <Section
           title="Use an existing install"
           note={`Already have ${name} installed outside mise — built by hand, or by another tool? mise can use it as a version.`}
@@ -348,5 +350,90 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
       </div>
       <LinkSheet open={linkOpen} tool={name} onDismiss={() => setLinkOpen(false)} context={context} />
     </div>
+  );
+}
+
+/** Version aliases (`node lts → 24`): mise's own, plus ones you add to your
+ *  global config, usable anywhere a version goes. */
+function AliasesSection({ tool, context }: { tool: string; context: AppContext }) {
+  const aliases = useAsync(() => api.toolAliases(tool), [tool, context.mise.revision]);
+  const [alias, setAlias] = useState("");
+  const [version, setVersion] = useState("");
+  const valid = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+  const canAdd = valid.test(alias) && valid.test(version);
+  if (aliases.error) return null;
+  return (
+    <Section
+      title="Version aliases"
+      note={`Names you can use instead of a version, like ${tool}@${aliases.data?.[0]?.alias ?? "lts"}. Yours go in your global config.`}
+    >
+      {aliases.data && aliases.data.length > 0 && (
+        <div className="list">
+          {aliases.data.map((entry) => (
+            <div className="list-row" key={entry.alias}>
+              <div className="row-main">
+                <div className="row-title mono">{entry.alias}</div>
+              </div>
+              <div className="row-trailing">
+                <span aria-hidden>→</span>
+                <span className="mono version-pill">{entry.version}</span>
+                {entry.custom && (
+                  <button
+                    className="button"
+                    onClick={() =>
+                      context.run({
+                        action: { kind: "unsetToolAlias", tool, alias: entry.alias },
+                        title: `Remove the alias ${entry.alias}?`,
+                        description: `mise removes it from your global config. Configs that ask for ${tool}@${entry.alias} will stop resolving.`,
+                        verb: "Remove",
+                        destructive: true,
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <form
+        className="setting-edit"
+        style={{ marginTop: 10 }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!canAdd) return;
+          context.run({
+            action: { kind: "setToolAlias", tool, alias, version },
+            title: `Add ${tool}@${alias}?`,
+            description: `mise saves ${alias} → ${version} in your global config.`,
+            verb: "Add",
+          });
+          setAlias("");
+          setVersion("");
+        }}
+      >
+        <input
+          className="text-field mono"
+          value={alias}
+          onChange={(event) => setAlias(event.target.value.trim())}
+          placeholder="alias, e.g. work"
+          aria-label="Alias name"
+          spellCheck={false}
+        />
+        <input
+          className="text-field mono"
+          value={version}
+          onChange={(event) => setVersion(event.target.value.trim())}
+          placeholder="version, e.g. 22"
+          aria-label="Version"
+          spellCheck={false}
+        />
+        <button className="button" type="submit" disabled={!canAdd}>
+          Add Alias…
+        </button>
+      </form>
+    </Section>
   );
 }

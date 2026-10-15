@@ -222,19 +222,19 @@ What the GUI does with each area of mise. "Planned" items are in the milestones 
 | mise area | Commands | In the GUI |
 |---|---|---|
 | Tools | `ls`, `use`, `unuse`, `install`, `uninstall`, `upgrade`, `outdated`, `ls-remote`, `latest`, `which`, `where` | ✅ Installed, Discover, tool pages, Updates |
-| Registry & backends | `registry`, `search`, `tool`, `backends`, `tool-alias` | ✅ registry · planned: tool details, any-backend installs, aliases |
-| Cleanup | `prune`, `cache` | ✅ `prune --tools` after removing a setup · planned: cleanup screen (M4) |
-| Projects & config | `config ls/get/set`, `fmt`, `edit`, `trust`, `untrust`, `lock` | ✅ `config ls`, `trust` with a config review · planned: `untrust`, `lock`, `fmt` |
-| Environment | `env`, `set`, `unset`, `vars`, `secrets`, environments (`MISE_ENV`) | ✅ `env`, `set`/`unset --file` · planned: `vars`, `secrets`, environments |
-| Tasks | `tasks ls/info/deps`, `run`, `watch` | ✅ `tasks ls/info`, `run` with arguments · planned: `deps`, `watch` |
-| Shell | `activate`, `doctor`, `reshim`, `en`, `exec` | ✅ activation guidance · planned: open terminal, reshim |
-| Settings | `settings ls/get/set/unset` | planned (M4) |
+| Registry & backends | `registry`, `search`, `tool`, `backends`, `tool-alias` | ✅ registry, tool details (`tool --json`), any-backend installs, version aliases |
+| Cleanup | `prune`, `cache` | ✅ Clean Up (`ls --prunable`, `prune --tools --yes`), cache prune/clear, sizes |
+| Projects & config | `config ls/get/set`, `fmt`, `edit`, `trust`, `untrust`, `lock` | ✅ `config ls`, `config set --file`, `fmt`, `trust` with a config review, `untrust`, `lock` |
+| Environment | `env`, `set`, `unset`, `vars`, `secrets`, environments (`MISE_ENV`) | ✅ `env`, `set`/`unset --file`, `vars`, `secrets` (names), environment preview |
+| Tasks | `tasks ls/info/deps`, `run`, `watch` | ✅ `tasks ls/info`, `run` with arguments, dependency tree, `watch`, interactive tasks in the terminal |
+| Shell | `activate`, `doctor`, `reshim`, `en`, `exec` | ✅ activation guidance, `reshim`, open a terminal (`en`) |
+| Settings | `settings ls/get/set/unset/add` | ✅ Settings screen; automatic-update switches |
 | Updating mise | `version`, `self-update` | ✅ |
 | Machine setup | `bootstrap`, `dotfiles` | ✅ Machine view (`bootstrap status`, `--dry-run`, `--yes [--only]`), dotfile checkpoints, save, sync, origin; AI Setups |
-| Migration | `sync`, `link` | planned (M4 onboarding) |
-| Generators | `generate github-action/git-pre-commit/devcontainer/bootstrap` | planned (M3) |
-| Auth | `token` | planned (M4) |
-| Plugins (asdf/vfox) | `plugins ls/install/update/uninstall` | later: listed read-only, legacy path |
+| Migration | `sync`, `link` | ✅ Welcome and Health (`sync`), tool pages (`link`) |
+| Generators | `generate github-action/git-pre-commit/devcontainer` | ✅ previewed, then `--write` |
+| Auth | `token` | ✅ GitHub token status and borrowing a gh or Git login |
+| Plugins (asdf/vfox) | `plugins ls/install/update/uninstall` | ✅ listed read-only on Health (legacy path; installs stay in the terminal) |
 
 **Not planned:** `mcp` (an agent integration, not a GUI surface — but AI Setups could
 point agents at `mise mcp`), `oci`, `deps`, `daemons`, `installs`, `packslip`, and

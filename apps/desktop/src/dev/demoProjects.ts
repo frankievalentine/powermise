@@ -243,6 +243,8 @@ export function describeProjectAction(action: MiseAction): string | undefined {
       return `${at(action.project)}mise vars ${action.name}=${action.value}`;
     case "unsetVar":
       return `${at(action.project)}mise vars unset ${action.name}`;
+    case "formatConfig":
+      return `${at(action.project)}mise fmt`;
     default:
       return undefined;
   }
@@ -294,6 +296,8 @@ export function performProjectAction(action: MiseAction): string[] | undefined {
       return ["mise pnpm@10.18.2  locked", "mise updated ~/code/web-app/mise.lock"];
     case "configSet":
       return [];
+    case "formatConfig":
+      return ["mise formatted ~/code/web-app/mise.toml"];
     case "generate":
       return [`mise wrote ${action.generator === "github-action" ? ".github/workflows/ci.yml" : action.generator === "devcontainer" ? ".devcontainer/devcontainer.json" : ".git/hooks/pre-commit"}`];
     case "watch":

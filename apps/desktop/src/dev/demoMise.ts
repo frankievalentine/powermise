@@ -381,7 +381,7 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
           })),
       );
     default: {
-      const machineResult = demoMachine(command);
+      const machineResult = demoMachine(command, args);
       if (machineResult !== NOT_A_MACHINE_COMMAND) return machineResult;
       const result = demoProjects(command, args);
       return result === NOT_A_PROJECT_COMMAND ? NOT_HANDLED : result;

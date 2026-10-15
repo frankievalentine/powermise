@@ -34,6 +34,7 @@ export function HealthView({ context }: { context: AppContext }) {
   const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
   const disk = useAsync(() => api.diskUsage(), [mise.revision]);
   const trust = useAsync(() => api.trustedFolders(), [mise.revision]);
+  const plugins = useAsync(() => api.plugins(), [mise.revision]);
   const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const healthy = !!doctor.data && summary.count === 0;
@@ -276,6 +277,25 @@ export function HealthView({ context }: { context: AppContext }) {
                     <div className="row-title mono selectable">{pretty(path)}</div>
                     <div className="row-subtitle">Ignored — mise skips this config entirely</div>
                   </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {plugins.data && plugins.data.length > 0 && (
+          <Section
+            title="Plugins"
+            note="Legacy asdf and vfox plugins. Most tools no longer need one; mise’s registry and backends cover them."
+          >
+            <div className="list">
+              {plugins.data.map((plugin) => (
+                <div className="list-row" key={plugin.name}>
+                  <div className="row-main">
+                    <div className="row-title mono">{plugin.name}</div>
+                    {plugin.url && <div className="row-subtitle mono selectable">{plugin.url}</div>}
+                  </div>
+                  {plugin.revision && <span className="row-subtitle mono">{plugin.revision}</span>}
                 </div>
               ))}
             </div>

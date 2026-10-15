@@ -73,6 +73,11 @@ const machineSections = [
 ];
 const dotHistory = { enabled: true, trackedFiles: 12, checkpoints: 4, latest: null, unsaved: true as unknown, pendingOperations: 0 };
 let dotOrigin: string | null = null;
+const customAliases: Record<string, Record<string, string>> = {};
+const BUILTIN_ALIASES: Record<string, Record<string, string>> = {
+  node: { lts: "24", "lts-iron": "20", "lts-jod": "22" },
+  java: { lts: "25" },
+};
 const checkpoints = [
   { id: 4, createdAt: "2026-10-14T21:02:00-07:00", trigger: "save", summary: "edited ~/.zshrc", machine: "studio", changed: ["~/.zshrc"] },
   { id: 3, createdAt: "2026-10-13T09:15:00-07:00", trigger: "edit", summary: "edited ~/.gitconfig", machine: "laptop", changed: ["~/.gitconfig"] },
@@ -151,6 +156,10 @@ export function describeMachineAction(action: MiseAction): string | null {
       return `mise dotfiles rollback --to ${action.checkpoint} --all ${action.dryRun ? "--dry-run" : "--yes"}`;
     case "dotfilesUndo":
       return "mise dotfiles undo --yes";
+    case "setToolAlias":
+      return `mise tool-alias set ${action.tool} ${action.alias} ${action.version}`;
+    case "unsetToolAlias":
+      return `mise tool-alias unset ${action.tool} ${action.alias}`;
     default:
       return null;
   }
@@ -230,6 +239,12 @@ export function performMachineAction(action: MiseAction): string[] | null {
         : ["mise history: saved checkpoint 5 before rolling back", `mise history: restored checkpoint ${action.checkpoint}`];
     case "dotfilesUndo":
       return ["mise history: undid the latest operation"];
+    case "setToolAlias":
+      customAliases[action.tool] = { ...customAliases[action.tool], [action.alias]: action.version };
+      return [];
+    case "unsetToolAlias":
+      delete customAliases[action.tool]?.[action.alias];
+      return [];
     case "dotfilesOriginSet":
       dotOrigin = action.url;
       return [`mise history: origin set to ${action.url}`];
@@ -256,7 +271,7 @@ export function performMachineAction(action: MiseAction): string[] | null {
 
 export const NOT_A_MACHINE_COMMAND = Symbol("not a machine command");
 
-export function demoMachine(command: string): unknown {
+export function demoMachine(command: string, args: Record<string, unknown> = {}): unknown {
   switch (command) {
     case "settings":
       return settings.map((entry) => ({ ...entry }));
@@ -290,6 +305,15 @@ export function demoMachine(command: string): unknown {
       };
     case "resolve_dotfile_conflicts":
       return undefined;
+    case "tool_aliases": {
+      const tool = args.tool as string;
+      return [
+        ...Object.entries(BUILTIN_ALIASES[tool] ?? {}).map(([alias, version]) => ({ alias, version, custom: false })),
+        ...Object.entries(customAliases[tool] ?? {}).map(([alias, version]) => ({ alias, version, custom: true })),
+      ];
+    }
+    case "plugins":
+      return [];
     case "pick_folder":
       return "/Users/demo/src/node-v24.11.0";
     default:

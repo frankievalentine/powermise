@@ -322,6 +322,31 @@ mod tests {
     }
 
     #[test]
+    fn aliases_and_plugins_parse() {
+        // Captured from mise 2026.7.18 and 2026.10.10.
+        let aliases = parse_tool_aliases(
+            "java  lts          25\nnode  lts          24\nnode  lts-argon    4 \n",
+        );
+        assert_eq!(aliases.len(), 3);
+        assert_eq!(
+            aliases[1],
+            ToolAlias {
+                tool: "node".into(),
+                alias: "lts".into(),
+                version: "24".into()
+            }
+        );
+        let plugins =
+            parse_plugins("tiny  https://github.com/mise-plugins/rtx-tiny  main 4a1c2e3\nbare\n");
+        assert_eq!(
+            plugins[0].url.as_deref(),
+            Some("https://github.com/mise-plugins/rtx-tiny")
+        );
+        assert_eq!(plugins[0].revision.as_deref(), Some("main 4a1c2e3"));
+        assert_eq!(plugins[1].url, None);
+    }
+
+    #[test]
     fn token_lines_parse() {
         assert_eq!(
             parse_token_status("github.com: (none)\n"),
@@ -559,6 +584,56 @@ pub fn parse_checkpoints(json: &serde_json::Value) -> Vec<DotfileCheckpoint> {
                     .get("machine")
                     .and_then(|machine| text(machine, "name")),
                 changed,
+            })
+        })
+        .collect()
+}
+
+/// A version alias, like `node lts → 24` (`mise tool-alias ls`).
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolAlias {
+    pub tool: String,
+    pub alias: String,
+    pub version: String,
+}
+
+/// Parses `mise tool-alias ls`: `tool  alias  version` per line.
+pub fn parse_tool_aliases(output: &str) -> Vec<ToolAlias> {
+    output
+        .lines()
+        .filter_map(|line| {
+            let mut words = line.split_whitespace();
+            let (tool, alias, version) = (words.next()?, words.next()?, words.next()?);
+            Some(ToolAlias {
+                tool: tool.into(),
+                alias: alias.into(),
+                version: version.into(),
+            })
+        })
+        .collect()
+}
+
+/// A legacy asdf or vfox plugin (`mise plugins ls --urls`).
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Plugin {
+    pub name: String,
+    pub url: Option<String>,
+    /// The Git ref and commit, when mise lists them.
+    pub revision: Option<String>,
+}
+
+pub fn parse_plugins(output: &str) -> Vec<Plugin> {
+    output
+        .lines()
+        .filter_map(|line| {
+            let words: Vec<&str> = line.split_whitespace().collect();
+            let (name, rest) = words.split_first()?;
+            Some(Plugin {
+                name: (*name).into(),
+                url: rest.first().map(|url| (*url).into()),
+                revision: (rest.len() > 1).then(|| rest[1..].join(" ")),
             })
         })
         .collect()

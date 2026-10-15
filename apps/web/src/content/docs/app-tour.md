@@ -67,6 +67,9 @@ Reads: `mise registry --json`, `mise backends ls`
 
 Reads: `mise ls-remote --json <tool>`, `mise tool --json <tool>`
 
+**Version aliases** lists names you can use instead of a version (`node@lts`),
+and adds your own to the global config (`mise tool-alias set node work 22`).
+
 Each tool page also has **Link a Folder…**: point mise at an install made
 outside it — built by hand or by another tool — and it uses that copy as a
 version (`mise link`).
@@ -160,7 +163,8 @@ when mise's experimental secrets support reports them — never their values.
 
 The files mise reads in the folder, most specific first — when two ask for the
 same tool, the higher one wins. **Edit a Value…** sets one dotted key in a
-project file (`mise config set --file mise.toml tools.node 22`).
+project file (`mise config set --file mise.toml tools.node 22`), and **Format
+Config Files…** tidies their layout (`mise fmt`).
 
 - **Lockfile** — whether `mise.lock` matches the config (`mise lock --dry-run
   --json`), with **Update** or **Create Lockfile** (`mise lock`).
@@ -182,6 +186,7 @@ project file (`mise config set --file mise.toml tools.node 22`).
 - **Versions from other tools** — the same bring-over list as Welcome.
 - **Shims** — when mise's shims are on your PATH, what they're for and
   **Rebuild Shims** (`mise reshim`).
+- **Plugins** — legacy asdf and vfox plugins, when any are installed (read-only).
 - **Trusted folders** — every folder or file mise trusts, with **Revoke**
   (`mise untrust`), and configs it was told to ignore.
 - **Disk space** — installed tools and the download cache, with **Remove Old**

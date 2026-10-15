@@ -229,6 +229,8 @@ pub fn run() {
             machine::pick_folder,
             machine::machine_status,
             machine::resolve_dotfile_conflicts,
+            machine::tool_aliases,
+            machine::plugins,
         ])
         .run(tauri::generate_context!())
         .expect("error while running the powermise desktop app");

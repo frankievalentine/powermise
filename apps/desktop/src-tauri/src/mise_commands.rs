@@ -349,6 +349,18 @@ pub enum MiseAction {
         dry_run: bool,
     },
     DotfilesUndo,
+    SetToolAlias {
+        tool: String,
+        alias: String,
+        version: String,
+    },
+    UnsetToolAlias {
+        tool: String,
+        alias: String,
+    },
+    FormatConfig {
+        project: PathBuf,
+    },
     DotfilesOriginSet {
         url: String,
     },
@@ -459,6 +471,13 @@ impl MiseAction {
                 dry_run,
             } => Ok(MiseCommand::dotfiles_rollback(*checkpoint, *dry_run)),
             Self::DotfilesUndo => Ok(MiseCommand::dotfiles_undo()),
+            Self::SetToolAlias {
+                tool,
+                alias,
+                version,
+            } => MiseCommand::set_tool_alias(tool, alias, version),
+            Self::UnsetToolAlias { tool, alias } => MiseCommand::unset_tool_alias(tool, alias),
+            Self::FormatConfig { project } => Ok(MiseCommand::format_config(project)),
             Self::DotfilesOriginSet { url } => MiseCommand::dotfiles_origin_set(url),
             Self::CachePrune => Ok(MiseCommand::cache_prune()),
             Self::CacheClear => Ok(MiseCommand::cache_clear()),

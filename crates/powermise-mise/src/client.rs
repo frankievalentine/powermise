@@ -19,8 +19,9 @@ use serde::de::DeserializeOwned;
 use crate::{
     MiseAdapterError,
     machine::{
-        DotfileCheckpoint, DotfilesHistory, ImportSource, MachineSection, Setting, TokenStatus,
-        parse_checkpoints, parse_machine_status, parse_settings, parse_token_status,
+        DotfileCheckpoint, DotfilesHistory, ImportSource, MachineSection, Plugin, Setting,
+        TokenStatus, ToolAlias, parse_checkpoints, parse_machine_status, parse_plugins,
+        parse_settings, parse_token_status, parse_tool_aliases,
     },
     models::{
         BootstrapPlan, BootstrapStatus, ConfigFile, Doctor, OutdatedReport, RegistryEntry,
@@ -365,6 +366,23 @@ impl MiseClient {
         let json: serde_json::Value =
             self.read_json(&["dotfiles", "history", "--json", "--limit", &limit], None)?;
         Ok(parse_checkpoints(&json))
+    }
+
+    /// Version aliases mise knows for `tool` (built in and your own).
+    pub fn tool_aliases(&self, tool: &str) -> Result<Vec<ToolAlias>, MiseAdapterError> {
+        Ok(
+            parse_tool_aliases(&self.read_text(&["tool-alias", "ls", "--no-header"], None)?)
+                .into_iter()
+                .filter(|alias| alias.tool == tool)
+                .collect(),
+        )
+    }
+
+    /// Installed legacy asdf/vfox plugins (`mise plugins ls --urls`).
+    pub fn plugins(&self) -> Result<Vec<Plugin>, MiseAdapterError> {
+        Ok(parse_plugins(
+            &self.read_text(&["plugins", "ls", "--urls"], None)?,
+        ))
     }
 
     /// `mise doctor --json`.
@@ -835,6 +853,41 @@ impl MiseCommand {
             "set".into(),
             url.into(),
         ]))
+    }
+
+    /// `mise tool-alias set <tool> <alias> <version>`, in the global config.
+    pub fn set_tool_alias(
+        tool: &str,
+        alias: &str,
+        version: &str,
+    ) -> Result<Self, MiseAdapterError> {
+        for value in [tool, alias, version] {
+            validate_argument(value)?;
+        }
+        Ok(Self::new(vec![
+            "tool-alias".into(),
+            "set".into(),
+            tool.into(),
+            alias.into(),
+            version.into(),
+        ]))
+    }
+
+    /// `mise tool-alias unset <tool> <alias>`.
+    pub fn unset_tool_alias(tool: &str, alias: &str) -> Result<Self, MiseAdapterError> {
+        validate_argument(tool)?;
+        validate_argument(alias)?;
+        Ok(Self::new(vec![
+            "tool-alias".into(),
+            "unset".into(),
+            tool.into(),
+            alias.into(),
+        ]))
+    }
+
+    /// `mise fmt` in a project: tidy the formatting of its config files.
+    pub fn format_config(project: impl Into<PathBuf>) -> Self {
+        Self::new(vec!["fmt".into()]).in_project(project)
     }
 
     /// `mise lock` in a project: write or refresh its lockfile.

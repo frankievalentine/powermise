@@ -273,6 +273,9 @@ export type MiseAction =
   | { kind: "dotfilesOriginSet"; url: string }
   | { kind: "dotfilesRollback"; checkpoint: number; dryRun: boolean }
   | { kind: "dotfilesUndo" }
+  | { kind: "setToolAlias"; tool: string; alias: string; version: string }
+  | { kind: "unsetToolAlias"; tool: string; alias: string }
+  | { kind: "formatConfig"; project: string }
   | { kind: "cachePrune" }
   | { kind: "cacheClear" }
   | { kind: "reshim" }
@@ -561,6 +564,9 @@ export const api = {
   diskUsage: () => call<DiskUsage>("disk_usage"),
   machineStatus: () => call<MachineStatus>("machine_status"),
   resolveDotfileConflicts: () => call<void>("resolve_dotfile_conflicts"),
+  toolAliases: (tool: string) =>
+    call<{ alias: string; version: string; custom: boolean }[]>("tool_aliases", { tool }),
+  plugins: () => call<{ name: string; url: string | null; revision: string | null }[]>("plugins"),
   toolInfo: (tool: string) => call<ToolInfo>("tool_info", { tool }),
   backends: () => call<string[]>("backends"),
   projectUpdates: () => call<ProjectUpdates[]>("project_updates"),

@@ -613,6 +613,20 @@ function ConfigTab({ data, context, pretty }: TabProps) {
           })}
         </div>
       </Section>
+      <button
+        className="button"
+        style={{ marginTop: 10 }}
+        onClick={() =>
+          context.run({
+            action: { kind: "formatConfig", project: data.path },
+            title: "Tidy up the config files’ formatting?",
+            description: "mise rewrites this project’s mise config files in its standard TOML layout. The settings don’t change.",
+            verb: "Format",
+          })
+        }
+      >
+        Format Config Files…
+      </button>
       <LockfileSection data={data} context={context} pretty={pretty} />
       <GeneratorsSection data={data} context={context} />
       <ConfigSetSheet file={editing} data={data} context={context} onClose={() => setEditing(null)} pretty={pretty} />
