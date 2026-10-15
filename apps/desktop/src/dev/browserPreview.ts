@@ -1,13 +1,15 @@
 // Browser-only stand-in for the Rust backend, used when the UI runs in a plain
-// browser (`bun run dev` without Tauri) for design work. It reads the real
-// catalog TOML files but fakes everything that would touch the machine.
-// Never loaded inside the Tauri app.
+// browser (`bun run dev` without Tauri) for design work and the marketing-site
+// demo. AI Setups read the real catalog TOML files; mise is simulated by
+// `demoMise.ts`. Nothing here touches the machine. Never loaded inside Tauri.
 import { parse } from "smol-toml";
 import harnessesToml from "../../../../catalog/profiles/harnesses.toml?raw";
 import toolsToml from "../../../../catalog/profiles/tools.toml?raw";
 import appsToml from "../../../../catalog/profiles/apps.toml?raw";
 import integrationsToml from "../../../../catalog/profiles/integrations.toml?raw";
 import mcpToml from "../../../../catalog/profiles/mcp.toml?raw";
+import { demoMise, NOT_HANDLED } from "./demoMise";
+export { browserEvents } from "./demoMise";
 import type {
   ApplyResult,
   CatalogBundle,
@@ -42,12 +44,12 @@ const catalog: CatalogBundle = {
   mcp: parse(mcpToml) as unknown as CatalogBundle["mcp"],
 };
 
-const MISE_CONFIG_DIR = "~/.config/mise";
+const MISE_CONFIG_DIR = "/Users/demo/.config/mise";
 
 let selections: SavedSelection[] = [
   {
     name: "engineering-agents",
-    path: "~/.config/powermise/selections/engineering-agents.toml",
+    path: "/Users/demo/.config/powermise/selections/engineering-agents.toml",
     harnesses: ["claude", "codex", "gemini"],
     includeDesktopApps: false,
     applied: true,
@@ -174,13 +176,15 @@ export async function browserPreview<T>(
   args: Record<string, unknown> = {},
 ): Promise<T> {
   await sleep(command === "apply_selection" ? 2200 : command === "selection_status" ? 700 : 60);
+  const mise = demoMise(command, args);
+  if (mise !== NOT_HANDLED) return mise as T;
   switch (command) {
     case "get_environment":
       return {
         hostTarget: "darwin",
-        powermiseDir: "~/.config/powermise",
+        powermiseDir: "/Users/demo/.config/powermise",
         miseConfigDir: MISE_CONFIG_DIR,
-        misePath: "~/.local/bin/mise",
+        misePath: "/Users/demo/.local/bin/mise",
         miseVersion: "2026.7.18 macos-arm64 (browser preview)",
       } satisfies EnvironmentInfo as T;
     case "get_catalog":
@@ -191,7 +195,7 @@ export async function browserPreview<T>(
       const draft = args.draft as SelectionDraft;
       const entry: SavedSelection = {
         name: draft.name,
-        path: `~/.config/powermise/selections/${draft.name}.toml`,
+        path: `/Users/demo/.config/powermise/selections/${draft.name}.toml`,
         harnesses: draft.harnesses,
         includeDesktopApps: draft.includeDesktopApps,
         applied: false,

@@ -1,8 +1,12 @@
-//! Powermise desktop backend. Every command calls the same lifecycle code the
-//! `powermise` CLI runs, against the same selection files, ledger, and mise
-//! configuration directory, so anything done here can be repeated, inspected,
-//! or undone from a terminal. Each response carries the equivalent CLI
-//! command so the app never hides what it does.
+//! Powermise desktop backend: a GUI companion for mise.
+//!
+//! - `mise_commands`: what mise manages, read through mise's JSON output and
+//!   changed only by running mise commands.
+//! - This module: shared environment helpers and the AI Setups feature, which
+//!   calls the same lifecycle code as the `powermise` CLI so anything done here
+//!   can be repeated, inspected, or undone from a terminal.
+mod mise_commands;
+
 use std::{
     env, fs,
     path::{Path, PathBuf},
@@ -26,9 +30,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 
 /// Errors cross the IPC boundary as their display message.
-type CommandResult<T> = Result<T, String>;
+pub(crate) type CommandResult<T> = Result<T, String>;
 
-fn message(error: impl std::fmt::Display) -> String {
+pub(crate) fn message(error: impl std::fmt::Display) -> String {
     error.to_string()
 }
 
@@ -67,7 +71,7 @@ fn extra_path_dirs() -> Vec<PathBuf> {
     directories
 }
 
-fn home_dir() -> Option<PathBuf> {
+pub(crate) fn home_dir() -> Option<PathBuf> {
     env::var_os("HOME")
         .or_else(|| env::var_os("USERPROFILE"))
         .map(PathBuf::from)
@@ -87,7 +91,7 @@ fn augmented_path() -> Option<std::ffi::OsString> {
 }
 
 /// Finds the `mise` executable on PATH.
-fn find_mise() -> Option<PathBuf> {
+pub(crate) fn find_mise() -> Option<PathBuf> {
     let names: &[&str] = if cfg!(windows) {
         &["mise.exe", "mise.cmd"]
     } else {
@@ -560,7 +564,18 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .manage(mise_commands::MiseState::default())
         .invoke_handler(tauri::generate_handler![
+            mise_commands::mise_info,
+            mise_commands::installed_tools,
+            mise_commands::outdated_tools,
+            mise_commands::registry,
+            mise_commands::remote_versions,
+            mise_commands::doctor,
+            mise_commands::describe_action,
+            mise_commands::run_action,
+            mise_commands::cancel_job,
+            mise_commands::activity,
             get_environment,
             get_catalog,
             list_selections,

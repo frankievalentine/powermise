@@ -1,0 +1,24 @@
+{
+  "jq": {
+    "name": "jq",
+    "requested": "1.8",
+    "current": null,
+    "bump": null,
+    "latest": "1.8.2",
+    "source": {
+      "type": "mise.toml",
+      "path": "/Users/demo/code/app/mise.toml"
+    }
+  },
+  "shellcheck": {
+    "name": "shellcheck",
+    "requested": "0.10",
+    "current": null,
+    "bump": null,
+    "latest": "0.10.0",
+    "source": {
+      "type": "mise.toml",
+      "path": "/Users/demo/code/app/mise.toml"
+    }
+  }
+}

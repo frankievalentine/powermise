@@ -1,0 +1,15 @@
+{
+  "jq": [
+    {
+      "version": "1.7.1",
+      "requested_version": "1.7.1",
+      "install_path": "/Users/demo/.local/share/mise/installs/jq/1.7.1",
+      "source": {
+        "type": "mise.toml",
+        "path": "/Users/demo/.config/mise/config.toml"
+      },
+      "installed": true,
+      "active": true
+    }
+  ]
+}

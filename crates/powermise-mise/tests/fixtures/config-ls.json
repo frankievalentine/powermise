@@ -1,0 +1,15 @@
+[
+  {
+    "path": "/Users/demo/code/app/mise.toml",
+    "tools": [
+      "jq",
+      "shellcheck"
+    ]
+  },
+  {
+    "path": "/Users/demo/.config/mise/config.toml",
+    "tools": [
+      "jq"
+    ]
+  }
+]

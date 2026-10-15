@@ -1,0 +1,65 @@
+{
+  "activated": false,
+  "aqua": {
+    "baked_in_registry_repository": "aquaproj/aqua-registry",
+    "baked_in_registry_tag": "fccbf15163f3e04681c359444b69e79bcd7f1d36",
+    "baked_in_registry_tools": 2260
+  },
+  "build_info": {
+    "target": "aarch64-apple-darwin",
+    "features": "openssl, rustls-native-roots, self_update",
+    "built": "Thu, 30 Jul 2026 20:56:14 +0000",
+    "rust_version": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "profile": "release"
+  },
+  "config_files": [
+    "/Users/demo/code/app/mise.toml",
+    "/Users/demo/.config/mise/config.toml"
+  ],
+  "dirs": {
+    "cache": "/Users/demo/Library/Caches/mise",
+    "config": "/Users/demo/.config/mise",
+    "data": "/Users/demo/.local/share/mise",
+    "shims": "/Users/demo/.local/share/mise/shims",
+    "state": "/Users/demo/.local/state/mise"
+  },
+  "env_files": [],
+  "env_vars": {
+    "MISE_DATA_DIR": "/Users/demo/.local/share/mise",
+    "MISE_CONFIG_DIR": "/Users/demo/.config/mise",
+    "MISE_CACHE_DIR": "/Users/demo/Library/Caches/mise",
+    "MISE_STATE_DIR": "/Users/demo/.local/state/mise"
+  },
+  "errors": [
+    "tool aqua:jqlang/jq@1.8.2 is not installed, install with `mise install`",
+    "tool aqua:koalaman/shellcheck@0.10.0 is not installed, install with `mise install`"
+  ],
+  "ignored_config_files": [],
+  "paths": [
+    "/Users/demo/.local/bin",
+    "/opt/homebrew/bin"
+  ],
+  "plugins": {},
+  "self_update_available": true,
+  "settings": {},
+  "shell": {
+    "name": "/bin/zsh",
+    "version": "zsh 5.9 (arm64-apple-darwin26.0)"
+  },
+  "shims_on_path": false,
+  "toolset": {
+    "jq": [
+      {
+        "version": "1.8.2",
+        "missing": true
+      }
+    ],
+    "shellcheck": [
+      {
+        "version": "0.10.0",
+        "missing": true
+      }
+    ]
+  },
+  "version": "2026.7.18 macos-arm64 (2026-07-30)"
+}

@@ -2337,6 +2337,7 @@ name = "powermise-mise"
 version = "0.1.0"
 dependencies = [
  "powermise-domain",
+ "serde",
  "serde_json",
  "thiserror 2.0.21",
 ]

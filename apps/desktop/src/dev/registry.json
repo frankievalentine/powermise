@@ -1,0 +1,796 @@
+[
+ {
+  "short": "act",
+  "backends": [
+   "aqua:nektos/act",
+   "asdf:gr1m0h/asdf-act"
+  ],
+  "description": "Run your GitHub Actions locally"
+ },
+ {
+  "short": "age",
+  "backends": [
+   "aqua:FiloSottile/age",
+   "asdf:threkk/asdf-age"
+  ],
+  "description": "A simple, modern and secure encryption tool (and Go library) with small explicit keys, no config options, and UNIX-style composability"
+ },
+ {
+  "short": "argocd",
+  "backends": [
+   "aqua:argoproj/argo-cd",
+   "asdf:beardix/asdf-argocd"
+  ],
+  "description": "Declarative continuous deployment for Kubernetes"
+ },
+ {
+  "short": "awscli",
+  "backends": [
+   "aqua:aws/aws-cli",
+   "asdf:MetricMike/asdf-awscli"
+  ],
+  "description": "The AWS Command Line Interface (AWS CLI v2) is a unified tool that provides a consistent interface for interacting with all parts of Amaz...",
+  "aliases": [
+   "aws",
+   "awscli"
+  ]
+ },
+ {
+  "short": "bat",
+  "backends": [
+   "aqua:sharkdp/bat",
+   "cargo:bat",
+   "asdf:https://gitlab.com/wt0f/asdf-bat"
+  ],
+  "description": "A cat(1) clone with wings"
+ },
+ {
+  "short": "bazel",
+  "backends": [
+   "aqua:bazelbuild/bazel",
+   "asdf:rajatvig/asdf-bazel"
+  ],
+  "description": "a fast, scalable, multi-language and extensible build system"
+ },
+ {
+  "short": "btop",
+  "backends": [
+   "aqua:aristocratos/btop"
+  ],
+  "description": "A monitor of resources"
+ },
+ {
+  "short": "buf",
+  "backends": [
+   "aqua:bufbuild/buf",
+   "asdf:truepay/asdf-buf"
+  ],
+  "description": "The best way of working with Protocol Buffers"
+ },
+ {
+  "short": "bun",
+  "backends": [
+   "core:bun"
+  ],
+  "description": "Bun is a fast JavaScript all-in-one toolkit"
+ },
+ {
+  "short": "chezmoi",
+  "backends": [
+   "aqua:twpayne/chezmoi",
+   "asdf:joke/asdf-chezmoi"
+  ],
+  "description": "Manage your dotfiles across multiple diverse machines, securely"
+ },
+ {
+  "short": "claude",
+  "backends": [
+   "aqua:anthropics/claude-code",
+   "http:claude"
+  ],
+  "description": "Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing rout...",
+  "aliases": [
+   "claude-code"
+  ]
+ },
+ {
+  "short": "cmake",
+  "backends": [
+   "aqua:Kitware/CMake",
+   "asdf:mise-plugins/mise-cmake",
+   "vfox:mise-plugins/vfox-cmake"
+  ],
+  "description": "CMake is a tool to manage building of source code. Originally, CMake was designed as a generator for various dialects of Makefile, today..."
+ },
+ {
+  "short": "codex",
+  "backends": [
+   "aqua:openai/codex",
+   "npm:@openai/codex"
+  ],
+  "description": "Lightweight coding agent that runs in your terminal"
+ },
+ {
+  "short": "cosign",
+  "backends": [
+   "aqua:sigstore/cosign",
+   "asdf:https://gitlab.com/wt0f/asdf-cosign"
+  ],
+  "description": "Code signing and transparency for containers and binaries"
+ },
+ {
+  "short": "delta",
+  "backends": [
+   "aqua:dandavison/delta",
+   "asdf:andweeb/asdf-delta",
+   "cargo:git-delta"
+  ],
+  "description": "A syntax-highlighting pager for git, diff, and grep output"
+ },
+ {
+  "short": "deno",
+  "backends": [
+   "core:deno"
+  ],
+  "description": "A modern runtime for JavaScript and TypeScript (Builtin plugin)"
+ },
+ {
+  "short": "direnv",
+  "backends": [
+   "aqua:direnv/direnv",
+   "asdf:asdf-community/asdf-direnv"
+  ],
+  "description": "unclutter your .profile"
+ },
+ {
+  "short": "dive",
+  "backends": [
+   "aqua:wagoodman/dive",
+   "asdf:looztra/asdf-dive"
+  ],
+  "description": "A tool for exploring each layer in a docker image"
+ },
+ {
+  "short": "doctl",
+  "backends": [
+   "aqua:digitalocean/doctl",
+   "asdf:maristgeek/asdf-doctl"
+  ],
+  "description": "The official command line interface for the DigitalOcean API"
+ },
+ {
+  "short": "dotnet",
+  "backends": [
+   "core:dotnet",
+   "vfox:mise-plugins/vfox-dotnet",
+   "asdf:mise-plugins/mise-dotnet"
+  ],
+  "description": ".NET SDK",
+  "aliases": [
+   "dotnet-core"
+  ]
+ },
+ {
+  "short": "duckdb",
+  "backends": [
+   "aqua:duckdb/duckdb"
+  ],
+  "description": "DuckDB is an analytical in-process SQL database management system"
+ },
+ {
+  "short": "elixir",
+  "backends": [
+   "core:elixir"
+  ],
+  "description": "Elixir is a dynamic, functional language for building scalable and maintainable applications"
+ },
+ {
+  "short": "erlang",
+  "backends": [
+   "core:erlang"
+  ],
+  "description": "erlang"
+ },
+ {
+  "short": "eza",
+  "backends": [
+   "vfox:jdx/vfox-eza",
+   "cargo:eza"
+  ],
+  "description": "A modern, maintained replacement for ls"
+ },
+ {
+  "short": "fd",
+  "backends": [
+   "aqua:sharkdp/fd",
+   "asdf:https://gitlab.com/wt0f/asdf-fd",
+   "cargo:fd-find"
+  ],
+  "description": "A simple, fast and user-friendly alternative to 'find'"
+ },
+ {
+  "short": "flutter",
+  "backends": [
+   "http:flutter",
+   "asdf:mise-plugins/mise-flutter",
+   "vfox:mise-plugins/vfox-flutter"
+  ],
+  "description": "Flutter is an open source framework for building beautiful, natively compiled, multi-platform applications from a single codebase"
+ },
+ {
+  "short": "flyctl",
+  "backends": [
+   "aqua:superfly/flyctl",
+   "asdf:chessmango/asdf-flyctl"
+  ],
+  "description": "Command line tools for fly.io services"
+ },
+ {
+  "short": "fzf",
+  "backends": [
+   "aqua:junegunn/fzf",
+   "asdf:kompiro/asdf-fzf"
+  ],
+  "description": ":cherry_blossom: A command-line fuzzy finder"
+ },
+ {
+  "short": "gcloud",
+  "backends": [
+   "vfox:mise-plugins/vfox-gcloud",
+   "asdf:mise-plugins/mise-gcloud"
+  ],
+  "description": "GCloud CLI (Google Cloud SDK)"
+ },
+ {
+  "short": "gemini",
+  "backends": [
+   "npm:@google/gemini-cli"
+  ],
+  "description": "Gemini CLI, a command-line AI workflow tool that connects to your tools, understands your code and accelerates your workflows",
+  "aliases": [
+   "gemini"
+  ]
+ },
+ {
+  "short": "gh",
+  "backends": [
+   "aqua:cli/cli",
+   "asdf:bartlomiejdanek/asdf-github-cli"
+  ],
+  "description": "GitHub\u2019s official command line tool",
+  "aliases": [
+   "gh"
+  ]
+ },
+ {
+  "short": "glab",
+  "backends": [
+   "gitlab:gitlab-org/cli",
+   "asdf:mise-plugins/mise-glab"
+  ],
+  "description": "gitlab cli"
+ },
+ {
+  "short": "glow",
+  "backends": [
+   "aqua:charmbracelet/glow",
+   "asdf:mise-plugins/asdf-glow"
+  ],
+  "description": "Render markdown on the CLI, with pizzazz"
+ },
+ {
+  "short": "go",
+  "backends": [
+   "core:go"
+  ],
+  "description": "go lang (Builtin plugin)"
+ },
+ {
+  "short": "golangci-lint",
+  "backends": [
+   "aqua:golangci/golangci-lint",
+   "asdf:hypnoglow/asdf-golangci-lint"
+  ],
+  "description": "Fast linters Runner for Go"
+ },
+ {
+  "short": "goreleaser",
+  "backends": [
+   "aqua:goreleaser/goreleaser",
+   "asdf:kforsthoevel/asdf-goreleaser"
+  ],
+  "description": "Deliver Go binaries as fast and easily as possible"
+ },
+ {
+  "short": "gradle",
+  "backends": [
+   "aqua:gradle/gradle",
+   "vfox:mise-plugins/vfox-gradle"
+  ],
+  "description": "Gradle is the open source build system of choice for Java, Android, and Kotlin developers"
+ },
+ {
+  "short": "gum",
+  "backends": [
+   "aqua:charmbracelet/gum",
+   "asdf:lwiechec/asdf-gum"
+  ],
+  "description": "A tool for glamorous shell scripts"
+ },
+ {
+  "short": "hadolint",
+  "backends": [
+   "aqua:hadolint/hadolint",
+   "asdf:devlincashman/asdf-hadolint"
+  ],
+  "description": "Dockerfile linter, validate inline bash, written in Haskell"
+ },
+ {
+  "short": "helix",
+  "backends": [
+   "aqua:helix-editor/helix"
+  ],
+  "description": "A post-modern modal text editor"
+ },
+ {
+  "short": "helm",
+  "backends": [
+   "aqua:helm/helm",
+   "asdf:Antiarchitect/asdf-helm"
+  ],
+  "description": "The Kubernetes Package Manager"
+ },
+ {
+  "short": "hugo",
+  "backends": [
+   "aqua:gohugoio/hugo",
+   "asdf:NeoHsu/asdf-hugo",
+   "asdf:nklmilojevic/asdf-hugo"
+  ],
+  "description": "The world\u2019s fastest framework for building websites"
+ },
+ {
+  "short": "hyperfine",
+  "backends": [
+   "aqua:sharkdp/hyperfine",
+   "asdf:volf52/asdf-hyperfine",
+   "cargo:hyperfine"
+  ],
+  "description": "A command-line benchmarking tool"
+ },
+ {
+  "short": "java",
+  "backends": [
+   "core:java"
+  ],
+  "description": "jdk java"
+ },
+ {
+  "short": "jq",
+  "backends": [
+   "aqua:jqlang/jq",
+   "asdf:mise-plugins/asdf-jq"
+  ],
+  "description": "Command-line JSON processor"
+ },
+ {
+  "short": "just",
+  "backends": [
+   "aqua:casey/just",
+   "asdf:olofvndrhr/asdf-just",
+   "cargo:just"
+  ],
+  "description": "Just a command runner"
+ },
+ {
+  "short": "k9s",
+  "backends": [
+   "aqua:derailed/k9s",
+   "asdf:looztra/asdf-k9s"
+  ],
+  "description": "Kubernetes CLI To Manage Your Clusters In Style"
+ },
+ {
+  "short": "kind",
+  "backends": [
+   "aqua:kubernetes-sigs/kind",
+   "asdf:johnlayton/asdf-kind"
+  ],
+  "description": "Kubernetes IN Docker - local clusters for testing Kubernetes"
+ },
+ {
+  "short": "kotlin",
+  "backends": [
+   "github:JetBrains/kotlin",
+   "asdf:mise-plugins/mise-kotlin",
+   "vfox:mise-plugins/vfox-kotlin"
+  ],
+  "description": "Kotlin is a modern but already mature programming language designed to make developers happier. It's concise, safe, interoperable with Ja..."
+ },
+ {
+  "short": "kubectl",
+  "backends": [
+   "aqua:kubernetes/kubernetes/kubectl",
+   "asdf:asdf-community/asdf-kubectl"
+  ],
+  "description": "kubectl cli"
+ },
+ {
+  "short": "kubectx",
+  "backends": [
+   "aqua:ahmetb/kubectx",
+   "asdf:https://gitlab.com/wt0f/asdf-kubectx"
+  ],
+  "description": "Faster way to switch between clusters and namespaces in kubectl"
+ },
+ {
+  "short": "kustomize",
+  "backends": [
+   "aqua:kubernetes-sigs/kustomize",
+   "asdf:Banno/asdf-kustomize"
+  ],
+  "description": "Customization of kubernetes YAML configurations"
+ },
+ {
+  "short": "lazydocker",
+  "backends": [
+   "aqua:jesseduffield/lazydocker"
+  ],
+  "description": "The lazier way to manage everything docker"
+ },
+ {
+  "short": "lazygit",
+  "backends": [
+   "aqua:jesseduffield/lazygit",
+   "asdf:nklmilojevic/asdf-lazygit"
+  ],
+  "description": "simple terminal UI for git commands"
+ },
+ {
+  "short": "lua",
+  "backends": [
+   "vfox:mise-plugins/vfox-lua",
+   "asdf:mise-plugins/mise-lua"
+  ],
+  "description": "Lua language"
+ },
+ {
+  "short": "maven",
+  "backends": [
+   "aqua:apache/maven",
+   "asdf:mise-plugins/mise-maven",
+   "vfox:mise-plugins/vfox-maven"
+  ],
+  "description": "Apache Maven core"
+ },
+ {
+  "short": "minikube",
+  "backends": [
+   "aqua:kubernetes/minikube",
+   "asdf:alvarobp/asdf-minikube"
+  ],
+  "description": "Run Kubernetes locally"
+ },
+ {
+  "short": "neovim",
+  "backends": [
+   "vfox:mise-plugins/vfox-neovim",
+   "aqua:neovim/neovim"
+  ],
+  "description": "Vim-fork focused on extensibility and usability"
+ },
+ {
+  "short": "ninja",
+  "backends": [
+   "aqua:ninja-build/ninja",
+   "asdf:asdf-community/asdf-ninja"
+  ],
+  "description": "a small build system with a focus on speed"
+ },
+ {
+  "short": "node",
+  "backends": [
+   "core:node"
+  ],
+  "description": "Node.js\u00ae is a free, open-source, cross-platform JavaScript runtime environment that lets developers create servers, web apps, command lin..."
+ },
+ {
+  "short": "opentofu",
+  "backends": [
+   "aqua:opentofu/opentofu",
+   "asdf:virtualroot/asdf-opentofu"
+  ],
+  "description": "OpenTofu lets you declaratively manage your cloud infrastructure"
+ },
+ {
+  "short": "packer",
+  "backends": [
+   "aqua:hashicorp/packer",
+   "asdf:mise-plugins/mise-hashicorp"
+  ],
+  "description": "Packer is a tool for creating identical machine images for multiple platforms from a single source configuration"
+ },
+ {
+  "short": "php",
+  "backends": [
+   "vfox:jdx/vfox-php",
+   "asdf:mise-plugins/asdf-php"
+  ],
+  "description": "popular general-purpose scripting language that is especially suited to web development. Fast, flexible and pragmatic, PHP powers everyth..."
+ },
+ {
+  "short": "pipx",
+  "backends": [
+   "aqua:pypa/pipx",
+   "asdf:mise-plugins/mise-pipx"
+  ],
+  "description": "Install and Run Python Applications in Isolated Environments"
+ },
+ {
+  "short": "pnpm",
+  "backends": [
+   "aqua:pnpm/pnpm",
+   "npm:pnpm"
+  ],
+  "description": "Fast, disk space efficient package manager"
+ },
+ {
+  "short": "poetry",
+  "backends": [
+   "vfox:mise-plugins/vfox-poetry",
+   "pipx:poetry"
+  ],
+  "description": "Python packaging and dependency management made easy"
+ },
+ {
+  "short": "postgres",
+  "backends": [
+   "vfox:mise-plugins/vfox-postgres",
+   "asdf:mise-plugins/mise-postgres"
+  ],
+  "description": "PostgreSQL is a powerful, open source object-relational database system with over 35 years of active development that has earned it a str..."
+ },
+ {
+  "short": "protoc",
+  "backends": [
+   "aqua:protocolbuffers/protobuf/protoc",
+   "asdf:paxosglobal/asdf-protoc"
+  ],
+  "description": "Protocol Buffers Compiler - Google's data interchange format",
+  "aliases": [
+   "protobuf"
+  ]
+ },
+ {
+  "short": "pulumi",
+  "backends": [
+   "aqua:pulumi/pulumi",
+   "asdf:canha/asdf-pulumi"
+  ],
+  "description": "Pulumi - Infrastructure as Code in any programming language"
+ },
+ {
+  "short": "python",
+  "backends": [
+   "core:python"
+  ],
+  "description": "python language"
+ },
+ {
+  "short": "redis",
+  "backends": [
+   "vfox:mise-plugins/vfox-redis",
+   "asdf:mise-plugins/mise-redis"
+  ],
+  "description": "Cache & in-memory datastore"
+ },
+ {
+  "short": "ripgrep",
+  "backends": [
+   "aqua:BurntSushi/ripgrep",
+   "asdf:https://gitlab.com/wt0f/asdf-ripgrep",
+   "cargo:ripgrep"
+  ],
+  "description": "ripgrep recursively searches directories for a regex pattern while respecting your gitignore",
+  "aliases": [
+   "rg"
+  ]
+ },
+ {
+  "short": "ruby",
+  "backends": [
+   "core:ruby"
+  ],
+  "description": "Ruby language"
+ },
+ {
+  "short": "ruff",
+  "backends": [
+   "aqua:astral-sh/ruff",
+   "asdf:simhem/asdf-ruff"
+  ],
+  "description": "An extremely fast Python linter and code formatter, written in Rust"
+ },
+ {
+  "short": "rust",
+  "backends": [
+   "core:rust",
+   "asdf:code-lever/asdf-rust"
+  ],
+  "description": "Rust language"
+ },
+ {
+  "short": "sbt",
+  "backends": [
+   "conda:sbt",
+   "asdf:mise-plugins/mise-sbt"
+  ],
+  "description": "sbt, the interactive build tool"
+ },
+ {
+  "short": "shellcheck",
+  "backends": [
+   "aqua:koalaman/shellcheck",
+   "asdf:luizm/asdf-shellcheck"
+  ],
+  "description": "ShellCheck, a static analysis tool for shell scripts"
+ },
+ {
+  "short": "shfmt",
+  "backends": [
+   "aqua:mvdan/sh",
+   "asdf:luizm/asdf-shfmt",
+   "go:mvdan.cc/sh/v3/cmd/shfmt"
+  ],
+  "description": "A shell parser, formatter, and interpreter with bash support; includes shfmt"
+ },
+ {
+  "short": "sops",
+  "backends": [
+   "aqua:getsops/sops",
+   "asdf:mise-plugins/mise-sops"
+  ],
+  "description": "Simple and flexible tool for managing secrets"
+ },
+ {
+  "short": "sqlite",
+  "backends": [
+   "conda:sqlite",
+   "asdf:mise-plugins/mise-sqlite"
+  ],
+  "description": "SQLite is a C-language library that implements a small, fast, self-contained, high-reliability, full-featured, SQL database engine. SQLit..."
+ },
+ {
+  "short": "starship",
+  "backends": [
+   "aqua:starship/starship",
+   "asdf:gr1m0h/asdf-starship",
+   "cargo:starship"
+  ],
+  "description": "The minimal, blazing-fast, and infinitely customizable prompt for any shell"
+ },
+ {
+  "short": "stern",
+  "backends": [
+   "aqua:stern/stern",
+   "asdf:looztra/asdf-stern"
+  ],
+  "description": "\u2388 Multi pod and container log tailing for Kubernetes -- Friendly fork of https://github.com/wercker/stern"
+ },
+ {
+  "short": "swift",
+  "backends": [
+   "core:swift"
+  ],
+  "description": "Swift Lang (Core)"
+ },
+ {
+  "short": "task",
+  "backends": [
+   "aqua:go-task/task",
+   "asdf:particledecay/asdf-task"
+  ],
+  "description": "A task runner / simpler Make alternative written in Go"
+ },
+ {
+  "short": "terraform",
+  "backends": [
+   "aqua:hashicorp/terraform",
+   "asdf:mise-plugins/mise-hashicorp",
+   "vfox:mise-plugins/vfox-terraform"
+  ],
+  "description": "Terraform enables you to safely and predictably create, change, and improve infrastructure. It is an open source tool that codifies APIs..."
+ },
+ {
+  "short": "tmux",
+  "backends": [
+   "aqua:tmux/tmux-builds",
+   "asdf:mise-plugins/mise-tmux"
+  ],
+  "description": "tmux is a terminal multiplexer. It lets you switch easily between several programs in one terminal, detach them (they keep running in the..."
+ },
+ {
+  "short": "trivy",
+  "backends": [
+   "aqua:aquasecurity/trivy",
+   "asdf:zufardhiyaulhaq/asdf-trivy"
+  ],
+  "description": "Find vulnerabilities, misconfigurations, secrets, SBOM in containers, Kubernetes, code repositories, clouds and more"
+ },
+ {
+  "short": "usage",
+  "backends": [
+   "aqua:jdx/usage",
+   "asdf:mise-plugins/mise-usage",
+   "cargo:usage-cli"
+  ],
+  "description": "A specification for CLIs"
+ },
+ {
+  "short": "uv",
+  "backends": [
+   "aqua:astral-sh/uv",
+   "asdf:asdf-community/asdf-uv",
+   "pipx:uv"
+  ],
+  "description": "An extremely fast Python package installer and resolver, written in Rust"
+ },
+ {
+  "short": "vault",
+  "backends": [
+   "aqua:hashicorp/vault",
+   "asdf:mise-plugins/mise-hashicorp"
+  ],
+  "description": "A tool for secrets management, encryption as a service, and privileged access management"
+ },
+ {
+  "short": "watchexec",
+  "backends": [
+   "aqua:watchexec/watchexec",
+   "cargo:watchexec-cli"
+  ],
+  "description": "Executes commands in response to file modifications"
+ },
+ {
+  "short": "yarn",
+  "backends": [
+   "vfox:mise-plugins/vfox-yarn",
+   "asdf:mise-plugins/mise-yarn",
+   "aqua:yarnpkg/berry"
+  ],
+  "description": "Yarn is a package manager that doubles down as project manager. Whether you work on simple projects or industry monorepos, whether you're..."
+ },
+ {
+  "short": "yq",
+  "backends": [
+   "aqua:mikefarah/yq",
+   "asdf:sudermanjr/asdf-yq",
+   "go:github.com/mikefarah/yq/v4"
+  ],
+  "description": "yq is a portable command-line YAML processor"
+ },
+ {
+  "short": "zellij",
+  "backends": [
+   "aqua:zellij-org/zellij",
+   "asdf:chessmango/asdf-zellij",
+   "cargo:zellij"
+  ],
+  "description": "A terminal workspace with batteries included"
+ },
+ {
+  "short": "zig",
+  "backends": [
+   "core:zig"
+  ],
+  "description": "Zig is a general-purpose programming language and toolchain for maintaining robust, optimal and reusable software"
+ },
+ {
+  "short": "zoxide",
+  "backends": [
+   "aqua:ajeetdsouza/zoxide",
+   "cargo:zoxide"
+  ],
+  "description": "A smarter cd command. Supports all major shells"
+ }
+]

@@ -7,6 +7,15 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+mod client;
+mod models;
+
+pub use client::{MiseClient, MiseCommand, OutputLine, RunOutcome, Stream};
+pub use models::{
+    ConfigFile, ConfigSource, Doctor, MiseVersion, OutdatedReport, OutdatedTool, RegistryEntry,
+    RemoteVersion, ShellInfo, Task, ToolInventory, ToolVersion, VersionInfo,
+};
+
 use powermise_domain::{
     MiseBootstrapApplyOutput, MiseBootstrapStatus, MiseDryRunOutput, MiseDryRunRequest,
     MiseEnvironmentRequest, MiseRunner,
@@ -270,6 +279,14 @@ pub enum MiseAdapterError {
         stdout: String,
         stderr: String,
     },
+    #[error("could not parse the JSON from `{command}`: {source}")]
+    Json {
+        command: String,
+        #[source]
+        source: serde_json::Error,
+    },
+    #[error("`{value}` is not a valid tool name or version")]
+    InvalidArgument { value: String },
     #[error("could not parse `mise bootstrap status --json` from `{executable}`: {source}")]
     Status {
         executable: PathBuf,

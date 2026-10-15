@@ -1231,6 +1231,116 @@ button {
   color: var(--text-tertiary);
 }
 
+/* ---------- mise screens ---------- */
+
+.sidebar-badge {
+  min-width: 18px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.version-pill {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--fill);
+  color: var(--text);
+}
+
+.version-pill.accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.install-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.select {
+  height: 32px;
+  min-width: 220px;
+  padding: 0 28px 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--control)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5'/%3E%3C/svg%3E")
+    no-repeat right 10px center;
+  box-shadow: var(--shadow-control);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.button.danger {
+  background: var(--red);
+  color: #fff;
+  box-shadow: none;
+}
+
+.row-link {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.run-log {
+  margin-top: 10px;
+  max-height: 260px;
+  min-height: 120px;
+  white-space: pre-wrap;
+}
+
+.run-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.activity-entry {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.activity-entry > svg {
+  flex: none;
+  margin-top: 8px;
+}
+
+.outcome-icon.running {
+  color: var(--accent);
+}
+
+.page code,
+.callout code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: var(--fill);
+}
+
 /* ---------- Accessibility preferences ---------- */
 
 @media (prefers-reduced-motion: reduce) {

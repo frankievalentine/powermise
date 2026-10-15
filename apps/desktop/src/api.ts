@@ -188,6 +188,97 @@ export interface RemoveResult {
   commands: string[];
 }
 
+// ---------------------------------------------------------------------------
+// mise (src-tauri/src/mise_commands.rs; shapes from powermise-mise models)
+// ---------------------------------------------------------------------------
+
+export interface MiseInfo {
+  path: string | null;
+  version: string | null;
+  latest: string | null;
+  minimum: string;
+  supported: boolean;
+}
+
+export interface ConfigSource {
+  type: string;
+  path: string;
+}
+
+export interface ToolVersion {
+  version: string;
+  requested_version?: string | null;
+  install_path: string;
+  source?: ConfigSource | null;
+  installed: boolean;
+  active: boolean;
+}
+
+export type ToolInventory = Record<string, ToolVersion[]>;
+
+export interface OutdatedTool {
+  name: string;
+  requested: string | null;
+  current: string | null;
+  bump: string | null;
+  latest: string;
+  source: ConfigSource | null;
+}
+
+export type OutdatedReport = Record<string, OutdatedTool>;
+
+export interface RegistryEntry {
+  short: string;
+  backends: string[];
+  description: string | null;
+  aliases: string[];
+}
+
+export interface RemoteVersion {
+  version: string;
+  created_at: string | null;
+  release_url: string | null;
+}
+
+export interface Doctor {
+  version: string;
+  activated: boolean;
+  shims_on_path: boolean;
+  self_update_available: boolean;
+  config_files: string[];
+  errors: string[];
+  warnings: string[];
+  shell: { name: string; version: string | null } | null;
+}
+
+export type MiseAction =
+  | { kind: "useGlobal"; tool: string; version: string }
+  | { kind: "unuseGlobal"; tool: string }
+  | { kind: "uninstall"; tool: string; version: string }
+  | { kind: "upgrade"; tool: string | null }
+  | { kind: "selfUpdate" };
+
+export interface RunOutcome {
+  success: boolean;
+  code: number | null;
+  cancelled: boolean;
+}
+
+export interface ActivityEntry {
+  id: number;
+  command: string;
+  startedAt: number;
+  finishedAt: number | null;
+  outcome: RunOutcome | null;
+  error: string | null;
+}
+
+export interface OutputEvent {
+  jobId: number;
+  stream: "stdout" | "stderr";
+  text: string;
+}
+
 /** Whether the page runs inside the Tauri shell (vs. a plain browser preview). */
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -216,7 +307,35 @@ export const api = {
     call<StatusResult>("selection_status", { name, target }),
   remove: (name: string) => call<RemoveResult>("remove_selection", { name }),
   reveal: (path: string) => call<void>("reveal_path", { path }),
+
+  miseInfo: () => call<MiseInfo>("mise_info"),
+  installed: () => call<ToolInventory>("installed_tools"),
+  outdated: () => call<OutdatedReport>("outdated_tools"),
+  registry: () => call<RegistryEntry[]>("registry"),
+  remoteVersions: (tool: string) => call<RemoteVersion[]>("remote_versions", { tool }),
+  doctor: () => call<Doctor>("doctor"),
+  describe: (action: MiseAction) => call<string>("describe_action", { action }),
+  run: (action: MiseAction) => call<number>("run_action", { action }),
+  cancel: (jobId: number) => call<void>("cancel_job", { jobId }),
+  activity: () => call<ActivityEntry[]>("activity"),
 };
+
+/** Subscribes to a backend event, in Tauri or from the browser stub. */
+async function subscribe<T>(event: string, handler: (payload: T) => void): Promise<UnlistenFn> {
+  if (!inTauri) {
+    const { browserEvents } = await import("./dev/browserPreview");
+    return browserEvents.on(event, handler as (payload: unknown) => void);
+  }
+  return listen<T>(event, (message) => handler(message.payload));
+}
+
+/** Output lines from running mise jobs. */
+export const onMiseOutput = (handler: (event: OutputEvent) => void) =>
+  subscribe<OutputEvent>("mise-output", handler);
+
+/** A mise job finished (successfully, with an error, or cancelled). */
+export const onMiseFinished = (handler: (entry: ActivityEntry) => void) =>
+  subscribe<ActivityEntry>("mise-finished", handler);
 
 /** Subscribes to human-readable apply progress lines. */
 export async function onApplyProgress(handler: (step: string) => void): Promise<UnlistenFn> {

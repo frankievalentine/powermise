@@ -1,0 +1,276 @@
+// A stateful stand-in for mise used when the UI runs outside Tauri: design
+// work, and the live demo on the marketing site. Installs, upgrades, and
+// removals change this in-memory state and stream believable output, so the
+// demo behaves like the real app without touching anyone's machine.
+import registryEntries from "./registry.json";
+import type {
+  ActivityEntry,
+  Doctor,
+  MiseAction,
+  MiseInfo,
+  OutdatedReport,
+  OutputEvent,
+  RegistryEntry,
+  RemoteVersion,
+  ToolInventory,
+  ToolVersion,
+} from "../api";
+
+type Listener = (payload: unknown) => void;
+
+/** A tiny event bus standing in for Tauri events. */
+export const browserEvents = {
+  listeners: new Map<string, Set<Listener>>(),
+  on(event: string, listener: Listener) {
+    const set = this.listeners.get(event) ?? new Set<Listener>();
+    set.add(listener);
+    this.listeners.set(event, set);
+    return () => set.delete(listener);
+  },
+  emit(event: string, payload: unknown) {
+    this.listeners.get(event)?.forEach((listener) => listener(payload));
+  },
+};
+
+const HOME = "/Users/demo";
+const GLOBAL_CONFIG = `${HOME}/.config/mise/config.toml`;
+const DATA = `${HOME}/.local/share/mise/installs`;
+
+const registry: RegistryEntry[] = (registryEntries as Partial<RegistryEntry>[]).map((entry) => ({
+  short: entry.short!,
+  backends: entry.backends ?? [],
+  description: entry.description ?? null,
+  aliases: entry.aliases ?? [],
+}));
+
+/** Latest version per demo tool; anything else gets a generated history. */
+const LATEST: Record<string, string> = {
+  node: "24.11.0",
+  python: "3.14.0",
+  go: "1.25.3",
+  jq: "1.8.1",
+  ripgrep: "15.1.0",
+  terraform: "1.13.4",
+  bun: "1.3.14",
+  uv: "0.9.5",
+  rust: "1.91.0",
+  deno: "2.5.6",
+  gh: "2.82.1",
+  kubectl: "1.34.1",
+};
+
+/** What the demo machine has, keyed by tool: [version, global?] pairs. */
+const machine = new Map<string, { version: string; global: boolean }[]>([
+  ["node", [{ version: "22.20.0", global: true }, { version: "20.19.5", global: false }]],
+  ["python", [{ version: "3.13.9", global: true }]],
+  ["go", [{ version: "1.25.3", global: true }]],
+  ["jq", [{ version: "1.7.1", global: true }]],
+  ["ripgrep", [{ version: "15.1.0", global: true }]],
+  ["terraform", [{ version: "1.12.2", global: true }]],
+  ["bun", [{ version: "1.3.14", global: true }]],
+]);
+
+let selfUpdateAvailable = true;
+let miseVersion = "2026.7.18";
+const activityLog: ActivityEntry[] = [];
+let nextJob = 0;
+
+function latestOf(tool: string): string {
+  return LATEST[tool] ?? "1.4.2";
+}
+
+function inventory(): ToolInventory {
+  const result: ToolInventory = {};
+  for (const [tool, versions] of [...machine.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    result[tool] = versions.map(
+      (entry): ToolVersion => ({
+        version: entry.version,
+        requested_version: entry.global ? entry.version : null,
+        install_path: `${DATA}/${tool}/${entry.version}`,
+        source: entry.global ? { type: "mise.toml", path: GLOBAL_CONFIG } : null,
+        installed: true,
+        active: entry.global,
+      }),
+    );
+  }
+  return result;
+}
+
+function outdated(): OutdatedReport {
+  const report: OutdatedReport = {};
+  for (const [tool, versions] of machine) {
+    const global = versions.find((entry) => entry.global);
+    const latest = latestOf(tool);
+    if (global && global.version !== latest) {
+      report[tool] = {
+        name: tool,
+        requested: global.version,
+        current: global.version,
+        bump: latest,
+        latest,
+        source: { type: "mise.toml", path: GLOBAL_CONFIG },
+      };
+    }
+  }
+  return report;
+}
+
+function remoteVersions(tool: string): RemoteVersion[] {
+  const [major, minor, patch] = latestOf(tool).split(".").map(Number);
+  const versions: string[] = [];
+  for (let m = Math.max(0, minor - 3); m <= minor; m++) {
+    const top = m === minor ? patch : 4;
+    for (let p = 0; p <= top; p++) versions.push(`${major}.${m}.${p}`);
+  }
+  if (major > 1) versions.unshift(`${major - 1}.9.0`, `${major - 1}.10.1`);
+  return versions.map((version) => ({ version, created_at: null, release_url: null }));
+}
+
+function doctor(): Doctor {
+  return {
+    version: `${miseVersion} macos-arm64`,
+    activated: true,
+    shims_on_path: false,
+    self_update_available: selfUpdateAvailable,
+    config_files: [GLOBAL_CONFIG, `${HOME}/code/web-app/mise.toml`],
+    errors: [],
+    warnings: [],
+    shell: { name: "/bin/zsh", version: "zsh 5.9" },
+  };
+}
+
+function describe(action: MiseAction): string {
+  switch (action.kind) {
+    case "useGlobal":
+      return `mise use -g ${action.tool}@${action.version}`;
+    case "unuseGlobal":
+      return `mise unuse -g ${action.tool}`;
+    case "uninstall":
+      return `mise uninstall ${action.tool}@${action.version}`;
+    case "upgrade":
+      return action.tool ? `mise upgrade --bump ${action.tool}` : "mise upgrade --bump";
+    case "selfUpdate":
+      return "mise self-update --yes";
+  }
+}
+
+function installLines(tool: string, version: string): string[] {
+  const backend = registry.find((entry) => entry.short === tool)?.backends[0] ?? `core:${tool}`;
+  return [
+    `mise ${tool}@${version}  resolving ${backend}`,
+    `mise ${tool}@${version}  download ${tool}-${version}-darwin-arm64.tar.gz`,
+    `mise ${tool}@${version}  checksum verified`,
+    `mise ${tool}@${version}  extract`,
+    `mise ${tool}@${version}  ✓ installed`,
+  ];
+}
+
+/** Applies an action to the demo machine and returns the output it "prints". */
+function perform(action: MiseAction): string[] {
+  switch (action.kind) {
+    case "useGlobal": {
+      const versions = (machine.get(action.tool) ?? []).map((entry) => ({ ...entry, global: false }));
+      const existing = versions.find((entry) => entry.version === action.version);
+      if (existing) existing.global = true;
+      else versions.push({ version: action.version, global: true });
+      machine.set(action.tool, versions);
+      return [
+        ...(existing ? [] : installLines(action.tool, action.version)),
+        `mise ~/.config/mise/config.toml tools: ${action.tool}@${action.version}`,
+      ];
+    }
+    case "unuseGlobal": {
+      machine.delete(action.tool);
+      return [`mise ~/.config/mise/config.toml removed: ${action.tool}`, `mise pruned ${action.tool}`];
+    }
+    case "uninstall": {
+      const remaining = (machine.get(action.tool) ?? []).filter((entry) => entry.version !== action.version);
+      if (remaining.length) machine.set(action.tool, remaining);
+      else machine.delete(action.tool);
+      return [`mise ${action.tool}@${action.version}  ✓ uninstalled`];
+    }
+    case "upgrade": {
+      const report = outdated();
+      const tools = action.tool ? [action.tool] : Object.keys(report);
+      const lines: string[] = [];
+      for (const tool of tools) {
+        const target = report[tool]?.bump ?? report[tool]?.latest;
+        if (!target) continue;
+        lines.push(...installLines(tool, target));
+        const versions = machine.get(tool) ?? [];
+        machine.set(tool, [
+          ...versions.filter((entry) => !entry.global),
+          { version: target, global: true },
+        ]);
+        lines.push(`mise ~/.config/mise/config.toml tools: ${tool}@${target}`);
+      }
+      return lines.length ? lines : ["mise All tools are up to date"];
+    }
+    case "selfUpdate":
+      selfUpdateAvailable = false;
+      miseVersion = "2026.10.10";
+      return ["Checking target-arch... mise-v2026.10.10-macos-arm64", "Downloading...", "Updated mise to 2026.10.10"];
+  }
+}
+
+function run(action: MiseAction): number {
+  const id = ++nextJob;
+  const entry: ActivityEntry = {
+    id,
+    command: describe(action),
+    startedAt: Date.now(),
+    finishedAt: null,
+    outcome: null,
+    error: null,
+  };
+  activityLog.push(entry);
+  const lines = perform(action);
+  lines.forEach((text, index) => {
+    setTimeout(
+      () => browserEvents.emit("mise-output", { jobId: id, stream: "stderr", text } satisfies OutputEvent),
+      260 + index * 320,
+    );
+  });
+  setTimeout(() => {
+    entry.finishedAt = Date.now();
+    entry.outcome = { success: true, code: 0, cancelled: false };
+    browserEvents.emit("mise-finished", { ...entry });
+  }, 420 + lines.length * 320);
+  return id;
+}
+
+/** Handles mise commands for the browser stub; `undefined` means "not mine". */
+export function demoMise(command: string, args: Record<string, unknown>): unknown {
+  switch (command) {
+    case "mise_info":
+      return {
+        path: "/Users/demo/.local/bin/mise",
+        version: `${miseVersion} macos-arm64 (demo)`,
+        latest: "2026.10.10",
+        minimum: "2026.7.18",
+        supported: true,
+      } satisfies MiseInfo;
+    case "installed_tools":
+      return inventory();
+    case "outdated_tools":
+      return outdated();
+    case "registry":
+      return registry;
+    case "remote_versions":
+      return remoteVersions(args.tool as string);
+    case "doctor":
+      return doctor();
+    case "describe_action":
+      return describe(args.action as MiseAction);
+    case "run_action":
+      return run(args.action as MiseAction);
+    case "cancel_job":
+      return undefined;
+    case "activity":
+      return [...activityLog].reverse();
+    default:
+      return NOT_HANDLED;
+  }
+}
+
+export const NOT_HANDLED = Symbol("not handled");

@@ -1,32 +1,56 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
 import {
+  Activity,
   AlertTriangle,
+  ArrowUpCircle,
   Blocks,
   ChevronLeft,
+  Compass,
   Cpu,
+  HeartPulse,
+  Layers,
   Package,
   Plug,
   Plus,
   Search,
   Server,
-  Terminal,
 } from "lucide-react";
 import {
   api,
+  onMiseFinished,
   PLATFORM_LABEL,
   type EnvironmentInfo,
+  type MiseInfo,
+  type OutdatedReport,
+  type RegistryEntry,
   type SavedSelection,
+  type ToolInventory,
 } from "./api";
 import { indexCatalog, type CatalogIndex } from "./catalog";
+import { RunSheet, type RunRequest } from "./components/RunSheet";
 import { HarnessesView } from "./views/HarnessesView";
 import { HarnessDetail } from "./views/HarnessDetail";
 import { ToolsView } from "./views/ToolsView";
 import { ConfigView } from "./views/ConfigView";
 import { SetupEditor } from "./views/SetupEditor";
 import { SetupView } from "./views/SetupView";
+import { InstalledView } from "./views/mise/InstalledView";
+import { DiscoverView } from "./views/mise/DiscoverView";
+import { ToolPage } from "./views/mise/ToolPage";
+import { UpdatesView } from "./views/mise/UpdatesView";
+import { HealthView } from "./views/mise/HealthView";
+import { ActivityView } from "./views/mise/ActivityView";
 
 export type Route =
+  // mise
+  | { kind: "installed" }
+  | { kind: "discover" }
+  | { kind: "tool"; name: string }
+  | { kind: "updates" }
+  | { kind: "activity" }
+  | { kind: "health" }
+  // AI Setups
   | { kind: "harnesses" }
   | { kind: "harness"; id: string }
   | { kind: "tools" }
@@ -35,33 +59,71 @@ export type Route =
   | { kind: "setup"; name: string }
   | { kind: "editor"; name?: string; seed?: string[] };
 
+/** What mise reports, shared by every mise screen and refreshed after changes. */
+export interface MiseData {
+  info: MiseInfo | null;
+  inventory: ToolInventory | null;
+  outdated: OutdatedReport | null;
+  registry: RegistryEntry[] | null;
+  registryByName: Map<string, RegistryEntry>;
+  error: string | null;
+  /** Increments whenever a change finishes; screens reload on it. */
+  revision: number;
+}
+
 export interface AppContext {
   env: EnvironmentInfo;
   catalog: CatalogIndex;
   selections: SavedSelection[];
+  mise: MiseData;
   navigate: (route: Route) => void;
   refreshSelections: () => Promise<SavedSelection[]>;
+  /** Asks to run a mise change: confirm, stream output, report. */
+  run: (request: RunRequest) => void;
 }
 
 /** Default UI spring: no overshoot, ~0.35s (apple-design). */
 const spring = { type: "spring", bounce: 0, duration: 0.35 } as const;
 
+const TOP_LEVEL: Route["kind"][] = [
+  "installed",
+  "discover",
+  "updates",
+  "activity",
+  "health",
+  "harnesses",
+  "tools",
+  "mcp",
+  "integrations",
+  "setup",
+];
+
+const SEARCHABLE: Route["kind"][] = ["installed", "discover", "harnesses", "tools", "mcp", "integrations"];
+
 const routeKey = (route: Route) =>
   route.kind === "harness"
     ? `harness:${route.id}`
-    : route.kind === "setup"
-      ? `setup:${route.name}`
+    : route.kind === "tool" || route.kind === "setup"
+      ? `${route.kind}:${route.name}`
       : route.kind === "editor"
         ? `editor:${route.name ?? "new"}`
         : route.kind;
 
-export default function App() {
+export default function App({ initialRoute }: { initialRoute?: Route }) {
   const [env, setEnv] = useState<EnvironmentInfo | null>(null);
   const [catalog, setCatalog] = useState<CatalogIndex | null>(null);
   const [selections, setSelections] = useState<SavedSelection[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<Route[]>([{ kind: "harnesses" }]);
+  const [history, setHistory] = useState<Route[]>([initialRoute ?? { kind: "installed" }]);
   const [query, setQuery] = useState("");
+  const [runRequest, setRunRequest] = useState<RunRequest | null>(null);
+
+  const [revision, setRevision] = useState(0);
+  const [miseInfo, setMiseInfo] = useState<MiseInfo | null>(null);
+  const [inventory, setInventory] = useState<ToolInventory | null>(null);
+  const [outdated, setOutdated] = useState<OutdatedReport | null>(null);
+  const [registry, setRegistry] = useState<RegistryEntry[] | null>(null);
+  const [miseError, setMiseError] = useState<string | null>(null);
 
   const route = history[history.length - 1];
 
@@ -79,42 +141,71 @@ export default function App() {
         setSelections(saved);
       })
       .catch((reason: Error) => setError(reason.message));
+    api.registry().then(setRegistry).catch(() => setRegistry([]));
+  }, []);
+
+  // mise state reloads at start and after every finished change.
+  useEffect(() => {
+    api.miseInfo().then(setMiseInfo).catch(() => setMiseInfo(null));
+    Promise.all([api.installed(), api.outdated()])
+      .then(([tools, report]) => {
+        setInventory(tools);
+        setOutdated(report);
+        setMiseError(null);
+      })
+      .catch((reason: Error) => setMiseError(reason.message));
+  }, [revision]);
+
+  useEffect(() => {
+    const stop = onMiseFinished(() => setRevision((value) => value + 1));
+    return () => {
+      stop.then((unlisten) => unlisten());
+    };
   }, []);
 
   const navigate = useCallback((next: Route) => {
     setQuery("");
-    setHistory((stack) => {
-      // Top-level destinations reset the stack; detail pages push onto it.
-      const topLevel = ["harnesses", "tools", "mcp", "integrations", "setup"].includes(next.kind);
-      return topLevel ? [next] : [...stack, next];
-    });
+    setHistory((stack) => (TOP_LEVEL.includes(next.kind) ? [next] : [...stack, next]));
   }, []);
 
   const goBack = () => setHistory((stack) => (stack.length > 1 ? stack.slice(0, -1) : stack));
 
+  const mise = useMemo<MiseData>(
+    () => ({
+      info: miseInfo,
+      inventory,
+      outdated,
+      registry,
+      registryByName: new Map((registry ?? []).map((entry) => [entry.short, entry])),
+      error: miseError,
+      revision,
+    }),
+    [miseInfo, inventory, outdated, registry, miseError, revision],
+  );
+
   const context = useMemo<AppContext | null>(
     () =>
-      env && catalog ? { env, catalog, selections, navigate, refreshSelections } : null,
-    [env, catalog, selections, navigate, refreshSelections],
+      env && catalog
+        ? { env, catalog, selections, mise, navigate, refreshSelections, run: setRunRequest }
+        : null,
+    [env, catalog, selections, mise, navigate, refreshSelections],
   );
 
   if (error) {
     return (
       <div className="empty" style={{ paddingTop: 120 }}>
         <AlertTriangle size={28} color="var(--orange)" />
-        <h3>Powermise couldn’t load its catalog</h3>
+        <h3>Powermise couldn’t start</h3>
         <p className="selectable">{error}</p>
       </div>
     );
   }
   if (!context) return null;
 
-  const searchable = ["harnesses", "tools", "mcp", "integrations"].includes(route.kind);
-
   return (
     <MotionConfig reducedMotion="user">
       <div className="window">
-        <Sidebar route={route} context={context} />
+        <Sidebar route={route} root={history[0]} context={context} />
         <main className="main">
           <header className="toolbar" data-tauri-drag-region>
             {history.length > 1 && (
@@ -126,13 +217,13 @@ export default function App() {
               <span data-tauri-drag-region>{toolbarTitle(route, context)}</span>
             </div>
             <div className="toolbar-spacer" data-tauri-drag-region />
-            {searchable && (
+            {SEARCHABLE.includes(route.kind) && (
               <label className="search">
                 <Search size={14} />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search"
+                  placeholder={route.kind === "discover" ? "Search 1,000+ tools" : "Search"}
                   aria-label="Search"
                 />
               </label>
@@ -151,18 +242,31 @@ export default function App() {
           </motion.div>
         </main>
       </div>
+      <RunSheet request={runRequest} onClose={() => setRunRequest(null)} />
     </MotionConfig>
   );
 }
 
 function toolbarTitle(route: Route, context: AppContext): string {
   switch (route.kind) {
+    case "installed":
+      return "Installed";
+    case "discover":
+      return "Discover";
+    case "tool":
+      return route.name;
+    case "updates":
+      return "Updates";
+    case "activity":
+      return "Activity";
+    case "health":
+      return "Health";
     case "harnesses":
       return "Harnesses";
     case "harness":
       return context.catalog.harnessById.get(route.id)?.title ?? route.id;
     case "tools":
-      return "Tools";
+      return "Agent Tools";
     case "mcp":
       return "MCP Servers";
     case "integrations":
@@ -176,6 +280,18 @@ function toolbarTitle(route: Route, context: AppContext): string {
 
 function RouteView({ route, context, query }: { route: Route; context: AppContext; query: string }) {
   switch (route.kind) {
+    case "installed":
+      return <InstalledView context={context} query={query} />;
+    case "discover":
+      return <DiscoverView context={context} query={query} />;
+    case "tool":
+      return <ToolPage context={context} name={route.name} />;
+    case "updates":
+      return <UpdatesView context={context} />;
+    case "activity":
+      return <ActivityView context={context} />;
+    case "health":
+      return <HealthView context={context} />;
     case "harnesses":
       return <HarnessesView context={context} query={query} />;
     case "harness":
@@ -193,32 +309,63 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
   }
 }
 
-function Sidebar({ route, context }: { route: Route; context: AppContext }) {
-  const { catalog, selections, env, navigate } = context;
-  const library = [
-    { kind: "harnesses" as const, label: "Harnesses", icon: Cpu, count: catalog.harnesses.length },
-    { kind: "tools" as const, label: "Tools", icon: Package, count: catalog.tools.length },
-    { kind: "mcp" as const, label: "MCP Servers", icon: Server, count: catalog.mcpServers.length },
+function Sidebar({ route, root, context }: { route: Route; root: Route; context: AppContext }) {
+  const { catalog, selections, env, mise, navigate } = context;
+  const installedCount = Object.keys(mise.inventory ?? {}).length;
+  const updateCount = Object.keys(mise.outdated ?? {}).length;
+
+  const miseItems = [
+    { kind: "installed" as const, label: "Installed", icon: Layers, trailing: installedCount || null },
+    { kind: "discover" as const, label: "Discover", icon: Compass, trailing: null },
     {
-      kind: "integrations" as const,
-      label: "Integrations",
-      icon: Plug,
-      count: catalog.integrations.length,
+      kind: "updates" as const,
+      label: "Updates",
+      icon: ArrowUpCircle,
+      trailing: updateCount ? <span className="sidebar-badge">{updateCount}</span> : null,
+    },
+    { kind: "activity" as const, label: "Activity", icon: Activity, trailing: null },
+    {
+      kind: "health" as const,
+      label: "Health",
+      icon: HeartPulse,
+      trailing: mise.info && !mise.info.supported ? <span className="status-dot attention" /> : null,
     },
   ];
-  const libraryActive = (kind: string) =>
-    route.kind === kind || (kind === "harnesses" && route.kind === "harness");
+  const aiItems = [
+    { kind: "harnesses" as const, label: "Harnesses", icon: Cpu, count: catalog.harnesses.length },
+    { kind: "tools" as const, label: "Agent Tools", icon: Package, count: catalog.tools.length },
+    { kind: "mcp" as const, label: "MCP Servers", icon: Server, count: catalog.mcpServers.length },
+    { kind: "integrations" as const, label: "Integrations", icon: Plug, count: catalog.integrations.length },
+  ];
+  // Detail pages keep the section they were opened from highlighted.
+  const isActive = (kind: string) => root.kind === kind;
 
   return (
     <nav className="sidebar" data-tauri-drag-region aria-label="Sidebar">
       <div className="sidebar-scroll">
         <div className="sidebar-section">
-          <div className="sidebar-heading">Library</div>
-          {library.map(({ kind, label, icon: Icon, count }) => (
+          <div className="sidebar-heading">mise</div>
+          {miseItems.map(({ kind, label, icon: Icon, trailing }) => (
             <button
               key={kind}
               className="sidebar-item"
-              aria-current={libraryActive(kind) ? "page" : undefined}
+              aria-current={isActive(kind) ? "page" : undefined}
+              onClick={() => navigate({ kind })}
+            >
+              <Icon size={16} />
+              <span className="label">{label}</span>
+              {typeof trailing === "number" ? <span className="count">{trailing}</span> : trailing}
+            </button>
+          ))}
+        </div>
+
+        <div className="sidebar-section">
+          <div className="sidebar-heading">AI Setups</div>
+          {aiItems.map(({ kind, label, icon: Icon, count }) => (
+            <button
+              key={kind}
+              className="sidebar-item"
+              aria-current={isActive(kind) ? "page" : undefined}
               onClick={() => navigate({ kind })}
             >
               <Icon size={16} />
@@ -227,6 +374,7 @@ function Sidebar({ route, context }: { route: Route; context: AppContext }) {
             </button>
           ))}
         </div>
+
         <div className="sidebar-section">
           <div className="sidebar-heading">
             My Setups
@@ -265,20 +413,17 @@ function Sidebar({ route, context }: { route: Route; context: AppContext }) {
         </div>
       </div>
       <div className="sidebar-footer">
-        <div className="row">
-          <Terminal size={13} />
-          This computer: {PLATFORM_LABEL[env.hostTarget]}
-        </div>
-        {env.misePath ? (
-          <div className="row" title={env.misePath}>
-            mise {env.miseVersion?.split(" ")[0] ?? "found"}
+        {mise.info?.version ? (
+          <div className={`row${mise.info.supported ? "" : " warn"}`} title={mise.info.path ?? undefined}>
+            {!mise.info.supported && <AlertTriangle size={13} />}
+            mise {mise.info.version.split(" ")[0]}
           </div>
         ) : (
           <div className="row warn">
             <AlertTriangle size={13} /> mise not found
           </div>
         )}
-        <div className="row">Catalog revision {catalog.revision}</div>
+        <div className="row">{PLATFORM_LABEL[env.hostTarget]}</div>
       </div>
     </nav>
   );
