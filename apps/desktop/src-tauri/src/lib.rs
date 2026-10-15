@@ -14,6 +14,7 @@ mod mise_commands;
 mod plugins;
 mod projects;
 mod setups;
+mod skills;
 mod terminal;
 
 use std::{
@@ -153,7 +154,13 @@ fn reveal_path(path: PathBuf) -> CommandResult<()> {
 }
 
 /// Hosts the app links to: mise's docs and GitHub (tokens, releases).
-const LINK_HOSTS: &[&str] = &["mise.jdx.dev", "github.com", "macos-defaults.com"];
+const LINK_HOSTS: &[&str] = &[
+    "mise.jdx.dev",
+    "github.com",
+    "macos-defaults.com",
+    "skills.sh",
+    "docs.devin.ai",
+];
 
 /// Opens a link in the default browser. Only https links to [`LINK_HOSTS`],
 /// so nothing a page shows can make the app open arbitrary programs or files.
@@ -198,6 +205,7 @@ pub fn run() {
             open_url,
             mise_commands::mise_info,
             plugins::agent_plugins,
+            skills::skills_report,
             plugins::install_plugin_in_terminal,
             mise_commands::installed_tools,
             mise_commands::outdated_tools,

@@ -40,6 +40,7 @@ import { HarnessesView } from "./views/HarnessesView";
 import { HarnessDetail } from "./views/HarnessDetail";
 import { ToolsView } from "./views/ToolsView";
 import { PluginsView } from "./views/PluginsView";
+import { SkillsView } from "./views/SkillsView";
 import { McpServersView } from "./views/McpServersView";
 import { SetupEditor } from "./views/SetupEditor";
 import { SetupView } from "./views/SetupView";
@@ -76,6 +77,7 @@ export type Route =
   | { kind: "tools" }
   | { kind: "mcp" }
   | { kind: "integrations" }
+  | { kind: "skills" }
   | { kind: "setup"; name: string }
   | { kind: "editor"; name?: string; seed?: string[] };
 
@@ -128,10 +130,11 @@ const TOP_LEVEL: Route["kind"][] = [
   "tools",
   "mcp",
   "integrations",
+  "skills",
   "setup",
 ];
 
-const SEARCHABLE: Route["kind"][] = ["installed", "discover", "settings", "macos-settings", "harnesses", "tools", "mcp", "integrations"];
+const SEARCHABLE: Route["kind"][] = ["installed", "discover", "settings", "macos-settings", "harnesses", "tools", "mcp", "integrations", "skills"];
 
 const routeKey = (route: Route) =>
   route.kind === "harness"
@@ -445,6 +448,7 @@ function toolbarTitle(route: Route, context: AppContext): string {
     case "tools":
     case "mcp":
     case "integrations":
+    case "skills":
       return "Agents";
     case "setup":
       return route.name;
@@ -508,6 +512,8 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
       return <McpServersView context={context} query={query} />;
     case "integrations":
       return <PluginsView context={context} query={query} />;
+    case "skills":
+      return <SkillsView context={context} query={query} />;
     case "setup":
       return <SetupView context={context} name={route.name} />;
     case "editor":
@@ -599,7 +605,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
               <Plus size={14} />
             </button>
           </div>
-          {item(["harnesses", "harness", "tools", "mcp", "integrations"], "Browse Agents", Cpu)}
+          {item(["harnesses", "harness", "tools", "mcp", "integrations", "skills"], "Browse Agents", Cpu)}
           {selections.map((selection) => {
             const active =
               (route.kind === "setup" && route.name === selection.name) ||

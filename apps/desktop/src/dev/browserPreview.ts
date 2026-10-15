@@ -10,11 +10,14 @@ import appsToml from "../../../../catalog/profiles/apps.toml?raw";
 import integrationsToml from "../../../../catalog/profiles/integrations.toml?raw";
 import mcpToml from "../../../../catalog/profiles/mcp.toml?raw";
 import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED } from "../catalog";
-import { demoMise, NOT_HANDLED, setBootstrapHook, setPluginHook } from "./demoMise";
+import { demoMise, NOT_HANDLED, setBootstrapHook, setPluginHook, setSkillsHook } from "./demoMise";
+import { CURATED_SKILLS } from "../data/skillsCurated";
 import { demoHasMise } from "./demoMachine";
 export { browserEvents } from "./demoMise";
 import type {
   AgentCli,
+  InstalledSkill,
+  SkillsReport,
   McpClientId,
   PluginReport,
   SetupPlugin,
@@ -352,6 +355,39 @@ setPluginHook((agent, id, remove) => {
   return [remove ? `✔ Removed ${id}` : `✔ Installed ${id}`];
 });
 
+/** Skills the demo has installed. */
+const demoSkills: InstalledSkill[] = [
+  { name: "frontend-design", description: "Build distinctive, production-grade interfaces.", source: "anthropics/skills", agents: ["claude-code", "codex"] },
+];
+const SKILLS_AGENTS = [
+  ["claude-code", "Claude Code", true],
+  ["codex", "Codex", true],
+  ["gemini-cli", "Gemini CLI", false],
+  ["cursor", "Cursor", false],
+  ["opencode", "OpenCode", false],
+  ["github-copilot", "GitHub Copilot", false],
+  ["goose", "Goose", false],
+  ["antigravity", "Antigravity", false],
+  ["hermes-agent", "Hermes Agent", false],
+] as const;
+setSkillsHook((action) => {
+  if (action.kind === "skillsAdd") {
+    const names = action.skills.length ? action.skills : [action.source.split("/").pop() ?? "skill"];
+    for (const name of names) {
+      if (demoSkills.some((skill) => skill.name === name)) continue;
+      const curated = CURATED_SKILLS.find((skill) => skill.name === name);
+      demoSkills.push({ name, description: curated?.description ?? null, source: action.source, agents: action.agents });
+    }
+    return [`◇ Installed ${names.join(", ")} for ${action.agents.join(", ")}`];
+  }
+  if (action.kind === "skillsRemove") {
+    const index = demoSkills.findIndex((skill) => skill.name === action.name);
+    if (index >= 0) demoSkills.splice(index, 1);
+    return [`◇ Removed ${action.name}`];
+  }
+  return ["◇ All skills are up to date"];
+});
+
 function applyCommand(targets: McpTarget[]): string {
   return targets.length
     ? `${APPLY_COMMAND} && mise dotfiles apply --yes ${targets.map((entry) => entry.target).join(" ")}`
@@ -489,6 +525,13 @@ export async function browserPreview<T>(command: string, args: Record<string, un
     }
     case "install_plugin_in_terminal":
       return undefined as T;
+    case "skills_report":
+      return {
+        installed: [...demoSkills].sort((a, b) => a.name.localeCompare(b.name)),
+        agents: SKILLS_AGENTS.map(([id, title, detected]) => ({ id, title, detected })),
+        toolSkills: [],
+        cli: "npm:skills@1.7.2",
+      } satisfies SkillsReport as T;
     default:
       throw new Error(`browser preview does not implement \`${command}\``);
   }

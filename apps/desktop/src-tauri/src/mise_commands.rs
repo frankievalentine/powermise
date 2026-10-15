@@ -305,6 +305,23 @@ pub enum MiseAction {
     ApplySetup {
         name: String,
     },
+    /// `skills add` for these agents (every skill in `source` when `skills`
+    /// is empty).
+    SkillsAdd {
+        source: String,
+        skills: Vec<String>,
+        agents: Vec<String>,
+        telemetry: bool,
+    },
+    SkillsRemove {
+        name: String,
+        telemetry: bool,
+    },
+    SkillsUpdate {
+        telemetry: bool,
+    },
+    /// `mise skills sync --global`.
+    SkillsSyncTools,
     /// Installs or removes a plugin with the agent's own CLI.
     AgentPlugin {
         agent: powermise_mise::AgentCli,
@@ -529,6 +546,17 @@ impl MiseAction {
                 version,
                 path,
             } => MiseCommand::link(tool, version, path),
+            Self::SkillsAdd {
+                source,
+                skills,
+                agents,
+                telemetry,
+            } => return powermise_mise::skills_add(source, skills, agents, *telemetry),
+            Self::SkillsRemove { name, telemetry } => {
+                return powermise_mise::skills_remove(name, *telemetry);
+            }
+            Self::SkillsUpdate { telemetry } => Ok(powermise_mise::skills_update(*telemetry)),
+            Self::SkillsSyncTools => Ok(MiseCommand::skills_sync_global()),
             Self::AgentPlugin { agent, id, remove } => {
                 return if *remove {
                     agent.remove(id)

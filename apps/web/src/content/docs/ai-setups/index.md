@@ -14,8 +14,8 @@ depends on, and optional desktop apps. AI Setups need mise 2026.10 or newer;
 Under **AI Agents** in the sidebar:
 
 - **Browse Agents** — the catalog of agents (harnesses), with what each installs
-  on each platform, and tabs for the **Agent Tools**, **MCP Servers**, and
-  **Plugins** they can bring along.
+  on each platform, and tabs for the **Agent Tools**, **MCP Servers**,
+  **Plugins**, and **Skills** they can bring along.
 - **Your setups** — listed below it. Create one with **+**, pick
   harnesses, and the side panel shows exactly what will be installed.
 
@@ -37,6 +37,23 @@ A setup also adds the MCP servers you pick to each agent's own settings, with
 a mise dotfiles merge that owns only those servers, and installs the plugins you
 pick with each agent's own plugin command. The **Plugins** tab browses every
 plugin Claude Code and Codex offer, and Gemini CLI extensions by link.
+
+## Skills
+
+Skills are folders of instructions an agent loads when they're relevant. The
+**Skills** tab installs them with the [skills CLI](https://skills.sh) from
+skills.sh, which mise runs (`mise x npm:skills@1.7.2 -- skills …`), into each
+agent you pick:
+
+```sh
+mise x npm:skills@1.7.2 -- skills add anthropics/skills -g -y -a claude-code -a codex --skill frontend-design
+```
+
+What's installed is read from the agents' skills folders (`~/.claude/skills`,
+`~/.agents/skills`, …) and the CLI's lock file, `~/.agents/.skill-lock.json`.
+The CLI's anonymous install reporting is off (`DISABLE_TELEMETRY=1`) unless you
+turn it on. Skills that tools mise manages ship (`mise skills ls`) are listed
+too, and **Link for Claude Code** runs `mise skills sync --global`.
 
 ## Reference
 

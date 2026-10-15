@@ -366,6 +366,30 @@ impl MiseClient {
         Ok(crate::parse_plugin_list(&json))
     }
 
+    /// Skills that active tools ship (`mise skills ls --json`, 2026.10+):
+    /// `(skill, tool, version)`.
+    pub fn tool_skills(&self) -> Result<Vec<(String, String, String)>, MiseAdapterError> {
+        let json: serde_json::Value = self.read_json(&["skills", "ls", "--json"], None)?;
+        let text = |entry: &serde_json::Value, keys: &[&str]| {
+            keys.iter()
+                .find_map(|key| entry.get(*key)?.as_str())
+                .unwrap_or_default()
+                .to_owned()
+        };
+        Ok(json
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|entry| {
+                (
+                    text(entry, &["skill", "name"]),
+                    text(entry, &["tool"]),
+                    text(entry, &["version"]),
+                )
+            })
+            .collect())
+    }
+
     /// Each `[dotfiles]` edit entry and its state (`applied`, `differs`, …)
     /// from `mise dotfiles status --json`: `(target, edit, state)`, such as
     /// `("~/.claude.json", "merge:powermise-work", "applied")`.
@@ -448,6 +472,7 @@ impl MiseClient {
     ) -> Result<RunOutcome, MiseAdapterError> {
         let mut process = self.base(command.cwd.as_deref());
         process.args(&command.arguments);
+        process.envs(command.env.iter().map(|(key, value)| (key, value)));
         stream(process, &self.executable, cancel, on_line)
     }
 
@@ -630,6 +655,8 @@ pub struct MiseCommand {
     /// Arguments of the form `KEY=value` whose value is hidden when the
     /// command is displayed (environment values can be secrets).
     masked: Vec<usize>,
+    /// Environment variables for the command (shown before it).
+    env: Vec<(String, String)>,
 }
 
 impl MiseCommand {
@@ -638,6 +665,7 @@ impl MiseCommand {
             arguments,
             cwd: None,
             masked: Vec::new(),
+            env: Vec::new(),
         }
     }
 
@@ -653,7 +681,12 @@ impl MiseCommand {
 
     /// The command line as a person would type it.
     pub fn display(&self) -> String {
-        let mut line = String::from("mise");
+        let mut line: String = self
+            .env
+            .iter()
+            .map(|(key, value)| format!("{key}={value} "))
+            .collect();
+        line.push_str("mise");
         for (index, argument) in self.arguments.iter().enumerate() {
             line.push(' ');
             if self.masked.contains(&index) {
@@ -661,7 +694,10 @@ impl MiseCommand {
                     .split_once('=')
                     .map_or(argument.as_str(), |(key, _)| key);
                 line.push_str(&format!("{key}=•••"));
-            } else if argument.contains(char::is_whitespace) || argument.is_empty() {
+            } else if argument.is_empty()
+                || argument
+                    .contains(|c: char| c.is_whitespace() || "*?[]$&;|<>(){}!'\"\\`~#".contains(c))
+            {
                 line.push_str(&format!("'{argument}'"));
             } else {
                 line.push_str(argument);
@@ -1116,12 +1152,32 @@ impl MiseCommand {
         Self::new(all)
     }
 
+    /// `mise x <tool> -- <program> <arguments>`: a tool mise installs on
+    /// first use (the skills CLI). Callers pass validated arguments.
+    pub(crate) fn exec_tool(tool: &str, program: &str, arguments: &[&str]) -> Self {
+        let mut all = vec!["x".into(), tool.into(), "--".into(), program.into()];
+        all.extend(arguments.iter().map(|argument| (*argument).to_owned()));
+        Self::new(all)
+    }
+
+    /// Sets an environment variable for the command.
+    pub(crate) fn with_env(mut self, key: &str, value: &str) -> Self {
+        self.env.push((key.into(), value.into()));
+        self
+    }
+
     /// `mise dotfiles apply --yes <targets>`: apply only the `[dotfiles]`
     /// entries for these files (2026.10+).
     pub fn dotfiles_apply(targets: &[PathBuf]) -> Self {
         let mut arguments = vec!["dotfiles".into(), "apply".into(), "--yes".into()];
         arguments.extend(targets.iter().map(|target| target.display().to_string()));
         Self::new(arguments)
+    }
+
+    /// `mise skills sync --global`: link the active tools' skills into
+    /// `~/.claude/skills` (the `skills.dir` setting).
+    pub fn skills_sync_global() -> Self {
+        Self::new(vec!["skills".into(), "sync".into(), "--global".into()])
     }
 
     /// `mise self-update --yes`: update mise itself (the person already

@@ -128,6 +128,25 @@ export interface PluginReport {
   error: string | null;
 }
 
+/** A skill installed for one or more agents (`~/.claude/skills`, …). */
+export interface InstalledSkill {
+  name: string;
+  description: string | null;
+  /** `owner/repo`, when the skills CLI installed it. */
+  source: string | null;
+  /** The skills CLI's agent names (`claude-code`, `codex`, …). */
+  agents: string[];
+}
+
+export interface SkillsReport {
+  installed: InstalledSkill[];
+  agents: { id: string; title: string; detected: boolean }[];
+  /** Skills that tools mise manages ship (`mise skills ls`). */
+  toolSkills: { name: string; tool: string; version: string }[];
+  /** The skills CLI mise runs, like `npm:skills@1.7.2`. */
+  cli: string;
+}
+
 /** A plugin a setup installs. */
 export interface SetupPlugin {
   id: string;
@@ -380,6 +399,10 @@ export type MiseAction =
   /** Packages and tools, then the setup's MCP servers into agents' configs. */
   | { kind: "applySetup"; name: string }
   | { kind: "agentPlugin"; agent: AgentCli; id: string; remove: boolean }
+  | { kind: "skillsAdd"; source: string; skills: string[]; agents: string[]; telemetry: boolean }
+  | { kind: "skillsRemove"; name: string; telemetry: boolean }
+  | { kind: "skillsUpdate"; telemetry: boolean }
+  | { kind: "skillsSyncTools" }
   | { kind: "pruneTools" }
   | { kind: "setSetting"; key: string; value: string }
   | { kind: "unsetSetting"; key: string }
@@ -693,6 +716,7 @@ export const api = {
   bootstrapPlan: () => call<BootstrapPlan>("bootstrap_plan"),
   bootstrapInTerminal: () => call<void>("bootstrap_in_terminal"),
   removeSetup: (name: string) => call<RemovedSetup>("remove_setup", { name }),
+  skillsReport: () => call<SkillsReport>("skills_report"),
   agentPlugins: (agent: AgentCli) => call<PluginReport>("agent_plugins", { agent }),
   installPluginInTerminal: (agent: AgentCli, id: string) => call<void>("install_plugin_in_terminal", { agent, id }),
   reveal: (path: string) => call<void>("reveal_path", { path }),

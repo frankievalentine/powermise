@@ -164,6 +164,16 @@ function describe(action: MiseAction): string {
       return "mise bootstrap --yes --only packages,tools";
     case "agentPlugin":
       return agentPluginCommand(action.agent, action.id, action.remove);
+    case "skillsAdd":
+      return `${action.telemetry ? "" : "DISABLE_TELEMETRY=1 "}mise x npm:skills@1.7.2 -- skills add ${action.source} -g -y ${action.agents
+        .map((agent) => `-a ${agent}`)
+        .join(" ")} ${action.skills.length ? action.skills.map((skill) => `--skill ${skill}`).join(" ") : "--skill '*'"}`;
+    case "skillsRemove":
+      return `${action.telemetry ? "" : "DISABLE_TELEMETRY=1 "}mise x npm:skills@1.7.2 -- skills remove ${action.name} -g -y`;
+    case "skillsUpdate":
+      return `${action.telemetry ? "" : "DISABLE_TELEMETRY=1 "}mise x npm:skills@1.7.2 -- skills update -g -y`;
+    case "skillsSyncTools":
+      return "mise skills sync --global";
     case "applySetup":
       return `mise bootstrap --yes --only packages,tools && mise dotfiles apply --yes ${applySetupTargets(action.name).join(" ")}`.trim();
     case "pruneTools":
@@ -213,6 +223,11 @@ function perform(action: MiseAction): string[] {
       return [...bootstrapHook(), ...applySetupHook(action.name)];
     case "agentPlugin":
       return pluginHook(action.agent, action.id, action.remove);
+    case "skillsAdd":
+    case "skillsRemove":
+    case "skillsUpdate":
+    case "skillsSyncTools":
+      return skillsHook(action);
     case "pruneTools": {
       const unused = [...machine.entries()].flatMap(([tool, versions]) =>
         versions.filter((entry) => !entry.global).map((entry) => `${tool}@${entry.version}`),
@@ -407,6 +422,12 @@ export const NOT_HANDLED = Symbol("not handled");
 
 /** Set by the browser stub so a demo bootstrap installs the applied setups. */
 let bootstrapHook: () => string[] = () => ["mise all tools are installed"];
+/** Runs a demo skills command; returns the output lines. */
+let skillsHook: (action: MiseAction) => string[] = () => [];
+export function setSkillsHook(hook: typeof skillsHook) {
+  skillsHook = hook;
+}
+
 /** Installs or removes a demo agent plugin; returns the output lines. */
 let pluginHook: (agent: AgentCli, id: string, remove: boolean) => string[] = () => [];
 export function setPluginHook(hook: typeof pluginHook) {

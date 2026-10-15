@@ -8,6 +8,7 @@ mod client;
 mod machine;
 mod models;
 mod project;
+mod skills;
 mod updater;
 
 pub use agents::{AgentCli, AgentPlugin, gemini_extensions, parse_plugin_list};
@@ -31,6 +32,10 @@ pub use project::{
     SecretsReport, TaskDetails, TaskInput, TrustStatus, VarDeclaration, VarEntry, declared_vars,
     idiomatic_files, is_untrusted_error, looks_secret, parse_task_details, parse_trust_show,
     parse_vars, preview_config, preview_project_configs, project_environments,
+};
+pub use skills::{
+    InstalledSkill, SKILLS_AGENTS, SKILLS_CLI, SkillsAgent, detected_skills_agents,
+    installed_skills, skills_add, skills_remove, skills_update,
 };
 pub use updater::{MiseUpdater, mise_updater};
 

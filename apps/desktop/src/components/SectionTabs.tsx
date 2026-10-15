@@ -23,7 +23,7 @@ export function AgentsTabs({
   current,
 }: {
   context: AppContext;
-  current: "harnesses" | "tools" | "mcp" | "integrations";
+  current: "harnesses" | "tools" | "mcp" | "integrations" | "skills";
 }) {
   return (
     <PageTabs
@@ -35,6 +35,7 @@ export function AgentsTabs({
         { value: "tools", label: "Agent Tools" },
         { value: "mcp", label: "MCP Servers" },
         { value: "integrations", label: "Plugins" },
+        { value: "skills", label: "Skills" },
       ]}
     />
   );
