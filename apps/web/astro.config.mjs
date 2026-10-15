@@ -60,7 +60,8 @@ export default defineConfig({
     starlight({
       title: 'powermise',
       description: 'An unofficial desktop companion app for mise-en-place.',
-      favicon: './favicon.svg',
+      // The same icon as the landing page (src/pages/index.astro).
+      favicon: '/favicon.ico',
       disable404Route: true,
       customCss: ['./src/styles/docs.css'],
       plugins: [
