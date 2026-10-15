@@ -4,7 +4,7 @@ description: Every Powermise command, flag, target, and exit code.
 ---
 
 This page is the complete command reference. For end-to-end workflows see
-[Getting started](/getting-started/).
+[Getting started](/ai-setups/getting-started/).
 
 ## Global flags
 
@@ -18,7 +18,7 @@ These apply to every command:
 ## Targets
 
 `--target` accepts `darwin`, `linux`, `win32`, or `wsl`. See
-[Targets](/targets/).
+[Targets](/ai-setups/targets/).
 
 ## Catalog override flags
 

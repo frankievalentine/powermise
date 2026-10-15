@@ -21,7 +21,7 @@ export default defineConfig({
     sitemap(),
     starlight({
       title: 'powermise',
-      description: 'Curated AI-harness workstation configuration for mise.',
+      description: 'A desktop companion app for mise-en-place.',
       favicon: './favicon.svg',
       disable404Route: true,
       customCss: ['./src/styles/docs.css'],
@@ -42,15 +42,37 @@ export default defineConfig({
       sidebar: [
         {
           label: 'Start here',
-          items: ['what-is-powermise', 'getting-started']
+          items: ['what-is-powermise', 'getting-started', 'app-tour']
         },
         {
-          label: 'Reference',
-          items: ['harness-selections', 'selection-schema', 'catalog', 'harness-reference', 'targets', 'commands']
+          label: 'How it works',
+          items: ['how-it-works', 'troubleshooting']
         },
         {
-          label: 'Guides',
-          items: ['mise-boundary', 'lifecycle', 'shell-integration', 'automation', 'safety', 'coexistence', 'chezmoi', 'troubleshooting']
+          label: 'AI Setups',
+          items: [
+            'ai-setups',
+            'ai-setups/getting-started',
+            'ai-setups/harness-selections',
+            'ai-setups/selection-schema',
+            'ai-setups/catalog',
+            'ai-setups/harness-reference',
+            'ai-setups/targets',
+            'ai-setups/commands'
+          ]
+        },
+        {
+          label: 'AI Setups guides',
+          collapsed: true,
+          items: [
+            'ai-setups/mise-boundary',
+            'ai-setups/lifecycle',
+            'ai-setups/shell-integration',
+            'ai-setups/automation',
+            'ai-setups/safety',
+            'ai-setups/coexistence',
+            'ai-setups/chezmoi'
+          ]
         }
       ]
     })

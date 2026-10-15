@@ -1,0 +1,190 @@
+---
+// The real desktop UI (apps/desktop, built with `bun run --cwd apps/desktop
+// build:demo`) running on its browser stub inside an iframe. Scrolling pins
+// the window and walks through a tour; each step steers the app with
+// postMessage. Visitors can click in and use it at any time.
+const steps = [
+  {
+    route: { kind: 'installed' },
+    label: 'Installed',
+    title: 'Everything mise manages, at a glance.',
+    body: 'The version you use, where it’s set, and what has an update — without running a single command.',
+  },
+  {
+    route: { kind: 'discover' },
+    label: 'Discover',
+    title: '1,000+ tools, one search.',
+    body: 'The whole mise registry — languages, CLIs, cloud tools — with descriptions and the backends they install from.',
+  },
+  {
+    route: [{ kind: 'discover' }, { kind: 'tool', name: 'deno' }],
+    label: 'Install',
+    title: 'Pick a version. Click Install.',
+    body: 'Powermise shows the exact command first, then streams mise’s output as it runs. Try it — the demo really installs (pretend) deno.',
+  },
+  {
+    route: { kind: 'updates' },
+    label: 'Updates',
+    title: 'Up to date, even past your pins.',
+    body: 'See everything newer than what you have, and upgrade one tool or all of them. mise updates your config to match.',
+  },
+  {
+    route: { kind: 'health' },
+    label: 'Health',
+    title: 'Know your setup is healthy.',
+    body: 'mise doctor in plain language: your version, shell activation, and anything that needs attention — with the fix.',
+  },
+  {
+    route: { kind: 'harnesses' },
+    label: 'AI Setups',
+    title: 'And when you want AI agents…',
+    body: 'Pick Claude, Codex, Gemini, and more. Powermise installs everything they need through mise.',
+  },
+];
+---
+
+<section class="demo" id="demo" aria-labelledby="demo-heading">
+  <h2 class="visually-hidden" id="demo-heading">Live demo of the Powermise app</h2>
+  <div class="demo-stage" data-demo-stage>
+    <div class="demo-window" data-demo-window>
+      <div class="demo-lights" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="demo-viewport" data-demo-viewport>
+        <iframe
+          data-demo-frame
+          src="/demo/index.html"
+          title="Powermise app demo"
+          width="1180"
+          height="740"
+          loading="eager"
+        ></iframe>
+        <button class="demo-activate" type="button" data-demo-activate>
+          <span>This is the real app.</span> Click to try it
+        </button>
+      </div>
+    </div>
+
+    <div class="demo-tour">
+      <ol class="demo-steps" data-demo-steps>
+        {steps.map((step, index) => (
+          <li class="demo-step" data-demo-step={index} data-route={JSON.stringify(step.route)}>
+            <button type="button" class="demo-step__tab" data-demo-jump={index}>
+              <span class="demo-step__index">{String(index + 1).padStart(2, '0')}</span>
+              {step.label}
+            </button>
+            <div class="demo-step__body">
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const stage = document.querySelector<HTMLElement>('[data-demo-stage]');
+  const frameWindow = document.querySelector<HTMLElement>('[data-demo-window]');
+  const viewport = document.querySelector<HTMLElement>('[data-demo-viewport]');
+  const frame = document.querySelector<HTMLIFrameElement>('[data-demo-frame]');
+  const activate = document.querySelector<HTMLButtonElement>('[data-demo-activate]');
+  const steps = Array.from(document.querySelectorAll<HTMLElement>('[data-demo-step]'));
+
+  const APP_WIDTH = 1180;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wide = window.matchMedia('(min-width: 900px)');
+
+  // Render the app at its real size and scale it to fit, like a screenshot
+  // that still works.
+  if (viewport) {
+    new ResizeObserver(([entry]) => {
+      viewport.style.setProperty('--demo-scale', String(entry.contentRect.width / APP_WIDTH));
+    }).observe(viewport);
+  }
+
+  const post = (message: object) => frame?.contentWindow?.postMessage(message, window.location.origin);
+  const syncTheme = () =>
+    post({ type: 'powermise:theme', theme: document.documentElement.dataset.theme === 'light' ? 'light' : 'dark' });
+  frame?.addEventListener('load', () => {
+    syncTheme();
+    showStep(current, true);
+  });
+  new MutationObserver(syncTheme).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme'],
+  });
+
+  // Until someone clicks in, the frame ignores the pointer so the page keeps
+  // scrolling normally over it.
+  const setInteractive = (on: boolean) => {
+    viewport?.classList.toggle('is-interactive', on);
+  };
+  activate?.addEventListener('click', () => setInteractive(true));
+
+  let current = 0;
+  function showStep(index: number, force = false) {
+    if (index === current && !force) return;
+    current = index;
+    steps.forEach((step, stepIndex) => step.classList.toggle('is-active', stepIndex === index));
+    const route = steps[index]?.dataset.route;
+    if (route) post({ type: 'powermise:navigate', route: JSON.parse(route) });
+  }
+  showStep(0, true);
+
+  let pin: ScrollTrigger | undefined;
+
+  const jump = (index: number) => {
+    if (pin) {
+      const progress = (index + 0.5) / steps.length;
+      window.scrollTo({ top: pin.start + (pin.end - pin.start) * progress, behavior: reducedMotion ? 'auto' : 'smooth' });
+    } else {
+      showStep(index);
+    }
+  };
+  document.querySelectorAll<HTMLButtonElement>('[data-demo-jump]').forEach((button) => {
+    button.addEventListener('click', () => jump(Number(button.dataset.demoJump)));
+  });
+
+  const media = gsap.matchMedia();
+
+  // Wide screens: the window tilts up into place, then pins while the tour
+  // steps scroll past it.
+  media.add('(min-width: 900px) and (prefers-reduced-motion: no-preference)', () => {
+    if (!stage || !frameWindow) return;
+    gsap.fromTo(
+      frameWindow,
+      { rotateX: 18, scale: 0.9, y: 40, transformPerspective: 1600, transformOrigin: '50% 0%' },
+      {
+        rotateX: 0,
+        scale: 1,
+        y: 0,
+        ease: 'none',
+        scrollTrigger: { trigger: stage, start: 'top bottom', end: 'top 12%', scrub: 0.6 },
+      },
+    );
+    pin = ScrollTrigger.create({
+      trigger: stage,
+      start: 'top 6%',
+      end: () => `+=${steps.length * window.innerHeight * 0.7}`,
+      pin: true,
+      onUpdate: (self) => showStep(Math.min(steps.length - 1, Math.floor(self.progress * steps.length))),
+      onLeave: () => setInteractive(false),
+      onLeaveBack: () => setInteractive(false),
+    });
+    return () => {
+      pin = undefined;
+    };
+  });
+
+  // Small screens and reduced motion: no pinning; the tabs steer the demo.
+  media.add('(max-width: 899px), (prefers-reduced-motion: reduce)', () => {
+    pin = undefined;
+  });
+
+  wide.addEventListener('change', () => ScrollTrigger.refresh());
+</script>

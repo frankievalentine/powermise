@@ -1,7 +1,8 @@
-# Clean-Machine Setup
+# Clean-Machine Setup (AI Setups CLI)
 
-How to build Powermise and converge a selected AI workstation on a fresh
-machine.
+How to build the `powermise` CLI and converge a selected AI workstation on a
+fresh machine. For the desktop app, see the
+[getting started guide](../apps/web/src/content/docs/getting-started.md).
 
 ## Prerequisites
 

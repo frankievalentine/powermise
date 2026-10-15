@@ -4,6 +4,7 @@
 # Node
 node_modules/
 apps/web/dist/
+apps/web/public/demo/
 apps/desktop/dist/
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/

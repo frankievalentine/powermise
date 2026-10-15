@@ -131,12 +131,17 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
 
 ### M5 — Marketing site & docs
 
-- [ ] Reposition the site: "A desktop app for mise."
-- [ ] Hero: a working, interactive demo of the desktop app (the real UI on the
-      browser stub), staged with GSAP and a WebGL backdrop.
-- [ ] Rewrite docs: getting started with the app, each screen, how Powermise uses
-      mise, and AI Setups as its own section.
-- [ ] Keep the CLI reference for AI Setups.
+- [x] Reposition the site: "A desktop app for mise."
+- [x] Hero with a WebGL dithered color field (three.js), pointer-reactive, paused
+      offscreen, still under reduced motion.
+- [x] A working, interactive demo of the real desktop UI (built in demo mode on the
+      browser stub), with a GSAP scroll tour that steers it screen by screen.
+- [x] Rewrite docs: what Powermise is, getting started with the app, an app tour,
+      and how Powermise uses mise. AI Setups docs moved under `/ai-setups/`.
+- [x] Keep the CLI reference for AI Setups.
+- [x] The dithered chef's hat moves to the closing call-to-action.
+- [ ] Screenshots / short screen recordings for docs pages once installers ship.
+- [ ] Download page with per-platform installers (with M6).
 
 ### M6 — Release
 

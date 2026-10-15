@@ -44,6 +44,6 @@ The catalog does not mutage your machine on its own — installation happens onl
 when `apply` runs a real `mise bootstrap` (or when you preview the native
 commands via `plan`). Review `plan` and `doctor` before converging.
 
-See [Harness selections](/harness-selections/) for how to author a selection
-against this catalog, and [The mise boundary](/mise-boundary/) for how the
+See [Harness selections](/ai-setups/harness-selections/) for how to author a selection
+against this catalog, and [The mise boundary](/ai-setups/mise-boundary/) for how the
 generated configuration is owned and applied.

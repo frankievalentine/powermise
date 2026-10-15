@@ -12,11 +12,11 @@ Architecture Decision in the build plan). It depends on a small, stable surface:
 - `mise --env <environment> bootstrap --yes`
 - `mise --env <environment> exec -- <command>`
 
-The minimum mise version is pinned only after clean-machine validation
-(BUILD_PLAN Phase 0). The version currently exercised by the workspace tests is
-**mise 2026.7.18** (macOS Apple Silicon, observed). That version is evidence,
-not yet a published support floor; the support matrix in `setup.md` reflects
-what has been clean-machine verified.
+The desktop app enforces a minimum of **mise 2026.7.18**
+(`MiseVersion::MINIMUM` in `powermise-mise`): the release its `--json` contract
+fixtures were captured from. Whether to raise it for 2026.10 features is an open
+question in [`ROADMAP.md`](../ROADMAP.md). The support matrix in `setup.md`
+reflects what has been clean-machine verified.
 
 A future Powermise release must:
 

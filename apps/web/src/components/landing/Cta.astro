@@ -1,13 +1,20 @@
-<section class="section cta-section" aria-labelledby="cta-heading" data-reveal>
+---
+import DitheredChefHat from './DitheredChefHat.astro';
+---
+
+<section class="section cta-section cta-section--hat" aria-labelledby="cta-heading" data-reveal>
+  <div class="cta-hat" aria-hidden="true">
+    <DitheredChefHat showCaption={false} />
+  </div>
   <div class="cta-inner">
     <div>
-      <p class="section-label">Find your starting point</p>
-      <h2 id="cta-heading">Build a setup that feels like yours.</h2>
-      <p>Choose the harnesses you want. Powermise brings the right tools and integrations with them.</p>
+      <p class="section-label">Mise en place</p>
+      <h2 id="cta-heading">Everything in its place, before you start cooking.</h2>
+      <p>Powermise is free, open source, and built on the mise you already trust.</p>
     </div>
     <div class="cta-actions">
-      <a class="button button-primary" href="/catalog/">Browse the catalog <span aria-hidden="true">→</span></a>
-      <a class="button button-secondary" href="/getting-started/">Get started</a>
+      <a class="button button-primary" href="/getting-started/">Get Powermise <span aria-hidden="true">→</span></a>
+      <a class="button button-secondary" href="/what-is-powermise/">Read the docs</a>
     </div>
   </div>
 </section>

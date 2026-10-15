@@ -1,0 +1,67 @@
+---
+const examples = [
+  { action: 'Install deno', command: 'mise use -g deno@2.5.6' },
+  { action: 'Upgrade everything', command: 'mise upgrade --bump' },
+  { action: 'Remove an old version', command: 'mise uninstall node@20.19.5' },
+  { action: 'Check your setup', command: 'mise doctor' },
+];
+---
+
+<section class="section commands" aria-labelledby="commands-heading">
+  <div class="commands__copy" data-reveal>
+    <p class="section-label">Nothing hidden</p>
+    <h2 class="section-heading" id="commands-heading">Every click is a mise command you can read.</h2>
+    <p class="section-sub">
+      Before anything changes, Powermise shows the exact command it will run — and streams mise’s own output
+      while it works. Copy any of them into a terminal. Start in the app, end up fluent in mise.
+    </p>
+  </div>
+  <ul class="commands__list" data-commands>
+    {examples.map((example) => (
+      <li class="commands__item">
+        <span class="commands__action">{example.action}</span>
+        <code class="commands__line">
+          <span class="commands__prompt" aria-hidden="true">$</span>
+          <span class="commands__text" data-command={example.command}>{example.command}</span>
+          <span class="commands__caret" aria-hidden="true"></span>
+        </code>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Types each command in sequence the first time the list scrolls into view.
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    const list = document.querySelector<HTMLElement>('[data-commands]');
+    const lines = Array.from(document.querySelectorAll<HTMLElement>('[data-command]'));
+    if (!list) return;
+    const timeline = gsap.timeline({ paused: true });
+    lines.forEach((line) => {
+      const full = line.dataset.command ?? '';
+      const state = { count: 0 };
+      line.textContent = '';
+      timeline.to(state, {
+        count: full.length,
+        duration: full.length * 0.035,
+        ease: 'none',
+        onStart: () => line.closest('li')?.classList.add('is-typing'),
+        onUpdate: () => {
+          line.textContent = full.slice(0, Math.round(state.count));
+        },
+        onComplete: () => line.closest('li')?.classList.replace('is-typing', 'is-typed'),
+      });
+      timeline.to({}, { duration: 0.25 });
+    });
+    ScrollTrigger.create({ trigger: list, start: 'top 75%', once: true, onEnter: () => timeline.play() });
+    return () => {
+      timeline.kill();
+      lines.forEach((line) => (line.textContent = line.dataset.command ?? ''));
+    };
+  });
+</script>

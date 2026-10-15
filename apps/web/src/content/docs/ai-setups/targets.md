@@ -58,4 +58,4 @@ powermise plan              --selection my-agent.toml --target wsl
 powermise apply             --name my-agent --target win32 --yes
 ```
 
-See [Commands](/commands/) for the full flag reference.
+See [Commands](/ai-setups/commands/) for the full flag reference.

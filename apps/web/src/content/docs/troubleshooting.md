@@ -4,7 +4,50 @@ description: Common Powermise errors and how to resolve them.
 ---
 
 A reference for the failures you are most likely to hit, and the exact fix for
-each.
+each. The first section covers the desktop app; the rest covers the AI Setups
+CLI.
+
+## The app says "mise not found"
+
+Powermise looks for mise on its `PATH`, plus `~/.local/bin`,
+`~/.local/share/mise/bin`, `/opt/homebrew/bin`, and `/usr/local/bin`. If you
+installed mise somewhere else, symlink it into `~/.local/bin`:
+
+```sh
+ln -s "$(command -v mise)" ~/.local/bin/mise
+```
+
+## Tools install in the app but not in my terminal
+
+Your shell isn't activated. Open **Health** — it shows the exact line to add
+to your shell's startup file — then open a new terminal.
+
+## An install fails with a GitHub rate limit
+
+Many tools download from GitHub releases, which limits anonymous downloads.
+Check which token mise is using:
+
+```sh
+mise token github
+```
+
+On mise 2026.10 or newer, `mise token github --oauth` signs in with your GitHub
+account and stores the token for you.
+
+## My mise settings are ignored in the app
+
+Apps opened from the Dock don't read `~/.zshrc`, so exported `MISE_*` variables
+don't reach Powermise. Move them to `[settings]` in `~/.config/mise/config.toml`.
+See [How Powermise uses mise](/how-it-works/#settings-in-your-shell-files).
+
+## Health says my mise is too old
+
+Click **Update** on the Health screen, or run `mise self-update`. Powermise
+needs mise 2026.7.18 or newer.
+
+## AI Setups CLI
+
+The sections below apply to the `powermise` command-line tool.
 
 ## Apply refuses to run without --yes
 
@@ -66,7 +109,7 @@ for the requested `--target`.
 
 **Fix:** confirm the harness exists and choose a supported target. Windows
 native installs (`win32`) and WSL (`wsl`) are distinct — pick the one matching
-where tools run. See [Targets](/targets/).
+where tools run. See [Targets](/ai-setups/targets/).
 
 ```sh
 powermise registry validate

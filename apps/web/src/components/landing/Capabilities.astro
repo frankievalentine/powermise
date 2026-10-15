@@ -1,0 +1,33 @@
+---
+const capabilities = [
+  { name: 'Installed', body: 'Every tool and version, where it’s configured, and which ones nothing uses anymore.', status: 'ready' },
+  { name: 'Discover', body: 'Search the full mise registry and install any version with a picker.', status: 'ready' },
+  { name: 'Updates', body: 'Everything outdated in one list, including versions past your pins. Upgrade one or all.', status: 'ready' },
+  { name: 'Health', body: 'mise doctor, explained. Version checks, shell activation, and self-update.', status: 'ready' },
+  { name: 'Activity', body: 'A log of every command Powermise ran and how it went.', status: 'ready' },
+  { name: 'AI Setups', body: 'Install a curated AI coding environment — Claude, Codex, Gemini, and more — in one step.', status: 'ready' },
+  { name: 'Projects', body: 'Per-project tools, environments, env vars, and tasks with a form for their arguments.', status: 'next' },
+  { name: 'Machine setup', body: 'mise bootstrap: system packages, dotfiles, and macOS defaults, with a preview.', status: 'later' },
+];
+---
+
+<section class="section capabilities" aria-labelledby="capabilities-heading">
+  <div class="capabilities__heading" data-reveal>
+    <p class="section-label">What’s inside</p>
+    <h2 class="section-heading" id="capabilities-heading">A calm place for everything mise does.</h2>
+  </div>
+  <ul class="capabilities__grid">
+    {capabilities.map((capability) => (
+      <li class:list={['capability', `capability--${capability.status}`]} data-reveal>
+        <div class="capability__top">
+          <h3>{capability.name}</h3>
+          {capability.status !== 'ready' && (
+            <span class="capability__badge">{capability.status === 'next' ? 'Next' : 'Planned'}</span>
+          )}
+        </div>
+        <p>{capability.body}</p>
+      </li>
+    ))}
+  </ul>
+  <a class="text-link" href="https://github.com/frankievalentine/powermise/blob/main/ROADMAP.md">See the roadmap <span aria-hidden="true">↗</span></a>
+</section>

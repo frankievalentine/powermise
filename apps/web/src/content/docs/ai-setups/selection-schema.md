@@ -68,5 +68,5 @@ exclude_tools = []
 5. Compilation emits a deterministic mise configuration only after validation
    succeeds.
 
-See [Harness selections](/harness-selections/) for the concepts and
-[Targets](/targets/) for how providers are chosen per platform.
+See [Harness selections](/ai-setups/harness-selections/) for the concepts and
+[Targets](/ai-setups/targets/) for how providers are chosen per platform.

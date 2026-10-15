@@ -50,4 +50,4 @@ mise-availability findings.
 guarded by an explicit confirmation (or `--yes` for non-interactive terminals),
 is idempotent across repeats, and records a failure boundary instead of
 rolling back. Use `--skip-bootstrap` to write and declare configuration without
-installing. See [Safety](/safety/) for the full guardrail set.
+installing. See [Safety](/ai-setups/safety/) for the full guardrail set.

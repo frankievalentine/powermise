@@ -168,6 +168,19 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
     setHistory((stack) => (TOP_LEVEL.includes(next.kind) ? [next] : [...stack, next]));
   }, []);
 
+  // The marketing-site demo steers the app from outside (see main.tsx).
+  useEffect(() => {
+    const onNavigate = (event: Event) => {
+      const next = (event as CustomEvent<Route>).detail;
+      if (next && typeof next === "object" && "kind" in next) {
+        setRunRequest(null);
+        navigate(next);
+      }
+    };
+    window.addEventListener("powermise:navigate", onNavigate);
+    return () => window.removeEventListener("powermise:navigate", onNavigate);
+  }, [navigate]);
+
   const goBack = () => setHistory((stack) => (stack.length > 1 ? stack.slice(0, -1) : stack));
 
   const mise = useMemo<MiseData>(

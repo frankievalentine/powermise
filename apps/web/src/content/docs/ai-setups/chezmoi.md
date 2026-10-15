@@ -85,5 +85,5 @@ dotfiles are a different problem (templating, secrets, per-host divergence of
 files you author). chezmoi already solves that well, so Powermise stays focused
 and the two compose cleanly.
 
-See [Commands](/commands/), [Lifecycle](/lifecycle/), and
+See [Commands](/ai-setups/commands/), [Lifecycle](/ai-setups/lifecycle/), and
 [Troubleshooting](/troubleshooting/) for the underlying Powermise behavior.

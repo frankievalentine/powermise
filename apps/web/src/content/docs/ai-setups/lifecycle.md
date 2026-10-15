@@ -17,7 +17,7 @@ lifecycle model.
   `<powermise-dir>/adapters` (override with `--adapters-config-dir`).
 - **Your user-owned `~/.config/mise/config.toml` is never rewritten.**
 
-See [Coexistence](/coexistence/) for the full ownership map.
+See [Coexistence](/ai-setups/coexistence/) for the full ownership map.
 
 ## Declare vs. converge
 
