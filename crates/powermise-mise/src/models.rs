@@ -102,6 +102,9 @@ pub struct RegistryEntry {
     pub description: Option<String>,
     #[serde(default)]
     pub aliases: Vec<String>,
+    /// The commands the tool puts on `PATH`.
+    #[serde(default)]
+    pub bins: Vec<String>,
 }
 
 /// One version of `mise ls-remote --json <tool>`.

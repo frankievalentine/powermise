@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, ExternalLink, Github, Info, Loader2, Trash2 } from "lucide-react";
-import { api, type DetectedImport, type GlobalPackage, type ImportSource, type ShellConflict } from "../api";
+import {
+  api,
+  type DetectedImport,
+  type GlobalPackage,
+  type ImportSource,
+  type InstalledProgram,
+  type RegistryEntry,
+  type ShellConflict,
+} from "../api";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
 import type { Activation } from "../health";
@@ -429,12 +437,13 @@ export function GlobalPackageList({ context, packages }: { context: AppContext; 
   const [picked, setPicked] = useState<Set<string> | null>(null);
   if (!rows.length) return null;
   const selected = picked ?? new Set(rows.map((row) => row.tool));
-  const toggle = (tool: string) => {
-    const next = new Set(selected);
-    if (next.has(tool)) next.delete(tool);
-    else next.add(tool);
-    setPicked(next);
-  };
+  const toggle = (tool: string) =>
+    setPicked((current) => {
+      const next = new Set(current ?? rows.map((row) => row.tool));
+      if (next.has(tool)) next.delete(tool);
+      else next.add(tool);
+      return next;
+    });
   const chosen = rows.filter((row) => selected.has(row.tool));
   return (
     <>
@@ -475,6 +484,143 @@ export function GlobalPackageList({ context, packages }: { context: AppContext; 
         >
           Add {chosen.length || ""} to mise
         </button>
+      </div>
+    </>
+  );
+}
+
+/** Homebrew names that differ from mise's (as in scripts/discover-popularity.py). */
+const BREW_RENAMES: Record<string, string> = {
+  "git-delta": "delta",
+  "kubernetes-cli": "kubectl",
+  "go-task": "task",
+  awscli: "aws-cli",
+  "python-yq": "yq",
+  "stripe-cli": "stripe",
+};
+
+/** Tools Bring Over already handles, with their versions and defaults. */
+const RUNTIMES = new Set(["node", "python", "ruby", "go"]);
+
+interface ProgramTool {
+  tool: string;
+  description: string | null;
+  foundIn: string;
+  commands: string[];
+  removeCommand: string | null;
+}
+
+/** Programs installed another way that mise's registry has, one row per
+ *  tool: Homebrew's matched by formula or cask (`ripgrep`, `git-delta`), the
+ *  rest only when the command is the tool's own name (`flyctl`, `stripe`),
+ *  so a same-named stranger never matches. */
+export function programTools(context: AppContext, programs: InstalledProgram[], skip: Set<string>): ProgramTool[] {
+  const registry = context.mise.registry ?? [];
+  const byName = new Map<string, RegistryEntry>();
+  for (const entry of registry) {
+    byName.set(entry.short, entry);
+    for (const alias of entry.aliases) if (!byName.has(alias)) byName.set(alias, entry);
+  }
+  const rows = new Map<string, ProgramTool>();
+  for (const program of programs) {
+    const formula = program.package?.replace(/@[\d.]+$/, "");
+    const entry = formula
+      ? byName.get(BREW_RENAMES[formula] ?? formula)
+      : (() => {
+          const candidate = byName.get(program.name);
+          return candidate && (candidate.bins ?? [candidate.short]).includes(program.name) ? candidate : undefined;
+        })();
+    if (!entry || RUNTIMES.has(entry.short) || skip.has(entry.short) || context.mise.inventory?.[entry.short]) continue;
+    const row = rows.get(entry.short);
+    if (row) {
+      if (!row.commands.includes(program.name)) row.commands.push(program.name);
+    } else {
+      rows.set(entry.short, {
+        tool: entry.short,
+        description: entry.description,
+        foundIn: program.foundIn,
+        commands: [program.name],
+        removeCommand: program.removeCommand,
+      });
+    }
+  }
+  return [...rows.values()].sort((a, b) => a.tool.localeCompare(b.tool));
+}
+
+/** Tools installed with Homebrew, an install script, or `go install` that
+ *  mise can manage instead. None are picked to start: there can be many,
+ *  and Homebrew's copies are fine where they are. Returns null when none. */
+export function ProgramToolList({ context, tools }: { context: AppContext; tools: ProgramTool[] }) {
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  if (!tools.length) return null;
+  const toggle = (tool: string) =>
+    setPicked((current) => {
+      const next = new Set(current);
+      if (next.has(tool)) next.delete(tool);
+      else next.add(tool);
+      return next;
+    });
+  const chosen = tools.filter((row) => picked.has(row.tool));
+  // `brew uninstall a b` for the Homebrew ones you pick, to run yourself.
+  const brewRemovals = chosen
+    .map((row) => row.removeCommand?.match(/^brew uninstall (--cask )?(.+)$/))
+    .filter((match): match is RegExpMatchArray => !!match);
+  const formulas = brewRemovals.filter((match) => !match[1]).map((match) => match[2]);
+  const casks = brewRemovals.filter((match) => match[1]).map((match) => match[2]);
+  return (
+    <>
+      <div className="detail-actions" style={{ marginBottom: 8 }}>
+        <button className="link-button" onClick={() => setPicked(picked.size === tools.length ? new Set() : new Set(tools.map((row) => row.tool)))}>
+          {picked.size === tools.length ? "Select none" : "Select all"}
+        </button>
+      </div>
+      <div className="list">
+        {tools.map((row) => (
+          <button
+            key={row.tool}
+            className="list-row interactive"
+            onClick={() => toggle(row.tool)}
+            role="checkbox"
+            aria-checked={picked.has(row.tool)}
+          >
+            <Checkbox checked={picked.has(row.tool)} />
+            <div className="row-main">
+              <div className="row-title">{row.tool}</div>
+              <div className="row-subtitle">
+                From {row.foundIn}
+                {row.commands.length > 1 || row.commands[0] !== row.tool ? ` · ${row.commands.join(", ")}` : ""}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+      <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+        <div>
+          <button
+            className="button"
+            disabled={!chosen.length}
+            onClick={() =>
+              context.run({
+                action: { kind: "useGlobalMany", tools: chosen.map((row) => [row.tool, "latest"]) },
+                title: `Let mise manage ${chosen.length === 1 ? chosen[0].tool : `${chosen.length} tools`}?`,
+                description:
+                  "mise installs the latest version of each into your global config, and puts its copy first on your PATH once mise is turned on in your terminal. The old copies stay until you remove them.",
+                verb: "Add to mise",
+              })
+            }
+          >
+            Add {chosen.length || ""} to mise
+          </button>
+        </div>
+        {(formulas.length > 0 || casks.length > 0) && (
+          <>
+            <p className="field-hint" style={{ margin: 0 }}>
+              Once mise has them, you can remove Homebrew’s copies yourself:
+            </p>
+            {formulas.length > 0 && <CommandBlock command={`brew uninstall ${formulas.join(" ")}`} />}
+            {casks.length > 0 && <CommandBlock command={`brew uninstall --cask ${casks.join(" ")}`} />}
+          </>
+        )}
       </div>
     </>
   );

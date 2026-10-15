@@ -360,6 +360,8 @@ export interface RegistryEntry {
   backends: string[];
   description: string | null;
   aliases: string[];
+  /** The commands the tool puts on PATH. */
+  bins?: string[];
 }
 
 export interface RemoteVersion {
@@ -512,6 +514,17 @@ export interface ShellConflict {
   line: number;
   text: string;
   manager: string;
+}
+
+/** A program in an installer's folder (Homebrew, an install script, `go install`). */
+export interface InstalledProgram {
+  name: string;
+  path: string;
+  foundIn: string;
+  /** The Homebrew formula or cask it belongs to. */
+  package: string | null;
+  /** The command that removes the old copy (`brew uninstall flyctl`). Shown, never run. */
+  removeCommand: string | null;
 }
 
 /** A command-line package installed globally outside mise. */
@@ -775,6 +788,7 @@ export const api = {
   detectImports: () => call<DetectedImport[]>("detect_imports"),
   shellConflicts: () => call<ShellConflict[]>("shell_conflicts"),
   globalPackages: () => call<GlobalPackage[]>("global_packages"),
+  installedPrograms: () => call<InstalledProgram[]>("installed_programs"),
   miseInstallers: () => call<InstallerOption[]>("mise_installers"),
   openUrl: (url: string) => call<void>("open_url", { url }),
   diskUsage: () => call<DiskUsage>("disk_usage"),

@@ -15,7 +15,9 @@ import {
   ShellConflictRows,
   UpdateMise,
   formatBytes,
+  ProgramToolList,
   pendingImports,
+  programTools,
 } from "../../components/machine";
 import { CommandBlock, Section } from "../../components/ui";
 
@@ -45,6 +47,10 @@ export function HealthView({ context, section }: { context: AppContext; section?
   const imports = useAsync(() => api.detectImports(), [mise.revision]);
   const conflicts = useAsync(() => api.shellConflicts(), [mise.revision]);
   const packages = useAsync(() => api.globalPackages(), [mise.revision]);
+  const programs = useAsync(() => api.installedPrograms(), [mise.revision]);
+  // Tools the package list already offers aren't offered twice.
+  const packageNames = new Set((packages.data ?? []).map((pkg) => pkg.name.replace(/^@[^/]+\//, "")));
+  const programRows = programs.data ? programTools(context, programs.data, packageNames) : [];
   const summary = healthSummary(info, doctor.data, conflicts.data?.length ?? 0);
   const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
   const disk = useAsync(() => api.diskUsage(), [mise.revision]);
@@ -279,6 +285,15 @@ export function HealthView({ context, section }: { context: AppContext; section?
               note="Installed globally with npm, pipx, uv, or cargo. Let mise manage them, and they stay put when you switch Node or Python versions."
             >
               <GlobalPackageList context={context} packages={packages.data} />
+            </Section>
+          )}
+
+          {programRows.length > 0 && (
+            <Section
+              title="Tools installed another way"
+              note="From Homebrew, an install script, or go install — and mise has them too. Let mise manage the ones you pick so they update with the rest of your tools."
+            >
+              <ProgramToolList context={context} tools={programRows} />
             </Section>
           )}
 

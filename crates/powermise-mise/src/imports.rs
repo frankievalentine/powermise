@@ -666,6 +666,144 @@ pub fn global_packages(
     found
 }
 
+// ---------------------------------------------------------------------------
+// Programs installed some other way
+// ---------------------------------------------------------------------------
+
+/// A program found where installers put command-line tools, which mise may
+/// be able to manage (matched against the registry's command names by the
+/// app).
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledProgram {
+    /// The command name (`flyctl`).
+    pub name: String,
+    pub path: PathBuf,
+    /// Where it came from, in words (`Homebrew`, `Fly’s installer`).
+    pub found_in: String,
+    /// The Homebrew formula or cask it belongs to, when it's Homebrew's;
+    /// the app matches that to the registry rather than the command name.
+    pub package: Option<String>,
+    /// The command that removes the old copy, when there's a clear one
+    /// (`brew uninstall flyctl`). Shown, never run.
+    pub remove_command: Option<String>,
+}
+
+/// Folders installers put command-line tools in, with how to describe them.
+fn program_dirs(home: &Path) -> Vec<(PathBuf, &'static str)> {
+    let mut dirs: Vec<(PathBuf, &'static str)> = HOMEBREW_PREFIXES
+        .iter()
+        .map(|prefix| (Path::new(prefix).join("bin"), "Homebrew"))
+        .collect();
+    dirs.extend([
+        (home.join(".local/bin"), "an installer"),
+        (home.join("bin"), "an installer"),
+        (home.join(".fly/bin"), "Fly’s installer"),
+        (home.join(".bun/bin"), "Bun"),
+        (home.join(".deno/bin"), "Deno’s installer"),
+        (
+            env_dir("GOBIN").unwrap_or_else(|| {
+                env_dir("GOPATH")
+                    .unwrap_or_else(|| home.join("go"))
+                    .join("bin")
+            }),
+            "go install",
+        ),
+    ]);
+    if cfg!(target_os = "linux") {
+        dirs.push((PathBuf::from("/snap/bin"), "Snap"));
+    }
+    if cfg!(windows) {
+        if let Some(local) = env_dir("LOCALAPPDATA") {
+            dirs.push((local.join("Microsoft/WinGet/Links"), "winget"));
+        }
+        dirs.push((home.join("scoop/shims"), "Scoop"));
+    }
+    dirs
+}
+
+/// Programs in the usual install folders (not mise's own, not the
+/// system's), with where each came from. Node, Python, and Ruby packages
+/// are left to [`global_packages`], which knows their package names.
+pub fn installed_programs(home: &Path, mise_data: Option<&Path>) -> Vec<InstalledProgram> {
+    // Compared with resolved program paths, so resolve it too (macOS's
+    // `/var` and `/tmp` are links to `/private/…`).
+    let mise_data =
+        mise_data.map(|data| fs::canonicalize(data).unwrap_or_else(|_| data.to_path_buf()));
+    let mise_data = mise_data.as_deref();
+    let mut found: Vec<InstalledProgram> = Vec::new();
+    for (dir, label) in program_dirs(home) {
+        let Ok(entries) = fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let name = name
+                .strip_suffix(".exe")
+                .or_else(|| name.strip_suffix(".cmd"))
+                .unwrap_or(&name)
+                .to_owned();
+            if name.starts_with('.')
+                || name == "mise"
+                || found.iter().any(|program| program.name == name)
+            {
+                continue;
+            }
+            let resolved = fs::canonicalize(&path).unwrap_or_else(|_| path.clone());
+            if !resolved.is_file() || mise_data.is_some_and(|data| resolved.starts_with(data)) {
+                continue;
+            }
+            let text = resolved.to_string_lossy().replace('\\', "/");
+            // An app's command-line helper (VS Code's `code`, Docker
+            // Desktop's `docker`) comes and goes with the app.
+            if text.contains(".app/") && !text.contains("/Caskroom/") {
+                continue;
+            }
+            // Packages from npm, pip, or gem are listed by package instead.
+            if [
+                "/node_modules/",
+                "/site-packages/",
+                "/gems/",
+                "/.cargo/",
+                "/pipx/",
+                "/uv/tools/",
+            ]
+            .iter()
+            .any(|part| text.contains(part))
+            {
+                continue;
+            }
+            let after = |marker: &str| {
+                text.split_once(marker)
+                    .and_then(|(_, rest)| rest.split('/').next())
+                    .map(str::to_owned)
+            };
+            let (found_in, package, remove_command) = if let Some(formula) = after("/Cellar/") {
+                let command = format!("brew uninstall {formula}");
+                ("Homebrew".to_owned(), Some(formula), Some(command))
+            } else if let Some(cask) = after("/Caskroom/") {
+                let command = format!("brew uninstall --cask {cask}");
+                ("Homebrew".to_owned(), Some(cask), Some(command))
+            } else if label == "Homebrew" {
+                // Not Homebrew's own: something installed into its bin folder.
+                (dir.display().to_string(), None, None)
+            } else {
+                (label.to_owned(), None, None)
+            };
+            found.push(InstalledProgram {
+                name,
+                path,
+                found_in,
+                package,
+                remove_command,
+            });
+        }
+    }
+    found.sort_by(|a, b| a.name.cmp(&b.name));
+    found
+}
+
 /// A source's name, for messages.
 fn label(source: ImportSource) -> &'static str {
     match source {
@@ -826,5 +964,46 @@ mod tests {
             expected.insert(0, ("cargo", "ripgrep", Some("14.1.0")));
         }
         assert_eq!(names, expected);
+    }
+
+    #[test]
+    fn finds_programs_installers_put_on_path() {
+        let home = temp("programs");
+        let write = |path: &str| {
+            let path = home.join(path);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(&path, "").unwrap();
+        };
+        write(".fly/bin/flyctl");
+        write(".local/bin/stripe");
+        write(".local/bin/mise");
+        write(".local/bin/.hidden");
+        // A pipx-installed command, listed by package instead.
+        write(".local/pipx/venvs/black/bin/black");
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(
+            home.join(".local/pipx/venvs/black/bin/black"),
+            home.join(".local/bin/black"),
+        )
+        .unwrap();
+        let mise_data = home.join(".local/share/mise");
+        write(".local/share/mise/installs/jq/1.8.2/bin/jq");
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(
+            home.join(".local/share/mise/installs/jq/1.8.2/bin/jq"),
+            home.join(".local/bin/jq"),
+        )
+        .unwrap();
+        let found = installed_programs(&home, Some(&mise_data));
+        fs::remove_dir_all(&home).unwrap();
+        let ours: Vec<_> = found
+            .iter()
+            .filter(|program| program.path.starts_with(&home))
+            .map(|program| (program.name.as_str(), program.found_in.as_str()))
+            .collect();
+        assert_eq!(
+            ours,
+            [("flyctl", "Fly’s installer"), ("stripe", "an installer")]
+        );
     }
 }

@@ -5,6 +5,7 @@ import type {
   DetectedImport,
   GlobalPackage,
   GithubStatus,
+  InstalledProgram,
   InstallerOption,
   MiseAction,
   Setting,
@@ -145,6 +146,15 @@ export function demoImport(source: string, tool: string): DetectedImport | undef
 
 const shellConflicts: ShellConflict[] = [
   { file: "/Users/demo/.zshrc", line: 12, text: '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"', manager: "nvm" },
+];
+
+const installedPrograms: InstalledProgram[] = [
+  { name: "flyctl", path: "/Users/demo/.fly/bin/flyctl", foundIn: "Fly’s installer", package: null, removeCommand: null },
+  { name: "stripe", path: "/opt/homebrew/bin/stripe", foundIn: "Homebrew", package: "stripe", removeCommand: "brew uninstall stripe" },
+  { name: "gh", path: "/opt/homebrew/bin/gh", foundIn: "Homebrew", package: "gh", removeCommand: "brew uninstall gh" },
+  { name: "delta", path: "/opt/homebrew/bin/delta", foundIn: "Homebrew", package: "git-delta", removeCommand: "brew uninstall git-delta" },
+  { name: "terraform", path: "/opt/homebrew/bin/terraform", foundIn: "Homebrew", package: "terraform", removeCommand: "brew uninstall terraform" },
+  { name: "supabase", path: "/Users/demo/go/bin/supabase", foundIn: "go install", package: null, removeCommand: null },
 ];
 
 const globalPackages: GlobalPackage[] = [
@@ -363,6 +373,8 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
       return shellConflicts;
     case "global_packages":
       return globalPackages;
+    case "installed_programs":
+      return installedPrograms;
     case "mise_installers":
       return installers;
     case "open_url":

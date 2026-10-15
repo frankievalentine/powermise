@@ -225,6 +225,15 @@ and keeps the rest under **More details**:
   `pipx:black`, or the registry's own name when it has one), so they survive a
   Node or Python switch. **Add to mise** runs one `mise use -g` for the ones you
   pick; the old copies stay until you remove them.
+- **Tools installed another way** — command-line tools from Homebrew, an
+  install script (`~/.local/bin`, `~/.fly/bin`, Bun's and Deno's folders),
+  `go install`, Snap, winget, or Scoop that mise's registry also has: flyctl,
+  stripe, gh, terraform, and so on. Homebrew's are matched by formula or cask,
+  the rest only when the command is the tool's own name, so a same-named
+  stranger never matches; an app's command-line helper (VS Code's `code`,
+  Docker Desktop's `docker`) is left alone. None are picked to start. **Add to
+  mise** installs the latest of each with `mise use -g`, and powermise shows the
+  `brew uninstall` to remove Homebrew's copies yourself.
 - **Shims** — when mise's shims are on your PATH, what they're for and
   **Rebuild Shims** (`mise reshim`).
 - **Plugins** — legacy asdf and vfox plugins, when any are installed (read-only).

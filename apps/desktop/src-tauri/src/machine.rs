@@ -142,6 +142,18 @@ pub async fn shell_conflicts() -> CommandResult<Vec<powermise_mise::ShellConflic
     .await
 }
 
+/// Programs in the usual install folders (Homebrew, installer scripts,
+/// `go install`, …) that the app matches against the registry.
+#[tauri::command]
+pub async fn installed_programs() -> CommandResult<Vec<powermise_mise::InstalledProgram>> {
+    blocking(|| {
+        let home = home_dir().ok_or("could not determine your home directory")?;
+        let data = mise_installs_dir().and_then(|installs| installs.parent().map(PathBuf::from));
+        Ok(powermise_mise::installed_programs(&home, data.as_deref()))
+    })
+    .await
+}
+
 /// Command-line packages installed globally with npm, pipx, uv, or cargo.
 #[tauri::command]
 pub async fn global_packages() -> CommandResult<Vec<powermise_mise::GlobalPackage>> {

@@ -241,6 +241,7 @@ pub fn run() {
             machine::detect_imports,
             machine::shell_conflicts,
             machine::global_packages,
+            machine::installed_programs,
             machine::mise_installers,
             machine::disk_usage,
             machine::trusted_folders,

@@ -17,8 +17,9 @@ pub use client::{
     MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program, validate_package_spec,
 };
 pub use imports::{
-    DetectedImport, GlobalPackage, HOMEBREW_PREFIXES, ImportSource, ImportVersion, ShellConflict,
-    detect_imports, global_packages, shell_conflicts,
+    DetectedImport, GlobalPackage, HOMEBREW_PREFIXES, ImportSource, ImportVersion,
+    InstalledProgram, ShellConflict, detect_imports, global_packages, installed_programs,
+    shell_conflicts,
 };
 pub use machine::{
     DotfileCheckpoint, DotfilesHistory, MachineItem, MachineSection, Plugin, Setting, TokenStatus,
