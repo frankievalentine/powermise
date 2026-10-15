@@ -29,6 +29,12 @@ const steps = [
     body: 'powermise shows the exact command first, then streams mise’s output as it runs. Try it — the demo really installs (pretend) deno.',
   },
   {
+    route: [{ kind: 'machine' }, { kind: 'import' }],
+    label: 'Import',
+    title: 'Bring over what you already have.',
+    body: 'Versions from nvm and pyenv, Homebrew and your Brewfile, winget and Scoop, global npm packages — pick what to keep, try a dry run, and import.',
+  },
+  {
     route: { kind: 'project', path: '/Users/demo/code/web-app' },
     label: 'Projects',
     title: 'Your projects’ tools, tasks, and env.',

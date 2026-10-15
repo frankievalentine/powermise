@@ -24,8 +24,13 @@ tools. mise lives in the terminal. powermise puts it in a window:
 - **Projects** — each folder's tools, tasks, and environment.
 - **Health** — `mise doctor` in plain language: your mise version, whether your
   shell is set up, and anything that needs fixing.
+- **Import** — bring over what you already have: versions from nvm, pyenv, and
+  other version managers, Homebrew and your Brewfile, winget and Scoop, and
+  global npm, pipx, cargo, and gem packages, with a dry run before anything
+  changes.
 - **AI Agents** — install a curated AI coding environment (Claude, Codex,
-  Gemini, and more) in one step. See [AI Setups](/ai-setups/).
+  Gemini, and more) in one step, and export it to your other computers. See
+  [AI Setups](/ai-setups/).
 - **This Computer**, **Settings**, and **History** — machine-wide setup, mise's
   settings in plain words, and every command powermise ran.
 

@@ -56,6 +56,10 @@ After that it opens on **Home**, with a checklist that ticks itself off:
 2. Open **Discover**, pick a tool, and click **Install**. powermise shows the
    exact `mise use -g …` command first, then mise's own output while it runs.
 3. Add a project folder to see the tools and tasks it uses.
+4. If another version manager installed some versions, **Bring over versions
+   you already have** opens **Import**. It also brings over Homebrew packages
+   and command-line tools you installed another way, with a dry run before
+   anything changes.
 
 **My Tools** shows what's installed and what has an update; **Health** lists
 anything that needs attention, with the fix.

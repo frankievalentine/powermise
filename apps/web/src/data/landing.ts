@@ -14,7 +14,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Antigravity',
     description: "Google's agent ecosystem for an IDE-first workflow.",
     category: 'IDE',
-    platforms: ['darwin', 'linux'],
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
     status: 'catalogued',
   },
   {
@@ -54,7 +54,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Cursor',
     description: 'The AI-native code editor with agent capabilities built in.',
     category: 'IDE',
-    platforms: ['darwin'],
+    platforms: ['darwin', 'win32'],
     status: 'catalogued',
   },
   {
@@ -70,7 +70,7 @@ export const harnesses: LandingHarness[] = [
     title: 'GitHub Copilot',
     description: 'GitHub Copilot agent support in the editor you already use.',
     category: 'IDE',
-    platforms: ['darwin', 'win32'],
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
     status: 'catalogued',
   },
   {
@@ -86,8 +86,8 @@ export const harnesses: LandingHarness[] = [
     title: 'Hermes Agent',
     description: 'An autonomous agent CLI with browser and messaging support.',
     category: 'Terminal',
-    platforms: [],
-    status: 'provider-gap',
+    platforms: ['darwin', 'linux', 'wsl'],
+    status: 'catalogued',
   },
   {
     id: 'openclaw',
@@ -103,6 +103,14 @@ export const harnesses: LandingHarness[] = [
     description: 'A provider-agnostic open source coding agent.',
     category: 'Terminal',
     platforms: ['darwin', 'linux', 'win32', 'wsl'],
+    status: 'catalogued',
+  },
+  {
+    id: 'orca',
+    title: 'Orca',
+    description: 'Run Claude Code, Codex, and more in parallel, each in its own worktree.',
+    category: 'GUI',
+    platforms: ['darwin', 'win32'],
     status: 'catalogued',
   },
   {
@@ -142,7 +150,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Zed',
     description: 'A high-performance editor with assistant and MCP support.',
     category: 'IDE',
-    platforms: ['darwin'],
+    platforms: ['darwin', 'win32'],
     status: 'catalogued',
   },
   {
