@@ -1,0 +1,34 @@
+{
+  "jq": [
+    {
+      "version": "1.7.1",
+      "install_path": "/Users/demo/.local/share/mise/installs/jq/1.7.1",
+      "installed": true,
+      "active": false
+    },
+    {
+      "version": "1.8.2",
+      "requested_version": "1.8",
+      "install_path": "/Users/demo/.local/share/mise/installs/jq/1.8.2",
+      "source": {
+        "type": "mise.toml",
+        "path": "/Users/demo/code/app/mise.toml"
+      },
+      "installed": false,
+      "active": false
+    }
+  ],
+  "shellcheck": [
+    {
+      "version": "0.10.0",
+      "requested_version": "0.10",
+      "install_path": "/Users/demo/.local/share/mise/installs/shellcheck/0.10.0",
+      "source": {
+        "type": "mise.toml",
+        "path": "/Users/demo/code/app/mise.toml"
+      },
+      "installed": false,
+      "active": false
+    }
+  ]
+}

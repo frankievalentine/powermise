@@ -1,0 +1,10 @@
+{
+  "APP_ENV": {
+    "source": "/Users/demo/code/app/mise.toml",
+    "value": "dev"
+  },
+  "SECRET_TOKEN": {
+    "source": "/Users/demo/code/app/mise.toml",
+    "value": "abc"
+  }
+}

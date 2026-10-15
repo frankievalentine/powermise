@@ -1,0 +1,54 @@
+{
+  "activated": false,
+  "aqua": {
+    "baked_in_registry_repository": "aquaproj/aqua-registry",
+    "baked_in_registry_tag": "9c111e118677559205a650354cd89febdecb8433",
+    "baked_in_registry_tools": 2333
+  },
+  "build_info": {
+    "target": "aarch64-apple-darwin",
+    "features": "openssl, rustls-native-roots, self_update",
+    "built": "Wed, 14 Oct 2026 09:35:02 +0000",
+    "rust_version": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "profile": "release"
+  },
+  "config_files": [
+    "/Users/demo/.config/mise/config.toml"
+  ],
+  "dirs": {
+    "cache": "/Users/demo/Library/Caches/mise",
+    "config": "/Users/demo/.config/mise",
+    "data": "/Users/demo/.local/share/mise",
+    "shims": "/Users/demo/.local/share/mise/shims",
+    "system_shims": "/usr/local/share/mise/shims",
+    "state": "/Users/demo/.local/state/mise"
+  },
+  "env_files": [],
+  "env_vars": {
+    "MISE_DATA_DIR": "/Users/demo/.local/share/mise",
+    "MISE_CACHE_DIR": "/Users/demo/Library/Caches/mise",
+    "MISE_STATE_DIR": "/Users/demo/.local/state/mise",
+    "MISE_CONFIG_DIR": "/Users/demo/.config/mise"
+  },
+  "ignored_config_files": [],
+  "paths": [
+    "/Users/demo/.local/share/mise/installs/jq/1.7.1",
+    "/Users/demo/.local/state/fnm_multishells/2593_1792036018644/bin"
+  ],
+  "plugins": {},
+  "self_update_available": true,
+  "settings": {},
+  "shell": {
+    "name": "/bin/zsh",
+    "version": "zsh 5.9 (arm64-apple-darwin26.0)"
+  },
+  "shims_on_path": false,
+  "toolset": {
+    "jq": [
+      {
+        "version": "1.7.1"
+      }
+    ]
+  },
+  "version": "2026.10.10 macos-arm64 (2026-10-14)"
+}

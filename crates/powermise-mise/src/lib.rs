@@ -116,7 +116,8 @@ impl MiseExecutable {
             .env("MISE_CONFIG_DIR", &request.config_dir)
             .env_remove("MISE_CONFIG_FILE")
             .env_remove("MISE_GLOBAL_CONFIG_FILE")
-            .env_remove("MISE_ENV");
+            .env_remove("MISE_ENV")
+            .env_remove("MISE_YES");
         command
     }
 
@@ -139,7 +140,8 @@ impl MiseExecutable {
             .env("MISE_SYSTEM_CONFIG_DIR", &sandbox.system)
             .env_remove("MISE_CONFIG_FILE")
             .env_remove("MISE_GLOBAL_CONFIG_FILE")
-            .env_remove("MISE_ENV");
+            .env_remove("MISE_ENV")
+            .env_remove("MISE_YES");
         command
     }
 }

@@ -57,7 +57,11 @@ impl MiseClient {
             .stdin(Stdio::null())
             // Plain output: no colors or spinners in captured text.
             .env("NO_COLOR", "1")
-            .env("MISE_COLOR", "0");
+            .env("MISE_COLOR", "0")
+            // `MISE_YES` makes mise answer its own prompts — including
+            // silently trusting an untrusted config on a plain read. Trust is
+            // the person's decision, so never inherit it from their shell.
+            .env_remove("MISE_YES");
         command
     }
 
@@ -633,6 +637,20 @@ mod tests {
                 .unwrap()
                 .display(),
             "cd /Users/demo/code/app && mise use node@22"
+        );
+    }
+
+    #[test]
+    fn commands_never_inherit_mise_yes() {
+        let client = MiseClient::new("mise", std::env::temp_dir());
+        let command = client.base(None);
+        let environment = command
+            .get_envs()
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(
+            environment.get(std::ffi::OsStr::new("MISE_YES")),
+            Some(&None),
+            "MISE_YES must be removed so reads can't auto-trust configs"
         );
     }
 

@@ -1,0 +1,36 @@
+{
+  "backend": "aqua:jqlang/jq",
+  "description": "Command-line JSON processor",
+  "url": null,
+  "installed_versions": [
+    "1.7.1"
+  ],
+  "requested_versions": [
+    "1.8"
+  ],
+  "active_versions": [
+    "1.8.2"
+  ],
+  "config_source": {
+    "type": "mise.toml",
+    "path": "/Users/demo/code/app/mise.toml"
+  },
+  "tool_options": {
+    "os": null,
+    "depends": null,
+    "install_env": {},
+    "lazy": null,
+    "lazy_bins": [],
+    "auto_update": null
+  },
+  "security": [
+    {
+      "type": "checksum",
+      "algorithm": "sha256"
+    },
+    {
+      "type": "github_attestations",
+      "signer_workflow": "jqlang/jq/.github/workflows/ci.yml"
+    }
+  ]
+}

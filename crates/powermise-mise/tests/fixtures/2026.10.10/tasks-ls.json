@@ -1,0 +1,68 @@
+[
+  {
+    "name": "build",
+    "aliases": [],
+    "description": "Build it",
+    "source": "/Users/demo/code/app/mise.toml",
+    "config_sources": [
+      "/Users/demo/code/app/mise.toml"
+    ],
+    "depends": [],
+    "daemons": null,
+    "secrets": [],
+    "depends_post": [],
+    "wait_for": [],
+    "env": [],
+    "dir": "/Users/demo/code/app",
+    "hide": false,
+    "global": false,
+    "raw": false,
+    "interactive": false,
+    "sources": [],
+    "outputs": [],
+    "shell": null,
+    "quiet": false,
+    "silent": false,
+    "tools": {},
+    "usage": "",
+    "timeout": null,
+    "run": [
+      "echo build"
+    ],
+    "args": [],
+    "file": null
+  },
+  {
+    "name": "deploy",
+    "aliases": [],
+    "description": "Deploy",
+    "source": "/Users/demo/code/app/mise.toml",
+    "config_sources": [
+      "/Users/demo/code/app/mise.toml"
+    ],
+    "depends": [],
+    "daemons": null,
+    "secrets": [],
+    "depends_post": [],
+    "wait_for": [],
+    "env": [],
+    "dir": "/Users/demo/code/app",
+    "hide": false,
+    "global": false,
+    "raw": false,
+    "interactive": false,
+    "sources": [],
+    "outputs": [],
+    "shell": null,
+    "quiet": false,
+    "silent": false,
+    "tools": {},
+    "usage": "arg \"<env>\" help=\"Target\" {\n  choices \"staging\" \"prod\"\n}\nflag \"--dry-run\" help=\"Preview only\"\n",
+    "timeout": null,
+    "run": [
+      "echo deploy {{usage.env}}"
+    ],
+    "args": [],
+    "file": null
+  }
+]
