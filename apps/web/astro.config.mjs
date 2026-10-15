@@ -21,7 +21,7 @@ export default defineConfig({
     sitemap(),
     starlight({
       title: 'powermise',
-      description: 'A desktop companion app for mise-en-place.',
+      description: 'An unofficial desktop companion app for mise-en-place.',
       favicon: './favicon.svg',
       disable404Route: true,
       customCss: ['./src/styles/docs.css'],

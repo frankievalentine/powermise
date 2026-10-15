@@ -1,9 +1,17 @@
 ---
 title: What is powermise?
-description: powermise is a desktop companion app for mise-en-place — see, install, and update every tool mise manages, with the exact command behind every click.
+description: powermise is an unofficial desktop companion app for mise-en-place — see, install, and update every tool mise manages, with the exact command behind every click.
 ---
 
-powermise is a desktop app for [mise-en-place](https://mise.jdx.dev), the tool
+:::note[Unofficial]
+powermise is an independent, community project. It isn't made by, affiliated
+with, or endorsed by [mise](https://mise.jdx.dev) or its maintainers. Please
+report powermise problems to the
+[powermise issue tracker](https://github.com/frankievalentine/powermise/issues),
+not to mise.
+:::
+
+powermise is an unofficial desktop app for [mise-en-place](https://mise.jdx.dev), the tool
 that installs and switches between versions of your languages and developer
 tools. mise lives in the terminal. powermise puts it in a window:
 

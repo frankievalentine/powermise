@@ -1516,12 +1516,6 @@ button {
   height: 100%;
 }
 
-.titlebar__icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  background: var(--accent);
-}
 
 .caption-button {
   display: grid;

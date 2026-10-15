@@ -69,10 +69,7 @@ body {
   min-width: 20rem;
   margin: 0;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 50% -10%, color-mix(in srgb, var(--pm-violet) 10%, transparent), transparent 32rem),
-    radial-gradient(circle at 100% 24%, color-mix(in srgb, var(--pm-blue) 7%, transparent), transparent 28rem),
-    var(--pm-bg);
+  background: var(--pm-bg);
   color: var(--pm-ink);
   font-family: var(--pm-font-reading);
   font-size: 1rem;
@@ -81,17 +78,6 @@ body {
   transition: background-color 240ms var(--pm-ease-out), color 240ms var(--pm-ease-out);
 }
 
-body::before {
-  position: fixed;
-  z-index: -1;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 0 49.8%, color-mix(in srgb, var(--pm-line) 22%, transparent) 50%, transparent 50.2%);
-  background-size: 8rem 100%;
-  content: '';
-  mask-image: linear-gradient(to bottom, transparent, black 28%, transparent 82%);
-  opacity: 0.35;
-  pointer-events: none;
-}
 
 a {
   color: inherit;
@@ -283,15 +269,6 @@ main {
   isolation: isolate;
 }
 
-.hero::after {
-  position: absolute;
-  z-index: -1;
-  inset: 10% -15% 8%;
-  background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--pm-violet) 8%, transparent), transparent 62%);
-  content: '';
-  filter: blur(3rem);
-  pointer-events: none;
-}
 
 .eyebrow,
 .section-label,
@@ -580,6 +557,11 @@ main {
   color: var(--pm-ink-faint);
   font-family: var(--pm-font-mono);
   font-size: 0.65rem;
+}
+
+.footer-note a {
+  color: inherit;
+  text-underline-offset: 0.2em;
 }
 
 .footer-links {

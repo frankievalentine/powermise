@@ -3,7 +3,8 @@ title: Getting started
 description: Install mise, build the powermise desktop app, and take a first look around.
 ---
 
-powermise is pre-release, so for now you build it from source. Installers for
+powermise is an unofficial companion to [mise](https://mise.jdx.dev) — it
+isn't made by the mise team. It's pre-release, so for now you build it from source. Installers for
 macOS, Windows, and Linux are on the [roadmap](https://github.com/frankievalentine/powermise/blob/main/ROADMAP.md).
 
 ## 1. Install mise

@@ -2,6 +2,9 @@
 
 > **mise is the CLI. powermise is the GUI.**
 >
+> powermise is an independent, unofficial project — not made by, affiliated with, or
+> endorsed by mise or its maintainers.
+>
 > powermise is a desktop companion for [mise-en-place](https://mise.jdx.dev): see every
 > tool mise manages, discover new ones, keep them up to date, and work with your
 > projects' tools, environments, and tasks — without memorizing commands. Setting up

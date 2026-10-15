@@ -4,7 +4,9 @@ description: Common powermise errors and how to resolve them.
 ---
 
 A reference for the failures you are most likely to hit, and the exact fix for
-each. The first section covers the desktop app; the rest covers the AI Setups
+each. powermise is unofficial: if something only goes wrong in powermise, report
+it on the [powermise issue tracker](https://github.com/frankievalentine/powermise/issues)
+rather than to mise. The first section covers the desktop app; the rest covers the AI Setups
 CLI.
 
 ## The app says "mise not found"

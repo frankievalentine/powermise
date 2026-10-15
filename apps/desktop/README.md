@@ -1,7 +1,9 @@
-# powermise Desktop
+# powermise desktop
 
-A Tauri v2 app for browsing the harness catalog, building setups, and applying
-them — for people who'd rather not live in a terminal.
+An unofficial desktop companion for [mise](https://mise.jdx.dev) — not made by
+or affiliated with the mise project. A Tauri v2 app for seeing, installing, and
+updating the tools mise manages, plus AI Setups — for people who'd rather not
+live in a terminal.
 
 ## Run it
 
