@@ -122,6 +122,22 @@ pub struct Doctor {
     /// The shell mise was run from, when it can tell.
     #[serde(default)]
     pub shell: Option<ShellInfo>,
+    /// Where mise keeps its cache, installs, shims, and state.
+    #[serde(default)]
+    pub dirs: Option<MiseDirs>,
+    /// Config files the person told mise to ignore (`mise trust --ignore`).
+    #[serde(default)]
+    pub ignored_config_files: Vec<PathBuf>,
+}
+
+/// The `dirs` section of `mise doctor --json`.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct MiseDirs {
+    pub cache: PathBuf,
+    pub config: PathBuf,
+    pub data: PathBuf,
+    pub shims: PathBuf,
+    pub state: PathBuf,
 }
 
 /// The `shell` section of `mise doctor --json`.

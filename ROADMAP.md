@@ -112,7 +112,7 @@ apps/web (Astro)          marketing site + docs; hosts the interactive app demo
       opening interactive tasks in a terminal.
 - [x] Trust flow: untrusted folders show a read-only preview of hooks, loaded files,
       variables, tools, and tasks before a user-confirmed `mise trust`.
-- [ ] Untrust (`mise untrust`) from the project page.
+- [x] Untrust (`mise untrust`) from the project page.
 - [ ] Lockfiles: show whether `mise.lock` is current and refresh it (`mise lock`,
       which supports `--dry-run` and `--json`).
 - [ ] "Open a terminal with this project's tools" (`mise en`).
@@ -135,15 +135,16 @@ apps/web (Astro)          marketing site + docs; hosts the interactive app demo
       one-click ways to borrow an existing login (`gh auth token` as
       `github.credential_command`, or `github.use_git_credentials`). Native
       `--oauth` needs a GitHub App client ID, so it's linked, not offered.
-- [ ] Disk usage and cache: `mise cache path` / `clear` / `prune`, and the download
-      cache size limit.
-- [ ] Trusted configs: review and revoke.
-- [ ] Shims vs. activation, explained, with `mise reshim` when shims are in use.
+- [x] Disk usage and cache: installed-tools and cache sizes (from `mise doctor`'s
+      `dirs`), `mise cache prune` / `clear`.
+- [x] Trusted configs: review (`<state>/trusted-configs`) and revoke (`mise untrust`),
+      on Health and the project page; ignored configs listed.
+- [x] Shims vs. activation, explained, with `mise reshim` when shims are in use.
 - [x] First run (Welcome): install a missing mise (Homebrew or mise.run on
       macOS/Linux, winget or Scoop on Windows), shell activation, bringing over
       versions from nvm, nodenv, pyenv, uv, or Homebrew (`mise sync`), and GitHub.
-- [ ] `mise link` for hand-built or other installs that `mise sync` doesn't cover.
-- [ ] Edit list settings (arrays) in the Settings screen.
+- [x] `mise link` from tool pages, with a folder picker.
+- [x] Edit list settings (comma-separated, as `mise settings set` takes them).
 - [ ] Gate features by mise version (several above need 2026.10.x) and explain why a
       control is disabled. Capture a second fixture set from 2026.10 so both ends of
       the supported range stay tested.

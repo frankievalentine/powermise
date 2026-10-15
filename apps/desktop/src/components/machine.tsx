@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { CheckCircle2, Download, ExternalLink, Github, Info, Loader2, Trash2 } from "lucide-react";
 import { api, type DetectedImport, type ImportSource } from "../api";
 import type { AppContext } from "../App";
@@ -289,5 +290,112 @@ export function ImportList({ context, imports }: { context: AppContext; imports:
         </div>
       ))}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Link an install made outside mise
+// ---------------------------------------------------------------------------
+
+/** Registers a folder (a hand-built or other manager's install) as a version
+ *  of `tool` with `mise link`, so mise uses it without downloading. */
+export function LinkSheet({
+  open,
+  tool,
+  onDismiss,
+  context,
+}: {
+  open: boolean;
+  tool: string;
+  onDismiss: () => void;
+  context: AppContext;
+}) {
+  const [version, setVersion] = useState("");
+  const [folder, setFolder] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // mise rejects `latest`, aliases, and channels: a version must be exact.
+  const validVersion = /^[A-Za-z0-9][A-Za-z0-9._+-]*$/.test(version) && version !== "latest";
+
+  const choose = async () => {
+    setError(null);
+    try {
+      const picked = await api.pickFolder();
+      if (picked) setFolder(picked);
+    } catch (reason) {
+      setError((reason as Error).message);
+    }
+  };
+
+  const close = () => {
+    setVersion("");
+    setFolder(null);
+    setError(null);
+    onDismiss();
+  };
+
+  return (
+    <Sheet open={open} onDismiss={close} labelledBy="link-title">
+      <div className="sheet-head">
+        <h2 id="link-title">Use an existing {tool} install</h2>
+        <p>
+          Point mise at a folder where {tool} is already installed — built by hand or by another tool — and it uses
+          that copy as a version, without downloading anything.
+        </p>
+      </div>
+      <div className="sheet-body">
+        <label className="task-field">
+          <span className="task-field__label">Version</span>
+          <input
+            className="text-field mono"
+            value={version}
+            onChange={(event) => setVersion(event.target.value.trim())}
+            placeholder="for example 20.11.1, or a name like system"
+            spellCheck={false}
+          />
+          {version && !validVersion && (
+            <span className="field-hint error">Use an exact version or a name, not “latest” or an alias.</span>
+          )}
+        </label>
+        <div className="task-field" style={{ marginTop: 12 }}>
+          <span className="task-field__label">Folder</span>
+          <div className="setting-edit">
+            <span className="mono row-subtitle" style={{ flex: 1 }}>
+              {folder ?? "No folder chosen"}
+            </span>
+            <button className="button" onClick={choose}>
+              Choose…
+            </button>
+          </div>
+        </div>
+        {validVersion && folder && (
+          <div style={{ marginTop: 12 }}>
+            <CommandBlock command={`mise link ${tool}@${version} ${folder}`} />
+          </div>
+        )}
+        {error && <div className="callout error selectable">{error}</div>}
+      </div>
+      <div className="sheet-foot">
+        <button className="button large" onClick={close}>
+          Cancel
+        </button>
+        <button
+          className="button primary large"
+          disabled={!validVersion || !folder}
+          onClick={() => {
+            const path = folder!;
+            close();
+            context.run({
+              action: { kind: "link", tool, version, path },
+              title: `Linking ${tool} ${version}`,
+              description: "",
+              verb: "Link",
+              autoStart: true,
+            });
+          }}
+        >
+          Link
+        </button>
+      </div>
+    </Sheet>
   );
 }

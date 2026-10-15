@@ -248,7 +248,12 @@ export type MiseAction =
   | { kind: "setSetting"; key: string; value: string }
   | { kind: "unsetSetting"; key: string }
   | { kind: "syncVersions"; source: ImportSource }
-  | { kind: "installMise"; installer: MiseInstaller };
+  | { kind: "installMise"; installer: MiseInstaller }
+  | { kind: "untrust"; path: string }
+  | { kind: "cachePrune" }
+  | { kind: "cacheClear" }
+  | { kind: "reshim" }
+  | { kind: "link"; tool: string; version: string; path: string };
 
 // ---------------------------------------------------------------------------
 // Machine (src-tauri/src/machine.rs)
@@ -287,6 +292,18 @@ export interface DetectedImport {
   source: ImportSource;
   tool: string;
   versions: string[];
+}
+
+export interface DiskUsage {
+  cacheDir: string;
+  cacheBytes: number;
+  installsDir: string;
+  installsBytes: number;
+}
+
+export interface TrustReport {
+  trusted: { path: string; exists: boolean }[];
+  ignored: string[];
 }
 
 export type MiseInstaller = "homebrew" | "winget" | "scoop" | "script";
@@ -435,6 +452,9 @@ export const api = {
   detectImports: () => call<DetectedImport[]>("detect_imports"),
   miseInstallers: () => call<InstallerOption[]>("mise_installers"),
   openUrl: (url: string) => call<void>("open_url", { url }),
+  diskUsage: () => call<DiskUsage>("disk_usage"),
+  trustedFolders: () => call<TrustReport>("trusted_folders"),
+  pickFolder: () => call<string | null>("pick_folder"),
   describe: (action: MiseAction) => call<string>("describe_action", { action }),
   run: (action: MiseAction) => call<number>("run_action", { action }),
   cancel: (jobId: number) => call<void>("cancel_job", { jobId }),

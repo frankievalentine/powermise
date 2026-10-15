@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { ArrowUpCircle, Download, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowUpCircle, Download, ExternalLink, Link2, Loader2 } from "lucide-react";
 import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { backendLabel, homeFrom, isGlobalPath, sourceLabel, upgradeTarget } from "../../mise";
 import { CommandBlock, Monogram, Section } from "../../components/ui";
+import { LinkSheet } from "../../components/machine";
 
 export function ToolPage({ context, name }: { context: AppContext; name: string }) {
   const { mise, env, run } = context;
@@ -20,6 +21,7 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
   // Newest first; mise lists oldest first.
   const available = [...(remote.data ?? [])].reverse();
   const [selected, setSelected] = useState("latest");
+  const [linkOpen, setLinkOpen] = useState(false);
   useEffect(() => setSelected("latest"), [name]);
 
   const chosen = selected === "latest" ? (available[0]?.version ?? "latest") : selected;
@@ -214,10 +216,20 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
           </Section>
         )}
 
+        <Section
+          title="Use an existing install"
+          note={`Already have ${name} installed outside mise — built by hand, or by another tool? mise can use it as a version.`}
+        >
+          <button className="button" onClick={() => setLinkOpen(true)} disabled={!env.misePath}>
+            <Link2 size={14} /> Link a Folder…
+          </button>
+        </Section>
+
         <Section title="In the terminal">
           <CommandBlock command={`mise use -g ${name}@${chosen}`} />
         </Section>
       </div>
+      <LinkSheet open={linkOpen} tool={name} onDismiss={() => setLinkOpen(false)} context={context} />
     </div>
   );
 }

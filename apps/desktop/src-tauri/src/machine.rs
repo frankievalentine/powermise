@@ -6,8 +6,10 @@ use std::{
     process::{Command, Stdio},
 };
 
-use powermise_mise::{DetectedImport, Setting, TokenStatus, directory_size};
+use powermise_mise::{DetectedImport, Setting, TokenStatus, directory_size, trusted_configs};
 use serde::{Deserialize, Serialize};
+use tauri::AppHandle;
+use tauri_plugin_dialog::DialogExt;
 
 use crate::{CommandResult, find_program, home_dir, message, mise_commands::client};
 
@@ -114,6 +116,86 @@ pub async fn detect_imports() -> CommandResult<Vec<DetectedImport>> {
     blocking(|| {
         let home = home_dir().ok_or("could not determine your home directory")?;
         Ok(powermise_mise::detect_imports(&home))
+    })
+    .await
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiskUsage {
+    cache_dir: PathBuf,
+    cache_bytes: u64,
+    installs_dir: PathBuf,
+    installs_bytes: u64,
+}
+
+/// How much space mise's download cache and installed tools take.
+#[tauri::command]
+pub async fn disk_usage() -> CommandResult<DiskUsage> {
+    blocking(|| {
+        let dirs = client()?
+            .doctor()
+            .map_err(message)?
+            .dirs
+            .ok_or("this mise doesn't report its folders")?;
+        let installs = dirs.data.join("installs");
+        Ok(DiskUsage {
+            cache_bytes: directory_size(&dirs.cache),
+            installs_bytes: directory_size(&installs),
+            cache_dir: dirs.cache,
+            installs_dir: installs,
+        })
+    })
+    .await
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrustedPath {
+    path: PathBuf,
+    exists: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrustReport {
+    trusted: Vec<TrustedPath>,
+    ignored: Vec<PathBuf>,
+}
+
+/// Folders and files mise trusts to run their hooks, tasks, and env, and the
+/// configs it was told to ignore.
+#[tauri::command]
+pub async fn trusted_folders() -> CommandResult<TrustReport> {
+    blocking(|| {
+        let doctor = client()?.doctor().map_err(message)?;
+        let state = doctor
+            .dirs
+            .map(|dirs| dirs.state)
+            .ok_or("this mise doesn't report its folders")?;
+        Ok(TrustReport {
+            trusted: trusted_configs(&state)
+                .into_iter()
+                .map(|path| TrustedPath {
+                    exists: path.exists(),
+                    path,
+                })
+                .collect(),
+            ignored: doctor.ignored_config_files,
+        })
+    })
+    .await
+}
+
+/// A folder picker, for linking an install made outside mise.
+#[tauri::command]
+pub async fn pick_folder(app: AppHandle) -> CommandResult<Option<PathBuf>> {
+    blocking(move || {
+        Ok(app
+            .dialog()
+            .file()
+            .blocking_pick_folder()
+            .and_then(|picked| picked.into_path().ok()))
     })
     .await
 }

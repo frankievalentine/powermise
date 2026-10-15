@@ -32,6 +32,9 @@ export function HealthView({ context }: { context: AppContext }) {
   const summary = healthSummary(info, doctor.data);
   const imports = useAsync(() => api.detectImports(), [mise.revision]);
   const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
+  const disk = useAsync(() => api.diskUsage(), [mise.revision]);
+  const trust = useAsync(() => api.trustedFolders(), [mise.revision]);
+  const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const healthy = !!doctor.data && summary.count === 0;
 
@@ -144,6 +147,33 @@ export function HealthView({ context }: { context: AppContext }) {
                 </div>
               </div>
             </div>
+            {doctor.data.shims_on_path && (
+              <div className="list prose" style={{ marginTop: 10 }}>
+                <div className="list-row">
+                  <div className="row-main">
+                    <div className="row-title">Shims are on your PATH</div>
+                    <div className="row-subtitle">
+                      {doctor.data.activated
+                        ? "Shims are small stand-in commands that call the right version. With mise activated you don’t need them, but they help editors and scripts that don’t run your shell."
+                        : "Shims are small stand-in commands that call the right version, so tools work even where mise isn’t activated — editors, scripts, and apps. If a tool’s command is missing, rebuild them."}
+                    </div>
+                  </div>
+                  <button
+                    className="button"
+                    onClick={() =>
+                      run({
+                        action: { kind: "reshim" },
+                        title: "Rebuild shims?",
+                        description: "mise recreates a shim for every command your installed tools provide.",
+                        verb: "Rebuild",
+                      })
+                    }
+                  >
+                    Rebuild Shims
+                  </button>
+                </div>
+              </div>
+            )}
             {!doctor.data.activated && (
               <div style={{ marginTop: 10 }}>
                 <p className="section-note" style={{ margin: "0 0 8px" }}>
@@ -211,8 +241,102 @@ export function HealthView({ context }: { context: AppContext }) {
           </Section>
         )}
 
+        {trust.data && (trust.data.trusted.length > 0 || trust.data.ignored.length > 0) && (
+          <Section
+            title="Trusted folders"
+            note="mise runs hooks, tasks, and environment from these folders’ configs. Revoke trust for any you no longer use."
+          >
+            <div className="list">
+              {trust.data.trusted.map((entry) => (
+                <div className="list-row" key={entry.path}>
+                  <div className="row-main">
+                    <div className="row-title mono selectable">{pretty(entry.path)}</div>
+                    {!entry.exists && <div className="row-subtitle">No longer exists</div>}
+                  </div>
+                  <button
+                    className="button"
+                    onClick={() =>
+                      run({
+                        action: { kind: "untrust", path: entry.path },
+                        title: `Stop trusting ${pretty(entry.path)}?`,
+                        description:
+                          "mise stops loading this config’s hooks, tasks, and environment until you trust it again.",
+                        verb: "Revoke",
+                        destructive: true,
+                      })
+                    }
+                  >
+                    Revoke
+                  </button>
+                </div>
+              ))}
+              {trust.data.ignored.map((path) => (
+                <div className="list-row" key={`ignored:${path}`}>
+                  <div className="row-main">
+                    <div className="row-title mono selectable">{pretty(path)}</div>
+                    <div className="row-subtitle">Ignored — mise skips this config entirely</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         <Section title="Disk space">
           <div className="list">
+            {disk.data && (
+              <div className="list-row">
+                <div className="row-main">
+                  <div className="row-title">Installed tools</div>
+                  <div className="row-subtitle mono">
+                    {formatBytes(disk.data.installsBytes)} · {pretty(disk.data.installsDir)}
+                  </div>
+                </div>
+                <button className="button" onClick={() => api.reveal(disk.data!.installsDir)}>
+                  Show
+                </button>
+              </div>
+            )}
+            {disk.data && (
+              <div className="list-row">
+                <div className="row-main">
+                  <div className="row-title">Download cache</div>
+                  <div className="row-subtitle mono">
+                    {formatBytes(disk.data.cacheBytes)} · {pretty(disk.data.cacheDir)}
+                  </div>
+                </div>
+                <button
+                  className="button"
+                  disabled={!disk.data.cacheBytes}
+                  onClick={() =>
+                    run({
+                      action: { kind: "cachePrune" },
+                      title: "Remove old cache files?",
+                      description: "mise deletes cached downloads and version lists it hasn’t used recently.",
+                      verb: "Remove",
+                    })
+                  }
+                >
+                  Remove Old
+                </button>
+                <button
+                  className="button"
+                  disabled={!disk.data.cacheBytes}
+                  onClick={() =>
+                    run({
+                      action: { kind: "cacheClear" },
+                      title: "Clear the whole cache?",
+                      description:
+                        "mise deletes every cached download and version list. Installed tools aren’t affected; mise downloads again when it needs to.",
+                      verb: "Clear Cache",
+                      destructive: true,
+                    })
+                  }
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
             <div className="list-row">
               <div className="row-main">
                 <div className="row-title">Unused tool versions</div>

@@ -25,12 +25,19 @@ const groupOf = (key: string) => (key.includes(".") ? key.split(".")[0] : "");
 const groupTitle = (group: string) =>
   GROUP_TITLE[group] ?? group.charAt(0).toUpperCase() + group.slice(1).replace(/_/g, " ");
 
-/** Settings mise can set from a single text value. Arrays and tables are
- *  edited in the config file instead. */
-const editable = (setting: Setting) => !setting.type.includes("array") && !setting.type.includes("object");
+/** Settings mise can set from one text value. Lists are written comma-separated
+ *  (`mise settings set key a,b`); tables are edited in the config file. */
+const editable = (setting: Setting) => !setting.type.includes("object");
+const isList = (setting: Setting) => setting.type === "array";
 
 const asText = (value: unknown) =>
-  value === null || value === undefined ? "" : typeof value === "string" ? value : JSON.stringify(value);
+  value === null || value === undefined
+    ? ""
+    : typeof value === "string"
+      ? value
+      : Array.isArray(value)
+        ? value.map((item) => (typeof item === "string" ? item : JSON.stringify(item))).join(", ")
+        : JSON.stringify(value);
 
 type Filter = "all" | "changed";
 
@@ -145,7 +152,9 @@ function SettingRow({ setting, context, globalDir }: { setting: Setting; context
         className="setting-edit"
         onSubmit={(event) => {
           event.preventDefault();
-          if (draft !== original) set(draft);
+          if (draft === original) return;
+          // mise splits list values on commas.
+          set(isList(setting) ? draft.split(",").map((item) => item.trim()).filter(Boolean).join(",") : draft);
         }}
       >
         <input
@@ -153,7 +162,7 @@ function SettingRow({ setting, context, globalDir }: { setting: Setting; context
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           inputMode={setting.type === "number" ? "numeric" : undefined}
-          placeholder="Not set"
+          placeholder={isList(setting) ? "Comma-separated" : "Not set"}
           aria-label={setting.key}
           spellCheck={false}
         />
@@ -166,7 +175,7 @@ function SettingRow({ setting, context, globalDir }: { setting: Setting; context
     );
   } else {
     control = (
-      <span className="mono row-subtitle" title="Edit lists in your mise config file">
+      <span className="mono row-subtitle" title="Edit tables like this in your mise config file">
         {original || "[]"}
       </span>
     );

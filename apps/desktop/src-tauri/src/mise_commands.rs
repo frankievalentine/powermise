@@ -205,6 +205,17 @@ pub enum MiseAction {
     SyncVersions {
         source: ImportSource,
     },
+    Untrust {
+        path: PathBuf,
+    },
+    CachePrune,
+    CacheClear,
+    Reshim,
+    Link {
+        tool: String,
+        version: String,
+        path: PathBuf,
+    },
     /// Installs mise itself — the one action that doesn't run mise.
     InstallMise {
         installer: MiseInstaller,
@@ -264,6 +275,15 @@ impl MiseAction {
             Self::SetSetting { key, value } => MiseCommand::set_setting(key, value),
             Self::UnsetSetting { key } => MiseCommand::unset_setting(key),
             Self::SyncVersions { source } => Ok(MiseCommand::sync(*source)),
+            Self::Untrust { path } => MiseCommand::untrust(path),
+            Self::CachePrune => Ok(MiseCommand::cache_prune()),
+            Self::CacheClear => Ok(MiseCommand::cache_clear()),
+            Self::Reshim => Ok(MiseCommand::reshim()),
+            Self::Link {
+                tool,
+                version,
+                path,
+            } => MiseCommand::link(tool, version, path),
             Self::InstallMise { .. } => {
                 return Err("installing mise doesn't run mise".into());
             }

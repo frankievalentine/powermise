@@ -11,13 +11,13 @@ mod project;
 pub use client::{MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program};
 pub use machine::{
     DetectedImport, ImportSource, Setting, TokenStatus, detect_imports, directory_size,
-    parse_settings, parse_token_status,
+    parse_settings, parse_token_status, trusted_configs,
 };
 pub use models::{
-    BootstrapPlan, BootstrapStatus, ConfigFile, ConfigSource, Doctor, MiseVersion, OutdatedReport,
-    OutdatedTool, PackageManagerStatus, PackageStatus, PlanResource, PlanResourceId, PlanSummary,
-    RegistryEntry, RemoteVersion, ShellInfo, Task, ToolInventory, ToolStatus, ToolVersion,
-    VersionInfo,
+    BootstrapPlan, BootstrapStatus, ConfigFile, ConfigSource, Doctor, MiseDirs, MiseVersion,
+    OutdatedReport, OutdatedTool, PackageManagerStatus, PackageStatus, PlanResource,
+    PlanResourceId, PlanSummary, RegistryEntry, RemoteVersion, ShellInfo, Task, ToolInventory,
+    ToolStatus, ToolVersion, VersionInfo,
 };
 pub use project::{
     ConfigPreview, EnvReport, EnvVar, PROJECT_CONFIG_FILES, TaskDetails, TaskInput, TrustStatus,

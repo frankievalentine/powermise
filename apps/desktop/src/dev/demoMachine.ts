@@ -48,6 +48,9 @@ const settings: Setting[] = [
   setting("self_update.auto", "boolean", false, "Update mise itself automatically in the background."),
 ];
 
+let cacheBytes = 412_000_000;
+const trusted = ["/Users/demo/code/web-app", "/Users/demo/code/old-prototype"];
+
 const imports: DetectedImport[] = [
   { source: "nvm", tool: "node", versions: ["18.20.4", "20.11.1"] },
   { source: "pyenv", tool: "python", versions: ["3.11.9"] },
@@ -93,6 +96,16 @@ export function describeMachineAction(action: MiseAction): string | null {
       return `mise sync ${SYNC[action.source]}`;
     case "installMise":
       return installers.find((entry) => entry.id === action.installer)?.command ?? "brew install mise";
+    case "untrust":
+      return `mise untrust ${action.path}`;
+    case "cachePrune":
+      return "mise cache prune --yes";
+    case "cacheClear":
+      return "mise cache clear --yes";
+    case "reshim":
+      return "mise reshim";
+    case "link":
+      return `mise link ${action.tool}@${action.version} ${action.path}`;
     default:
       return null;
   }
@@ -125,6 +138,23 @@ export function performMachineAction(action: MiseAction): string[] | null {
       const [found] = index >= 0 ? imports.splice(index, 1) : [];
       return (found?.versions ?? []).map((version) => `mise linked ${found.tool}@${version}`);
     }
+    case "untrust": {
+      const index = trusted.indexOf(action.path);
+      if (index >= 0) trusted.splice(index, 1);
+      return [`mise untrusted ${action.path.replace("/Users/demo", "~")}`];
+    }
+    case "cachePrune": {
+      const freed = Math.round(cacheBytes * 0.6);
+      cacheBytes -= freed;
+      return [`mise cache pruned 214 files, ${Math.round(freed / 1_000_000)} MB`];
+    }
+    case "cacheClear":
+      cacheBytes = 0;
+      return ["mise cache cleared"];
+    case "reshim":
+      return [];
+    case "link":
+      return [`mise linked ${action.tool}@${action.version} → ${action.path}`];
     case "installMise":
       demoHasMise = true;
       return [
@@ -151,6 +181,20 @@ export function demoMachine(command: string): unknown {
       return installers;
     case "open_url":
       return undefined;
+    case "disk_usage":
+      return {
+        cacheDir: "/Users/demo/Library/Caches/mise",
+        cacheBytes,
+        installsDir: "/Users/demo/.local/share/mise/installs",
+        installsBytes: 2_840_000_000,
+      };
+    case "trusted_folders":
+      return {
+        trusted: trusted.map((path) => ({ path, exists: !path.endsWith("old-prototype") })),
+        ignored: [],
+      };
+    case "pick_folder":
+      return "/Users/demo/src/node-v24.11.0";
     default:
       return NOT_A_MACHINE_COMMAND;
   }

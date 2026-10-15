@@ -60,6 +60,10 @@ Reads: `mise registry --json`
 
 Reads: `mise ls-remote --json <tool>`
 
+Each tool page also has **Link a Folder…**: point mise at an install made
+outside it — built by hand or by another tool — and it uses that copy as a
+version (`mise link`).
+
 ## Updates
 
 Everything with a newer version — including tools pinned to an exact version,
@@ -129,7 +133,13 @@ it worked. Copy any of them to run it yourself.
   (`github.credential_command = "gh auth token"`) or Git's saved login
   (`github.use_git_credentials`).
 - **Versions from other tools** — the same bring-over list as Welcome.
-- **Disk space** — unused versions, with **Clean Up…**.
+- **Shims** — when mise's shims are on your PATH, what they're for and
+  **Rebuild Shims** (`mise reshim`).
+- **Trusted folders** — every folder or file mise trusts, with **Revoke**
+  (`mise untrust`), and configs it was told to ignore.
+- **Disk space** — installed tools and the download cache, with **Remove Old**
+  (`mise cache prune`) and **Clear All** (`mise cache clear`), plus unused
+  versions and **Clean Up…**.
 
 The **Health** badge in the sidebar counts what needs attention: amber for
 warnings, red when something is broken.
@@ -141,7 +151,7 @@ Reads: `mise doctor --json`, `mise version --json`, `mise token github`
 Every mise setting, grouped (General, GitHub, Node, Python, …) with its
 description and where it's set. Switches and text fields change your global
 config through `mise settings set`; **Reset to default** runs
-`mise settings unset`. Lists are shown, and edited in your config file. A
+`mise settings unset`. Lists are edited comma-separated. A
 setting another file sets (a project, or a `conf.d` file) is labelled with that
 file. **Changed** shows only what you've set.
 

@@ -247,6 +247,20 @@ fn homebrew_versions(formula: &str) -> Vec<String> {
         .collect()
 }
 
+/// Folders and files mise trusts: the links in `<state>/trusted-configs`.
+pub fn trusted_configs(state_dir: &Path) -> Vec<PathBuf> {
+    let Ok(entries) = fs::read_dir(state_dir.join("trusted-configs")) else {
+        return Vec::new();
+    };
+    let mut paths: Vec<PathBuf> = entries
+        .filter_map(Result::ok)
+        .filter_map(|entry| fs::read_link(entry.path()).ok())
+        .collect();
+    paths.sort();
+    paths.dedup();
+    paths
+}
+
 /// Total size of a directory, without following symlinks.
 pub fn directory_size(path: &Path) -> u64 {
     let Ok(metadata) = fs::symlink_metadata(path) else {

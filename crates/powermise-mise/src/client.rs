@@ -589,6 +589,35 @@ impl MiseCommand {
         ]))
     }
 
+    /// `mise untrust <path>`: revoke trust for a config file or folder.
+    pub fn untrust(path: &Path) -> Result<Self, MiseAdapterError> {
+        Ok(Self::new(vec!["untrust".into(), absolute_path(path)?]))
+    }
+
+    /// `mise cache prune --yes`: delete cache files not used recently.
+    pub fn cache_prune() -> Self {
+        Self::new(vec!["cache".into(), "prune".into(), "--yes".into()])
+    }
+
+    /// `mise cache clear --yes`: delete the whole download and metadata cache.
+    pub fn cache_clear() -> Self {
+        Self::new(vec!["cache".into(), "clear".into(), "--yes".into()])
+    }
+
+    /// `mise reshim`: rebuild the shims for every installed tool.
+    pub fn reshim() -> Self {
+        Self::new(vec!["reshim".into()])
+    }
+
+    /// `mise link <tool>@<version> <path>`: use an install made outside mise.
+    pub fn link(tool: &str, version: &str, path: &Path) -> Result<Self, MiseAdapterError> {
+        Ok(Self::new(vec![
+            "link".into(),
+            tool_spec(tool, version)?,
+            absolute_path(path)?,
+        ]))
+    }
+
     /// `mise sync <tool> --<source>`: lets mise use versions another version
     /// manager already installed, without reinstalling them.
     pub fn sync(source: ImportSource) -> Self {
@@ -648,6 +677,18 @@ fn tool_spec(tool: &str, version: &str) -> Result<String, MiseAdapterError> {
     validate_argument(tool)?;
     validate_argument(version)?;
     Ok(format!("{tool}@{version}"))
+}
+
+/// A path passed to mise: absolute, so it can't be read as a flag.
+fn absolute_path(path: &Path) -> Result<String, MiseAdapterError> {
+    let text = path.to_string_lossy();
+    if path.is_absolute() && !text.chars().any(char::is_control) {
+        Ok(text.into_owned())
+    } else {
+        Err(MiseAdapterError::InvalidArgument {
+            value: text.into_owned(),
+        })
+    }
 }
 
 /// Setting keys as mise lists them: dotted lowercase words.
@@ -808,6 +849,18 @@ mod tests {
             MiseCommand::prune_tools().display(),
             "mise prune --tools --yes"
         );
+        assert_eq!(
+            MiseCommand::cache_clear().display(),
+            "mise cache clear --yes"
+        );
+        assert_eq!(
+            MiseCommand::link("node", "20.11.1", Path::new("/opt/node-20"))
+                .unwrap()
+                .display(),
+            "mise link node@20.11.1 /opt/node-20"
+        );
+        assert!(MiseCommand::link("node", "20", Path::new("relative")).is_err());
+        assert!(MiseCommand::untrust(Path::new("-rf")).is_err());
         assert_eq!(
             MiseCommand::sync(crate::ImportSource::Nvm).display(),
             "mise sync node --nvm"

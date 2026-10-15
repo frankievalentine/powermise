@@ -25,6 +25,7 @@ type Tab = "tools" | "tasks" | "env" | "config";
 export function ProjectView({ context, path }: { context: AppContext; path: string }) {
   const { mise, env, run } = context;
   const overview = useAsync(() => api.projectOverview(path), [path, mise.revision]);
+  const trusted = useAsync(() => api.trustedFolders(), [mise.revision]);
   const [tab, setTab] = useState<Tab>("tools");
   const home = homeFrom(env.miseConfigDir);
   const data = overview.data;
@@ -51,6 +52,12 @@ export function ProjectView({ context, path }: { context: AppContext; path: stri
     );
   }
 
+  // Untrust only what mise trusts by name; a folder can also be trusted
+  // through a parent, which revoking here wouldn't change.
+  const explicitlyTrusted =
+    data.trust.trusted &&
+    !!trusted.data?.trusted.some((entry) => entry.path === data.path || entry.path === data.trust.path);
+
   const missing = Object.entries(data.tools ?? {}).filter(([, versions]) =>
     versions.some((version) => version.source && !version.installed),
   );
@@ -70,6 +77,23 @@ export function ProjectView({ context, path }: { context: AppContext; path: stri
             <button className="button large" onClick={() => api.reveal(data.path)}>
               <FolderOpen size={14} /> Show
             </button>
+            {explicitlyTrusted && (
+              <button
+                className="button large"
+                onClick={() =>
+                  run({
+                    action: { kind: "untrust", path: data.trust.path },
+                    title: `Stop trusting ${data.name}?`,
+                    description:
+                      "mise stops loading this folder’s config — its tools, environment, hooks, and tasks — until you trust it again.",
+                    verb: "Untrust",
+                    destructive: true,
+                  })
+                }
+              >
+                Untrust…
+              </button>
+            )}
             {missing.length > 0 && (
               <button
                 className="button primary large"

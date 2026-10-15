@@ -243,3 +243,17 @@ fn settings_prunable_versions_and_token_status_parse() {
         assert_eq!(token.token, None, "{version}");
     }
 }
+
+#[test]
+fn doctor_reports_mise_directories() {
+    for version in VERSIONS {
+        let doctor: Doctor = fixture(version, "doctor.json");
+        let dirs = doctor.dirs.unwrap_or_else(|| panic!("{version}: no dirs"));
+        assert!(
+            dirs.state.ends_with("mise"),
+            "{version}: {}",
+            dirs.state.display()
+        );
+        assert!(dirs.cache.to_string_lossy().contains("mise"), "{version}");
+    }
+}
