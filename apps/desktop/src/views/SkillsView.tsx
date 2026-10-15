@@ -61,7 +61,7 @@ export function SkillsView({ context, query }: { context: AppContext; query: str
   const installedNames = new Set(report.data?.installed.map((skill) => skill.name));
   const suggested = CURATED_SKILLS.filter((skill) => !installedNames.has(skill.name) && matches(skill.name, skill.description));
   const agentTitle = (id: string) => report.data?.agents.find((agent) => agent.id === id)?.title ?? id;
-  const forAgents = chosen.map(agentTitle).join(", ");
+  const forAgents = new Intl.ListFormat("en", { type: "conjunction" }).format(chosen.map(agentTitle));
 
   const add = (from: string, skills: string[]) =>
     run({
@@ -251,14 +251,7 @@ export function SkillsView({ context, query }: { context: AppContext; query: str
               </button>
             </div>
             <p className={`field-hint${chosen.length ? "" : " error"}`} style={{ marginTop: 8 }}>
-              {chosen.length ? (
-                <>
-                  Runs <span className="mono">mise x {report.data.cli} -- skills add …</span>, so the skills CLI needs no
-                  separate install.
-                </>
-              ) : (
-                "Pick at least one agent above."
-              )}
+              {chosen.length ? `Installs for ${forAgents}.` : "Pick at least one agent above."}
             </p>
           </Section>
         )}
