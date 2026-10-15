@@ -1785,6 +1785,15 @@ button {
   background: var(--fill);
 }
 
+/* Command bars already have their own background; their code isn't a chip. */
+.page .command code,
+.callout .command code {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
+}
+
 /* ---------- Projects ---------- */
 
 .trust-panel {
