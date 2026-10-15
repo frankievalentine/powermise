@@ -57,7 +57,7 @@ export function ConfigView({
         <div className="banner warn">
           <Info size={16} />
           <span>
-            Powermise lists these but doesn’t configure them yet. Applying a setup marks them
+            powermise lists these but doesn’t configure them yet. Applying a setup marks them
             “Manual setup” rather than pretending they’re done.
           </span>
         </div>

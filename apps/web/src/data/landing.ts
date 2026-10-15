@@ -179,7 +179,7 @@ export const features: LandingFeature[] = [
     id: 'selection-compile',
     number: '03',
     title: 'Keep the boundaries',
-    description: 'Use a separate Powermise environment while your global mise setup stays untouched.',
+    description: 'Use a separate powermise environment while your global mise setup stays untouched.',
     command: 'powermise doctor --name my-agent --target darwin',
   },
 ];

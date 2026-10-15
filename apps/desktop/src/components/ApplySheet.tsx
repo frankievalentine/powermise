@@ -103,7 +103,7 @@ export function ApplySheet({
         </h2>
         {phase.kind === "review" && (
           <p>
-            Powermise will install {installCount} {installCount === 1 ? "item" : "items"} on{" "}
+            powermise will install {installCount} {installCount === 1 ? "item" : "items"} on{" "}
             {PLATFORM_LABEL[target]} using mise, and write one configuration file it owns. Your own
             mise settings aren’t changed.
           </p>
@@ -345,7 +345,7 @@ function humanizeStep(step: string, catalog: CatalogIndex): string {
   }
   const map: Record<string, string> = {
     "writing generated configuration": "Writing the mise configuration file",
-    "recording ownership ledger": "Recording what Powermise owns",
+    "recording ownership ledger": "Recording what powermise owns",
     "converging mise environment (installs tools and packages)": "Installing tools and packages with mise",
     "persisting run report": "Saving the report",
   };

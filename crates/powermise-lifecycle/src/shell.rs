@@ -1,6 +1,6 @@
 //! Opt-in shell integration: installs or removes a marker-guarded block in a
 //! shell startup file that exports the selection's mise environment. The block
-//! is fully managed by Powermise and uninstall never touches content outside
+//! is fully managed by powermise and uninstall never touches content outside
 //! the markers.
 use std::{
     env, fs,
@@ -11,7 +11,7 @@ use powermise_state::write_atomically;
 
 use crate::LifecycleError;
 
-/// The shells Powermise can integrate with.
+/// The shells powermise can integrate with.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Shell {
     Zsh,
@@ -136,7 +136,7 @@ fn installed_selection(contents: &str) -> Option<&str> {
 /// Builds the full managed block including markers.
 fn managed_block(shell: &Shell, selection: &str) -> String {
     format!(
-        "{}\n# Managed by Powermise. Do not edit.\n{}\n{}",
+        "{}\n# Managed by powermise. Do not edit.\n{}\n{}",
         start_marker(selection),
         shell.activation_line(selection),
         end_marker(selection),

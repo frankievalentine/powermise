@@ -59,7 +59,7 @@ pub struct MiseInfo {
     latest: Option<String>,
     minimum: String,
     recommended: String,
-    /// Whether the installed mise is new enough for Powermise at all.
+    /// Whether the installed mise is new enough for powermise at all.
     supported: bool,
     /// Whether it meets the recommended version, so every feature is on.
     recommended_met: bool,
@@ -266,7 +266,7 @@ pub fn cancel_job(state: State<'_, MiseState>, job_id: u64) -> CommandResult<()>
     Ok(())
 }
 
-/// Every command Powermise ran this session, newest first.
+/// Every command powermise ran this session, newest first.
 #[tauri::command]
 pub fn activity(state: State<'_, MiseState>) -> CommandResult<Vec<ActivityEntry>> {
     let mut entries = state.activity.lock().map_err(message)?.clone();

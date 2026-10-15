@@ -4,7 +4,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Powermise",
+        "title": "powermise",
         "width": 1180,
         "height": 760,
         "minWidth": 880,

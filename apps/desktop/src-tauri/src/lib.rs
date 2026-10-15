@@ -1,4 +1,4 @@
-//! Powermise desktop backend: a GUI companion for mise.
+//! powermise desktop backend: a GUI companion for mise.
 //!
 //! - `mise_commands`: what mise manages, read through mise's JSON output and
 //!   changed only by running mise commands.
@@ -587,5 +587,5 @@ pub fn run() {
             reveal_path,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running the Powermise desktop app");
+        .expect("error while running the powermise desktop app");
 }

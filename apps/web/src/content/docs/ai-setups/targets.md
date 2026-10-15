@@ -1,9 +1,9 @@
 ---
 title: Targets & platform support
-description: How Powermise resolves harnesses across macOS, Linux, Windows, and WSL.
+description: How powermise resolves harnesses across macOS, Linux, Windows, and WSL.
 ---
 
-Powermise is multi-target. Every resolution, preview, and convergence command
+powermise is multi-target. Every resolution, preview, and convergence command
 takes a `--target` that selects the platform providers used for tools, apps,
 and native operations.
 
@@ -23,7 +23,7 @@ that matches where the tools will actually run.
 ## How providers are chosen
 
 Each tool in the catalog declares a compatible mise provider per target
-platform. When Powermise resolves a selection it:
+platform. When powermise resolves a selection it:
 
 - selects the provider that matches the requested `--target`;
 - reports an unsupported-provider error if no compatible provider exists;

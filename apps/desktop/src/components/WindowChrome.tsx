@@ -44,7 +44,7 @@ function WindowsTitleBar() {
     <header className="titlebar" data-tauri-drag-region>
       <div className="titlebar__title" data-tauri-drag-region>
         <span className="titlebar__icon" aria-hidden />
-        <span data-tauri-drag-region>Powermise</span>
+        <span data-tauri-drag-region>powermise</span>
       </div>
       <button className="caption-button" onClick={() => act("minimize")} aria-label="Minimize">
         <Minus size={14} strokeWidth={1.5} />
@@ -66,7 +66,7 @@ function WindowsTitleBar() {
 function FakeHeaderBar() {
   return (
     <header className="fake-headerbar" aria-hidden>
-      Powermise
+      powermise
       <span className="fake-headerbar__close">
         <X size={13} />
       </span>

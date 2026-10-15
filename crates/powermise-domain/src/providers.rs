@@ -2,7 +2,7 @@ use std::{error::Error, path::PathBuf};
 
 use crate::OperationProvider;
 
-/// A request to install a package through a Powermise-native installer.
+/// A request to install a package through a powermise-native installer.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeInstallRequest {
     pub provider: OperationProvider,
@@ -24,7 +24,7 @@ pub struct NativeApplyOutput {
     pub message: String,
 }
 
-/// A port for Powermise-owned native package installation.
+/// A port for powermise-owned native package installation.
 pub trait NativeInstaller {
     type Error: Error + Send + Sync + 'static;
 
@@ -41,7 +41,7 @@ pub trait NativeInstaller {
 /// The managed content to inject into a configuration document.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedBlock {
-    /// A selection-scoped marker that identifies the Powermise-owned block.
+    /// A selection-scoped marker that identifies the powermise-owned block.
     pub marker: String,
     /// The text to inject between the managed-block markers.
     pub contents: String,

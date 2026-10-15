@@ -222,7 +222,7 @@ export function SetupView({ context, name }: { context: AppContext; name: string
         <div className="sheet-head">
           <h2 id="remove-title">Remove “{name}”?</h2>
           <p>
-            Powermise deletes this setup and the configuration files it wrote for it. Tools that
+            powermise deletes this setup and the configuration files it wrote for it. Tools that
             were already installed stay installed in mise.
           </p>
         </div>

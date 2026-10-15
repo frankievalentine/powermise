@@ -1,9 +1,9 @@
 ---
 title: The mise boundary
-description: Powermise writes a dedicated mise environment and runs a real mise bootstrap; your global config stays yours.
+description: powermise writes a dedicated mise environment and runs a real mise bootstrap; your global config stays yours.
 ---
 
-Powermise integrates with an installed `mise` executable. It does not fork
+powermise integrates with an installed `mise` executable. It does not fork
 mise, embed its internals, or overwrite your global configuration.
 
 ## How configuration is owned

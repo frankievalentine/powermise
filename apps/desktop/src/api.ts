@@ -198,7 +198,7 @@ export interface MiseInfo {
   latest: string | null;
   minimum: string;
   recommended: string;
-  /** New enough for Powermise at all. */
+  /** New enough for powermise at all. */
   supported: boolean;
   /** Meets the recommended version, so every feature is available. */
   recommendedMet: boolean;
@@ -347,7 +347,7 @@ export async function onApplyProgress(handler: (step: string) => void): Promise<
   return listen<string>("apply-progress", (event) => handler(event.payload));
 }
 
-/** Matches the one naming rule Powermise enforces for setups. */
+/** Matches the one naming rule powermise enforces for setups. */
 export function isValidSetupName(name: string): boolean {
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(name);
 }

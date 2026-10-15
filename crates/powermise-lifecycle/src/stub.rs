@@ -1,9 +1,9 @@
 //! Lazy-install stubs: small per-tool launcher scripts placed on `PATH` that
 //! run a tool through the selection's mise environment, installing it on
 //! first use (`mise x --env <env> <package> -- <command>`). This ports
-//! Omarchy's lazy `~/.local/bin` stub pattern to Powermise's ownership model:
+//! Omarchy's lazy `~/.local/bin` stub pattern to powermise's ownership model:
 //! stubs are ledger-owned `Generated` artifacts, scoped to the selection
-//! environment instead of the user's global mise config, and Powermise never
+//! environment instead of the user's global mise config, and powermise never
 //! overwrites a stub file it does not own.
 use std::{
     env, fs, io,
@@ -124,7 +124,7 @@ pub fn install_stubs(
 }
 
 /// Removes the ledger-owned stubs of a selection. Dry-run by default
-/// (`dry_run == true`); content outside Powermise ownership is never touched.
+/// (`dry_run == true`); content outside powermise ownership is never touched.
 pub fn remove_stubs(
     layout: &PowermiseLayout,
     selection: &str,
@@ -172,7 +172,7 @@ pub fn remove_stubs(
     })
 }
 
-/// Refuses to clobber a stub file Powermise does not own: an identical file is
+/// Refuses to clobber a stub file powermise does not own: an identical file is
 /// converged silently, a differing file owned by another selection or by the
 /// user is an error.
 fn ensure_writable(
@@ -216,7 +216,7 @@ fn ensure_writable(
     if !owned_here {
         return Err(LifecycleError::Other {
             message: format!(
-                "refusing to overwrite `{}` because Powermise does not own it; \
+                "refusing to overwrite `{}` because powermise does not own it; \
                  pass a different --bin-dir",
                 stub_path.display()
             ),
@@ -256,7 +256,7 @@ fn stub_contents(selection: &str, entry: &StubEntry, target: Platform) -> String
     match target {
         Platform::Win32 => format!(
             "@echo off\r\n\
-             rem Managed by Powermise for selection `{selection}`. Do not edit.\r\n\
+             rem Managed by powermise for selection `{selection}`. Do not edit.\r\n\
              setlocal\r\n\
              if defined {guard} (\r\n\
              echo powermise: `{command}` was not installed by mise; run `powermise apply` 1>&2\r\n\
@@ -269,7 +269,7 @@ fn stub_contents(selection: &str, entry: &StubEntry, target: Platform) -> String
         ),
         _ => format!(
             "#!/bin/sh\n\
-             # Managed by Powermise for selection `{selection}`. Do not edit.\n\
+             # Managed by powermise for selection `{selection}`. Do not edit.\n\
              # If mise could not provide the tool, PATH resolves back to this stub;\n\
              # the guard stops that from recursing forever.\n\
              if [ -n \"${guard}\" ]; then\n\
@@ -362,7 +362,7 @@ mod tests {
             Platform::Darwin,
         );
         assert!(contents.starts_with("#!/bin/sh\n"));
-        assert!(contents.contains("Managed by Powermise for selection `engineering-agents`"));
+        assert!(contents.contains("Managed by powermise for selection `engineering-agents`"));
         assert!(contents.contains(
             "POWERMISE_STUB_CLAUDE=1 exec mise x --env powermise-engineering-agents claude-code -- claude \"$@\""
         ));

@@ -98,7 +98,7 @@ impl MiseExecutable {
 
     /// Runs against the machine's real HOME and data directories. Only the
     /// config directory is pinned so the command sees exactly the directory
-    /// Powermise wrote the generated configuration to, and the working
+    /// powermise wrote the generated configuration to, and the working
     /// directory is pinned to that same directory so an unrelated
     /// project-local `mise.toml` can never join the run.
     fn live_command(&self, request: &MiseEnvironmentRequest, arguments: &[&str]) -> Command {

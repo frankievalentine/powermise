@@ -3,7 +3,7 @@ title: Safety and lifecycle
 description: Real installs are guarded by explicit confirmation, idempotent convergence, and an ownership ledger.
 ---
 
-Powermise can change your machine: `apply` writes configuration, records
+powermise can change your machine: `apply` writes configuration, records
 ownership, and runs a real `mise bootstrap` that installs tools and packages.
 That power is fenced behind deliberate guardrails.
 
@@ -33,7 +33,7 @@ artifacts.
   back completed work. The run report records the failure boundary, independent
   operations still run, and `status` lists follow-up actions.
 - **Ownership ledger.** Generated configs are recorded so `prune` and
-  `uninstall` can find and remove only what Powermise owns. Unmanaged
+  `uninstall` can find and remove only what powermise owns. Unmanaged
   `config.powermise-*.toml` files are reported and never touched.
 
 ## A safe workflow

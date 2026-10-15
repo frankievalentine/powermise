@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-description: Common Powermise errors and how to resolve them.
+description: Common powermise errors and how to resolve them.
 ---
 
 A reference for the failures you are most likely to hit, and the exact fix for
@@ -9,7 +9,7 @@ CLI.
 
 ## The app says "mise not found"
 
-Powermise looks for mise on its `PATH`, plus `~/.local/bin`,
+powermise looks for mise on its `PATH`, plus `~/.local/bin`,
 `~/.local/share/mise/bin`, `/opt/homebrew/bin`, and `/usr/local/bin`. If you
 installed mise somewhere else, symlink it into `~/.local/bin`:
 
@@ -37,12 +37,12 @@ account and stores the token for you.
 ## My mise settings are ignored in the app
 
 Apps opened from the Dock don't read `~/.zshrc`, so exported `MISE_*` variables
-don't reach Powermise. Move them to `[settings]` in `~/.config/mise/config.toml`.
-See [How Powermise uses mise](/how-it-works/#settings-in-your-shell-files).
+don't reach powermise. Move them to `[settings]` in `~/.config/mise/config.toml`.
+See [How powermise uses mise](/how-it-works/#settings-in-your-shell-files).
 
 ## Health says my mise is too old, or recommends an update
 
-Click **Update** on the Health screen, or run `mise self-update`. Powermise
+Click **Update** on the Health screen, or run `mise self-update`. powermise
 needs mise 2026.7.18 or newer and recommends 2026.10 or newer; on versions in
 between it works, with a few newer features switched off.
 
@@ -57,7 +57,7 @@ error: refusing to apply without --yes because the terminal is not interactive; 
 ```
 
 **Cause:** you ran `apply` from a non-interactive terminal (script, CI, piped
-input) without `--yes`. Powermise refuses real installs by default in that
+input) without `--yes`. powermise refuses real installs by default in that
 context.
 
 **Fix:** add `--yes`. On an interactive terminal the same command prompts
@@ -73,7 +73,7 @@ powermise apply --name my-agent --target darwin --yes
 error: could not find mise
 ```
 
-**Cause:** Powermise shells out to `mise` and it is not resolvable.
+**Cause:** powermise shells out to `mise` and it is not resolvable.
 
 **Fix:** install mise and ensure it is on `PATH`, or pass an explicit path:
 
@@ -142,7 +142,7 @@ status: pending
 drift: <config> differs from recorded manifest
 ```
 
-**Cause:** the applied configuration no longer matches what Powermise last
+**Cause:** the applied configuration no longer matches what powermise last
 wrote (manual edit, external change).
 
 **Fix:** review with `diff`, then re-run `apply` to converge.

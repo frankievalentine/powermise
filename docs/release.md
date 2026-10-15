@@ -1,10 +1,10 @@
 # Release Policy
 
-How Powermise is versioned, what it supports, and how it is updated.
+How powermise is versioned, what it supports, and how it is updated.
 
 ## Minimum supported mise version
 
-Powermise integrates with the separately installed `mise` executable (see the
+powermise integrates with the separately installed `mise` executable (see the
 Architecture Decision in the build plan). It depends on a small, stable surface:
 
 - `mise --env <environment> bootstrap --dry-run`
@@ -18,18 +18,18 @@ fixtures were captured from) and recommends **2026.10** (`MiseVersion::RECOMMEND
 Features that need newer mise are gated by version rather than raising the floor. The support matrix in `setup.md`
 reflects what has been clean-machine verified.
 
-A future Powermise release must:
+A future powermise release must:
 
 - declare the minimum mise version it was validated against in this document
   and the build plan;
 - keep using only the supported surface above, so a mise upgrade on the user's
-  machine does not require a Powermise upgrade;
+  machine does not require a powermise upgrade;
 - fail early with a clear message if the installed mise is below the declared
   minimum (the version probe backing `doctor`).
 
 ## Versioning
 
-Powermise follows semantic versioning. The CLI surface — subcommands, flags,
+powermise follows semantic versioning. The CLI surface — subcommands, flags,
 and the schema-stable JSON envelope (`{"command","schema_version":1,"payload"}`)
 — is the contract. A change that breaks JSON field names or removes a flag is a
 major version. New commands, flags, and additive JSON fields are minor.
@@ -40,11 +40,11 @@ attributable and comparable across upgrades.
 
 ## Update policy
 
-- Powermise does not auto-update and never modifies your global `mise`
+- powermise does not auto-update and never modifies your global `mise`
   configuration.
-- `mise` itself is updated independently of Powermise; because the integration
+- `mise` itself is updated independently of powermise; because the integration
   boundary is stable, a mise upgrade should be transparent.
-- When Powermise gains a feature that needs a newer mise capability, the minimum
+- When powermise gains a feature that needs a newer mise capability, the minimum
   version is raised here first, then the support matrix is updated.
 
 ## Release artifacts

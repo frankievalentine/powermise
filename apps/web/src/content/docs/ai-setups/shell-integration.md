@@ -33,7 +33,7 @@ powermise shell uninstall --name my-agent --shell zsh   # dry-run
 powermise shell uninstall --name my-agent --shell zsh --yes
 ```
 
-The marker guards mean Powermise can find and remove only what it added; your
+The marker guards mean powermise can find and remove only what it added; your
 other shell configuration is left alone.
 
 ## Which to choose

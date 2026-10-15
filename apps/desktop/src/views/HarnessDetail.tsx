@@ -109,7 +109,7 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
         {configs.length > 0 && (
           <Section
             title="MCP servers & integrations"
-            note="Powermise doesn’t configure these yet. They’re listed so you know what to set up in the agent."
+            note="powermise doesn’t configure these yet. They’re listed so you know what to set up in the agent."
           >
             <div className="list">
               {configs.map((entry) => (

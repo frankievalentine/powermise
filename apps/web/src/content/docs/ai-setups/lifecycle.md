@@ -1,9 +1,9 @@
 ---
 title: Lifecycle & ownership
-description: How Powermise stores selections, owns generated config, tracks drift, and converges idempotently.
+description: How powermise stores selections, owns generated config, tracks drift, and converges idempotently.
 ---
 
-Powermise does more than print config: it owns what it writes, tracks drift
+powermise does more than print config: it owns what it writes, tracks drift
 against what it applied, and converges repeatably. This page explains the
 lifecycle model.
 
@@ -25,7 +25,7 @@ Two commands write configuration; only one installs.
 
 - `selection activate --name <name> --target <t>` writes the generated config
   into the mise environment and records ownership, **without** running a
-  bootstrap. Use it when you want Powermise to own and emit the configuration
+  bootstrap. Use it when you want powermise to own and emit the configuration
   but not install anything yet.
 - `apply --name <name> --target <t>` does the same write **and** runs a real
   `mise bootstrap --yes`, applies managed blocks, executes native operations,

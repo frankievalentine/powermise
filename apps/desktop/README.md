@@ -1,4 +1,4 @@
-# Powermise Desktop
+# powermise Desktop
 
 A Tauri v2 app for browsing the harness catalog, building setups, and applying
 them — for people who'd rather not live in a terminal.

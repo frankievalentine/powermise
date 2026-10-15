@@ -72,7 +72,7 @@ export function HealthView({ context }: { context: AppContext }) {
                 ) : (
                   <span
                     className="badge orange"
-                    title={`Powermise works with this version. Some features need ${info.recommended} or newer.`}
+                    title={`powermise works with this version. Some features need ${info.recommended} or newer.`}
                   >
                     Update recommended
                   </span>
@@ -99,7 +99,7 @@ export function HealthView({ context }: { context: AppContext }) {
                 <Info size={15} color="var(--orange)" />
                 <div className="row-main">
                   <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
-                    Powermise works with your mise, but is designed around {info.recommended} or newer.
+                    powermise works with your mise, but is designed around {info.recommended} or newer.
                     Updating turns on project-vs-global updates, automatic updates, and more.
                   </div>
                 </div>
@@ -138,7 +138,7 @@ export function HealthView({ context }: { context: AppContext }) {
             {!doctor.data.activated && (
               <div style={{ marginTop: 10 }}>
                 <p className="section-note" style={{ margin: "0 0 8px" }}>
-                  Add this line to {shell.file}, then open a new terminal. Powermise doesn’t edit your
+                  Add this line to {shell.file}, then open a new terminal. powermise doesn’t edit your
                   shell files for you.
                 </p>
                 <CommandBlock command={`echo '${shell.line}' >> ${shell.file}`} />
@@ -147,9 +147,9 @@ export function HealthView({ context }: { context: AppContext }) {
             <div className="callout info" style={{ marginTop: 10 }}>
               <Info size={14} />
               <span>
-                Powermise can’t see settings exported in your shell files (like <code>MISE_*</code>{" "}
+                powermise can’t see settings exported in your shell files (like <code>MISE_*</code>{" "}
                 variables), because apps opened from {launchedFrom} don’t load them. Put mise settings in{" "}
-                <code>~/.config/mise/config.toml</code> to share them with Powermise.
+                <code>~/.config/mise/config.toml</code> to share them with powermise.
               </span>
             </div>
           </Section>

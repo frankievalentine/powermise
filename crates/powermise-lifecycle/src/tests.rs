@@ -658,7 +658,7 @@ fn user_owned_global_mise_config_survives_all_commands() {
     let mise_config_dir = base.join("mise");
     fs::create_dir_all(&mise_config_dir).expect("mise config dir should be created");
 
-    // A user-owned global mise config that Powermise must never touch.
+    // A user-owned global mise config that powermise must never touch.
     let user_config = mise_config_dir.join("config.toml");
     let user_contents = b"[tools]\nuser-tool = \"1\"\n\n[settings]\ntrusted-configs = []\n";
     fs::write(&user_config, user_contents).expect("user config should write");

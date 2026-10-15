@@ -3,8 +3,8 @@ title: AI Setups
 description: Install a curated AI coding environment — Claude, Codex, Gemini, and more — through mise in one step.
 ---
 
-AI Setups is the part of Powermise that sets up AI coding agents. Pick the
-harnesses you want — Claude, Codex, Gemini, Cursor, and others — and Powermise
+AI Setups is the part of powermise that sets up AI coding agents. Pick the
+harnesses you want — Claude, Codex, Gemini, Cursor, and others — and powermise
 installs everything they need through mise: the agent's CLI, the runtimes it
 depends on, and optional desktop apps.
 
@@ -19,10 +19,10 @@ Under **AI Setups** in the sidebar:
   harnesses, and watch the side panel show exactly what will be installed.
   **Save & Apply** previews every change before anything runs.
 
-## How it relates to the rest of Powermise
+## How it relates to the rest of powermise
 
 A setup compiles to a dedicated mise configuration file
-(`config.powermise-<name>.toml`) that Powermise owns, next to — never inside —
+(`config.powermise-<name>.toml`) that powermise owns, next to — never inside —
 your own mise config. Applying it runs `mise bootstrap`. Remove the setup and
 that file goes with it. [The mise boundary](/ai-setups/mise-boundary/) has the
 details.

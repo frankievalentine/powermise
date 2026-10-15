@@ -1,4 +1,4 @@
-//! Atomic persistence primitives for Powermise-generated state.
+//! Atomic persistence primitives for powermise-generated state.
 mod generated;
 mod ledger;
 
@@ -60,8 +60,8 @@ pub enum StateError {
         #[source]
         source: serde_json::Error,
     },
-    /// An ownership record was requested for an operation not owned by Powermise.
-    #[error("operation `{operation_id}` is owned by `{owner}`, not Powermise")]
+    /// An ownership record was requested for an operation not owned by powermise.
+    #[error("operation `{operation_id}` is owned by `{owner}`, not powermise")]
     UnownedOperation { operation_id: String, owner: String },
     /// A persisted state schema is newer or otherwise unsupported.
     #[error("unsupported {kind} schema version {version}; expected {expected}")]
@@ -334,12 +334,13 @@ mod tests {
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         );
         assert_eq!(
-            content_fingerprint(b"Powermise"),
-            content_fingerprint(b"Powermise"),
+            content_fingerprint(b"powermise"),
+            content_fingerprint(b"powermise"),
         );
         assert_ne!(
-            content_fingerprint(b"Powermise"),
             content_fingerprint(b"powermise"),
+            content_fingerprint(b"Powermise"),
+            "fingerprints are byte-exact, including case"
         );
     }
 

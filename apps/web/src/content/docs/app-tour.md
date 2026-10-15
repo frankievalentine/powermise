@@ -1,9 +1,9 @@
 ---
 title: App tour
-description: Every screen in the Powermise desktop app, and the mise command behind each action.
+description: Every screen in the powermise desktop app, and the mise command behind each action.
 ---
 
-Every action in Powermise opens a sheet that shows the mise command it will run.
+Every action in powermise opens a sheet that shows the mise command it will run.
 Confirm it, and the sheet streams mise's output live; you can stop it at any
 time. When it finishes, every screen refreshes from mise.
 
@@ -54,14 +54,14 @@ Commands: `mise upgrade --bump <tool>`, or `mise upgrade --bump` for all.
 
 ## Activity
 
-Every command Powermise ran since it opened, with how long it took and whether
+Every command powermise ran since it opened, with how long it took and whether
 it worked. Copy any of them to run it yourself.
 
 ## Health
 
-- **mise** — your version, the minimum Powermise needs, and an update button
+- **mise** — your version, the minimum powermise needs, and an update button
   when a newer mise is out (`mise self-update`).
-- **Your shell** — whether mise is activated. If it isn't, Powermise shows the
+- **Your shell** — whether mise is activated. If it isn't, powermise shows the
   line to add to your shell's startup file. It won't edit that file for you.
 - **Problems mise found** and the **config files** it reads.
 

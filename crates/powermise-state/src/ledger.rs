@@ -183,7 +183,7 @@ mod tests {
         let mut ledger = Ledger::default();
         ledger
             .record_verified(&operation("powermise"), Some("fingerprint".into()))
-            .expect("Powermise operation should be recorded");
+            .expect("powermise operation should be recorded");
 
         assert_eq!(
             write_ledger(&path, &ledger).expect("ledger should be written"),

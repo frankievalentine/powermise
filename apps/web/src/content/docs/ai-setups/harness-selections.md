@@ -1,9 +1,9 @@
 ---
 title: Harness selections
-description: Selections reference curated Powermise harness profiles, not generic profiles.
+description: Selections reference curated powermise harness profiles, not generic profiles.
 ---
 
-A Powermise selection is a portable declaration for a focused AI harness set.
+A powermise selection is a portable declaration for a focused AI harness set.
 The selected profile IDs resolve their declared tools for a target platform; a
 selection does not duplicate those definitions.
 

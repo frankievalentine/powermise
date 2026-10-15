@@ -12,7 +12,7 @@ use powermise_state::{AtomicWriteResult, content_fingerprint, write_atomically};
 use serde_json::{Map, Value, json};
 use thiserror::Error;
 
-/// The reserved top-level object that owns all Powermise-managed JSON blocks.
+/// The reserved top-level object that owns all powermise-managed JSON blocks.
 const MANAGED_OBJECT_KEY: &str = "_powermise";
 
 #[derive(Debug, Error)]

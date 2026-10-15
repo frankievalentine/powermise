@@ -183,7 +183,7 @@ impl CatalogArgs {
 struct EnvironmentArgs {
     #[arg(
         long,
-        help = "the Powermise root directory (default: ~/.config/powermise)"
+        help = "the powermise root directory (default: ~/.config/powermise)"
     )]
     powermise_dir: Option<PathBuf>,
     #[arg(long, help = "the mise configuration directory")]

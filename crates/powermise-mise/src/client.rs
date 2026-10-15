@@ -1,6 +1,6 @@
 //! A typed client for the installed `mise` executable. Reads run mise's JSON
 //! commands; changes are expressed as [`MiseCommand`]s that render the exact
-//! command line shown to people and run with streamed output. Powermise never
+//! command line shown to people and run with streamed output. powermise never
 //! edits mise configuration itself.
 use std::{
     io::{BufRead, BufReader, Read},
@@ -25,12 +25,12 @@ use crate::{
 };
 
 /// The installed mise, run from a fixed working directory so project-local
-/// configs only join when Powermise asks for a project.
+/// configs only join when powermise asks for a project.
 #[derive(Clone, Debug)]
 pub struct MiseClient {
     executable: PathBuf,
     /// The directory reads run in when no project is given (the home directory,
-    /// so the global view isn't shaped by wherever Powermise was launched).
+    /// so the global view isn't shaped by wherever powermise was launched).
     home: PathBuf,
 }
 

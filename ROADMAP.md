@@ -1,8 +1,8 @@
-# Powermise Roadmap
+# powermise Roadmap
 
-> **mise is the CLI. Powermise is the GUI.**
+> **mise is the CLI. powermise is the GUI.**
 >
-> Powermise is a desktop companion for [mise-en-place](https://mise.jdx.dev): see every
+> powermise is a desktop companion for [mise-en-place](https://mise.jdx.dev): see every
 > tool mise manages, discover new ones, keep them up to date, and work with your
 > projects' tools, environments, and tasks — without memorizing commands. Setting up
 > AI coding environments is one feature built on top of it.
@@ -13,16 +13,16 @@ original AI-harness-first design.
 
 ## Principles
 
-1. **mise owns its state.** Powermise reads mise through its JSON output and changes
+1. **mise owns its state.** powermise reads mise through its JSON output and changes
    it only through mise's own commands (`mise use`, `mise upgrade`, `mise settings set`,
    …). It never hand-edits mise TOML.
 2. **Never hide what it's doing.** Every action shows the exact command it runs, with
    a copy button, so people who start in the app learn the CLI.
-3. **Ask before trusting.** mise's config trust is a security boundary. Powermise
+3. **Ask before trusting.** mise's config trust is a security boundary. powermise
    surfaces trust prompts; it never trusts a file automatically.
 4. **Built for people who'd rather not live in a terminal**, in the spirit of
    Homebrew's BrewUI — plain language, clear consequences, undo where possible.
-5. **One brand, native edges.** The same Powermise look on macOS, Windows, and
+5. **One brand, native edges.** The same powermise look on macOS, Windows, and
    Linux — Geist type, the coral accent, platform-neutral controls — with each
    platform's own window chrome, materials, shortcuts, and dialog conventions.
 
@@ -43,7 +43,7 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
   output and cancellation. Parsing is tested against fixtures captured from real mise.
 - **The browser stub** (`apps/desktop/src/dev`) keeps the UI runnable without Tauri.
   It powers design work and the live demo on the marketing site.
-- **The CLI** stays for AI Setups (`powermise apply`, `status`, …). Powermise does
+- **The CLI** stays for AI Setups (`powermise apply`, `status`, …). powermise does
   not grow a second general-purpose CLI — that's mise's job.
 
 ## Milestones
@@ -72,7 +72,7 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
 - [x] Upgrade, uninstall, change version, and remove from global on tool pages.
 - [x] **Updates**: everything outdated (including past pins, `--bump`), with "Upgrade all".
 - [x] Streamed command output with cancel (whole process group), shared by every change.
-- [x] Activity log: every command Powermise ran this session, with its result.
+- [x] Activity log: every command powermise ran this session, with its result.
 - [ ] **Clean up**: remove versions nothing uses (`mise prune --dry-run` to preview,
       then `mise prune`).
 - [ ] Tool pages from `mise tool --json`: backend, tool options, and supply-chain
@@ -138,8 +138,8 @@ crates/powermise-cli      `powermise` CLI, scoped to AI Setups
       offscreen, still under reduced motion.
 - [x] A working, interactive demo of the real desktop UI (built in demo mode on the
       browser stub), with a GSAP scroll tour that steers it screen by screen.
-- [x] Rewrite docs: what Powermise is, getting started with the app, an app tour,
-      and how Powermise uses mise. AI Setups docs moved under `/ai-setups/`.
+- [x] Rewrite docs: what powermise is, getting started with the app, an app tour,
+      and how powermise uses mise. AI Setups docs moved under `/ai-setups/`.
 - [x] Keep the CLI reference for AI Setups.
 - [x] The dithered chef's hat moves to the closing call-to-action.
 - [ ] Screenshots / short screen recordings for docs pages once installers ship.
@@ -233,7 +233,7 @@ Continues as one section of the app and the `powermise` CLI.
 | Writing mise config | Only through mise's commands, with the command shown |
 | Project discovery | Manual add + recents |
 | mise versions | 2026.7.18 minimum; 2026.10 recommended; newer features gated by version |
-| Name | Powermise ("mise-en-place", chef's hat) |
+| Name | powermise ("mise-en-place", chef's hat) |
 
 ## Open questions
 

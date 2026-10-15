@@ -1,4 +1,4 @@
-//! Powermise-owned native installers: winget, Scoop, npm, and verified scripts.
+//! powermise-owned native installers: winget, Scoop, npm, and verified scripts.
 use std::{
     fs,
     path::{Path, PathBuf},

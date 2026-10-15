@@ -1,11 +1,11 @@
 ---
-title: What is Powermise?
-description: Powermise is a desktop companion app for mise-en-place — see, install, and update every tool mise manages, with the exact command behind every click.
+title: What is powermise?
+description: powermise is a desktop companion app for mise-en-place — see, install, and update every tool mise manages, with the exact command behind every click.
 ---
 
-Powermise is a desktop app for [mise-en-place](https://mise.jdx.dev), the tool
+powermise is a desktop app for [mise-en-place](https://mise.jdx.dev), the tool
 that installs and switches between versions of your languages and developer
-tools. mise lives in the terminal. Powermise puts it in a window:
+tools. mise lives in the terminal. powermise puts it in a window:
 
 - **Installed** — every tool mise manages, the version you use, and which config
   file set it.
@@ -15,16 +15,16 @@ tools. mise lives in the terminal. Powermise puts it in a window:
   exact version. Upgrade one, or all of them.
 - **Health** — `mise doctor` in plain language: your mise version, whether your
   shell is set up, and anything that needs fixing.
-- **Activity** — every command Powermise ran and how it went.
+- **Activity** — every command powermise ran and how it went.
 - **AI Setups** — install a curated AI coding environment (Claude, Codex,
   Gemini, and more) in one step. See [AI Setups](/ai-setups/).
 
-## mise is the CLI. Powermise is the GUI.
+## mise is the CLI. powermise is the GUI.
 
-Powermise doesn't replace mise or keep its own copy of your setup. It reads
+powermise doesn't replace mise or keep its own copy of your setup. It reads
 what mise reports and changes things only by running mise commands — and it
 shows you each command before it runs it. Anything you do in the app, you can
-repeat or undo in a terminal. [How Powermise uses mise](/how-it-works/) explains
+repeat or undo in a terminal. [How powermise uses mise](/how-it-works/) explains
 the details.
 
 ## Who it's for
@@ -36,7 +36,7 @@ mise itself.
 
 ## Status
 
-Powermise is pre-release. The mise screens above work today; per-project tools,
+powermise is pre-release. The mise screens above work today; per-project tools,
 environments, and tasks are next. The [roadmap](https://github.com/frankievalentine/powermise/blob/main/ROADMAP.md)
 has the full plan.
 

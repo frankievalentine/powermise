@@ -1,6 +1,6 @@
 ---
 title: Getting started with the CLI
-description: Install Powermise, build a selection, preview it, and converge a real mise environment.
+description: Install powermise, build a selection, preview it, and converge a real mise environment.
 ---
 
 The `powermise` CLI is the terminal side of [AI Setups](/ai-setups/). It turns a small, reviewable selection file into a real, working
@@ -11,10 +11,10 @@ This guide walks from install to a converged machine.
 
 - **mise** installed and on `PATH` (the integration pins a minimum supported
   version; check the release notes before relying on new bootstrap flags).
-- **Rust** toolchain (`cargo`, tested against 1.93) to build Powermise.
+- **Rust** toolchain (`cargo`, tested against 1.93) to build powermise.
 - **git** to clone the repository (not required at runtime).
 
-## Install Powermise
+## Install powermise
 
 ```sh
 git clone https://github.com/frankievalentine/powermise.git
@@ -124,7 +124,7 @@ Two flags shape `apply`:
   accident.
 - `--skip-bootstrap` — write and declare everything, but do **not** run the
   real `mise bootstrap`. The follow-ups then show what a later real bootstrap
-  would converge. Useful when you only want Powermise to emit and own the
+  would converge. Useful when you only want powermise to emit and own the
   configuration.
 
 A failed bootstrap never rolls back completed work: the run report records the

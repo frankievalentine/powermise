@@ -1,4 +1,4 @@
-//! Powermise selection lifecycle: managed selection storage, activation, and
+//! powermise selection lifecycle: managed selection storage, activation, and
 //! safety operations (diff, doctor, prune, uninstall) over ledger-owned
 //! resources, plus the convergent apply command.
 mod activate;
@@ -80,9 +80,9 @@ pub struct CompilationContext {
     pub plan: powermise_domain::Plan,
 }
 
-/// The Powermise-managed directory layout.
+/// The powermise-managed directory layout.
 pub struct PowermiseLayout {
-    /// The Powermise root directory, for example `~/.config/powermise`.
+    /// The powermise root directory, for example `~/.config/powermise`.
     pub root: PathBuf,
     /// Managed selection files: `<root>/selections/<name>.toml`.
     pub selections: PathBuf,
@@ -97,7 +97,7 @@ pub struct PowermiseLayout {
 }
 
 impl PowermiseLayout {
-    /// Resolves the Powermise directory from an explicit override, then
+    /// Resolves the powermise directory from an explicit override, then
     /// `POWERMISE_HOME`, `XDG_CONFIG_HOME/powermise`, or `~/.config/powermise`.
     pub fn resolve(override_dir: Option<PathBuf>) -> Result<Self, LifecycleError> {
         let root = match override_dir {
@@ -162,7 +162,7 @@ pub fn resolve_mise_config_dir(override_dir: Option<PathBuf>) -> Result<PathBuf,
         })
 }
 
-/// The target platform of the machine Powermise is running on. WSL is a
+/// The target platform of the machine powermise is running on. WSL is a
 /// distinct target from native Linux, detected from the kernel release.
 pub fn host_platform() -> Platform {
     if cfg!(target_os = "macos") {
@@ -431,7 +431,7 @@ pub enum LifecycleError {
         #[source]
         source: toml::ser::Error,
     },
-    #[error("could not determine the Powermise configuration directory")]
+    #[error("could not determine the powermise configuration directory")]
     NoConfigDir,
     #[error("selection `{name}` does not exist")]
     NotFound { name: String },

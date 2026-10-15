@@ -14,7 +14,7 @@ this page should be regenerated whenever the catalog changes.
 
 ## How installation is structured
 
-Powermise is fully catalog-driven. A selection resolves against five profile
+powermise is fully catalog-driven. A selection resolves against five profile
 files:
 
 | File | Role |
@@ -27,7 +27,7 @@ files:
 
 ### Resolution and provider priority
 
-When you resolve a selection for a `--target`, Powermise:
+When you resolve a selection for a `--target`, powermise:
 
 1. Merges `extends` recursively — so **every selection always pulls the base
    harness's five tools**: `git`, `curl`, `jq`, `ripgrep`, `fd`.
@@ -36,7 +36,7 @@ When you resolve a selection for a `--target`, Powermise:
    the generated mise config (`[tools]` plus `[bootstrap.packages]`), which are
    installed by `mise bootstrap`.
 3. If a tool only has a `Winget`/`Scoop` provider for that target (Windows
-   native tools), it becomes a **native Powermise operation** that `apply` runs
+   native tools), it becomes a **native powermise operation** that `apply` runs
    directly through winget/scoop — it is not managed by mise.
 4. Integrations and MCP servers become **config-adapter operations** that write
    a managed, reversible block into the agent's settings file. They do not
@@ -49,7 +49,7 @@ The flow is identical on every OS; only the install backend differs.
 1. **Prerequisites.** Install `mise` (required — `apply` runs `mise bootstrap`),
    and the platform package manager: **brew** on macOS/Linux, **winget or
    scoop** on Windows.
-2. **Install Powermise.** `git clone https://github.com/frankievalentine/powermise.git && cd powermise && cargo install --path crates/powermise-cli`
+2. **Install powermise.** `git clone https://github.com/frankievalentine/powermise.git && cd powermise && cargo install --path crates/powermise-cli`
 3. **Author a selection** TOML (harnesses plus optional `machine_roles` with
    `include_apps`), or use `powermise selection create` / `import`.
 4. **Preview per machine.** `powermise selection show --name X --target <darwin|linux|win32|wsl>`
@@ -68,7 +68,7 @@ The flow is identical on every OS; only the install backend differs.
 | `darwin` | `mise-tool` and `brew`/`brew-cask` bootstrap | No winget. Desktop apps (Claude, Codex, Cursor, Zed, etc.) come from brew-cask. |
 | `linux` | `mise-tool` and `bootstrap-brew` | Treated as a standard Linux environment. |
 | `wsl` | `mise-tool` and `bootstrap-brew` | Treated as a **distinct Linux target** — see the critical gap below. |
-| `win32` | `mise-tool` plus **winget native** | Windows-only tools install through winget, run by Powermise directly. |
+| `win32` | `mise-tool` plus **winget native** | Windows-only tools install through winget, run by powermise directly. |
 
 Windows winget package IDs currently in the catalog:
 
@@ -125,7 +125,7 @@ The **base five** (`git curl jq ripgrep fd`) are implied for every harness.
   It is a single static Zig binary and is model-agnostic (Vercel AI Gateway,
   OpenAI Codex, or xAI Grok). Releases are **Apple-Silicon macOS only** and
   **Linux only** (no Windows build), so Intel Macs cannot install it. Its MCP
-  and ACP connections are configured by the user inside fx, not by Powermise.
+  and ACP connections are configured by the user inside fx, not by powermise.
 
 ## App lists (machine roles, not harnesses)
 

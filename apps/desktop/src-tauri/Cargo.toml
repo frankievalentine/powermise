@@ -1,7 +1,7 @@
 [package]
 name = "powermise-desktop"
 version = "0.1.0"
-description = "Powermise desktop app: browse AI harnesses, build setups, and apply them with mise."
+description = "powermise desktop app: browse AI harnesses, build setups, and apply them with mise."
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/frankievalentine/powermise"

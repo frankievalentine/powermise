@@ -5,11 +5,11 @@ Everything is catalog-driven and resolved per --target:
 - tools.toml — each tool lists providers (MiseTool, BootstrapBrew, BootstrapBrewCask, Winget) with supported_platforms.
 - apps.toml — application bundles (currently only cursor, darwin brew-cask). Apps are opt-in via a machine_role include_apps, not per-harness.
 - integrations.toml / mcp.toml — config-adapter entries; these write managed config blocks into the agent's settings (they don't install binaries).
-Resolution merges extends (so every selection always pulls base's 5 tools: git, curl, jq, ripgrep, fd), then per target it picks one provider per tool in priority order: MiseTool → BootstrapBrew → BootstrapBrewCask become entries in the generated mise config (installed by mise bootstrap); Winget/Scoop become native Powermise operations (run by apply on win32).
+Resolution merges extends (so every selection always pulls base's 5 tools: git, curl, jq, ripgrep, fd), then per target it picks one provider per tool in priority order: MiseTool → BootstrapBrew → BootstrapBrewCask become entries in the generated mise config (installed by mise bootstrap); Winget/Scoop become native powermise operations (run by apply on win32).
 2. Steps to get started, per machine
 The flow is identical on every OS; only the install backend differs.
 1. Prereqs: mise installed (required — apply runs mise bootstrap); and the platform PM: brew (macOS/Linux), winget or scoop (Windows).
-2. Install Powermise: git clone https://github.com/frankievalentine/powermise.git && cd powermise && cargo install --path crates/powermise-cli
+2. Install powermise: git clone https://github.com/frankievalentine/powermise.git && cd powermise && cargo install --path crates/powermise-cli
 3. Author a selection TOML (harnesses + optional machine_roles with include_apps), or powermise selection create/import.
 4. Preview per machine: powermise selection show --name X --target <darwin|linux|win32|wsl> then powermise plan --name X --target <t> --yes (plan mutates nothing).
 5. Converge: powermise apply --name X --target <t> --yes → writes generated config to ~/.config/mise, records ledger ownership, then runs real mise bootstrap --yes (or --skip-bootstrap to only write config).

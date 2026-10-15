@@ -117,7 +117,7 @@ powermise stub remove --name my-agent --yes                      # removes stubs
   provider tools are real `PATH` binaries and get no stub.
 - On `win32` targets the stubs are `.cmd` scripts in the bin directory.
 - Stubs are ledger-owned: `uninstall` and `prune` remove them together with
-  the rest of a selection's artifacts, and Powermise refuses to overwrite a
+  the rest of a selection's artifacts, and powermise refuses to overwrite a
   stub file it does not own.
 
 ## Desktop companion apps

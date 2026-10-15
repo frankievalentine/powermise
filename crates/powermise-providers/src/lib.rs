@@ -1,4 +1,4 @@
-//! Powermise-owned native installers and typed configuration adapters.
+//! powermise-owned native installers and typed configuration adapters.
 mod config;
 mod native;
 

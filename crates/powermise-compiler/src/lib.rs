@@ -477,7 +477,7 @@ fn compile_config_adapter_operations(
             },
             reversibility: OperationReversibility {
                 kind: ReversibilityKind::RestorableSnapshot,
-                note: "managed configuration block is restored from a Powermise snapshot".into(),
+                note: "managed configuration block is restored from a powermise snapshot".into(),
             },
         });
     }

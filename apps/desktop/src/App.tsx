@@ -227,7 +227,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
     return (
       <div className="empty" style={{ paddingTop: 120 }}>
         <AlertTriangle size={28} color="var(--orange)" />
-        <h3>Powermise couldn’t start</h3>
+        <h3>powermise couldn’t start</h3>
         <p className="selectable">{error}</p>
       </div>
     );

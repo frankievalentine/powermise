@@ -1,6 +1,6 @@
 ---
 title: Selection schema
-description: Field-by-field reference for the Powermise selection TOML.
+description: Field-by-field reference for the powermise selection TOML.
 ---
 
 A selection is a single TOML document. It is validated against the catalog

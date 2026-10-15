@@ -21,7 +21,7 @@ source_file = "antigravity.json"
 [[harnesses]]
 id = "base"
 title = "Base"
-description = "Universal tooling required by every Powermise harness profile and domain."
+description = "Universal tooling required by every powermise harness profile and domain."
 kind = "terminal-agent"
 category = "terminal"
 supported_platforms = [

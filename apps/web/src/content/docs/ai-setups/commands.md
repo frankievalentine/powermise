@@ -1,6 +1,6 @@
 ---
 title: Commands reference
-description: Every Powermise command, flag, target, and exit code.
+description: Every powermise command, flag, target, and exit code.
 ---
 
 This page is the complete command reference. For end-to-end workflows see
@@ -39,7 +39,7 @@ Available where a selection store or mise path is needed:
 
 | Flag | Default | Notes |
 | --- | --- | --- |
-| `--powermise-dir` | `~/.config/powermise` | Powermise store root. |
+| `--powermise-dir` | `~/.config/powermise` | powermise store root. |
 | `--mise-config-dir` | resolved from `MISE_CONFIG_DIR` / `XDG_CONFIG_HOME` / `~/.config/mise` | Where generated config is written. |
 | `--adapters-config-dir` | `<powermise-dir>/adapters` | Where config-adapter managed blocks live. |
 | `--mise` | `mise` | Path to the mise executable. |

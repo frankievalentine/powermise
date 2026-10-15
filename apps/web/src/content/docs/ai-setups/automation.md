@@ -1,9 +1,9 @@
 ---
 title: Automation & CI
-description: Drive Powermise from scripts and CI with stable JSON, explicit --yes, and predictable exit codes.
+description: Drive powermise from scripts and CI with stable JSON, explicit --yes, and predictable exit codes.
 ---
 
-Powermise is built to be automated. Three features make that safe: a
+powermise is built to be automated. Three features make that safe: a
 schema-stable JSON output, an explicit opt-in for non-interactive convergence,
 and predictable exit codes.
 
@@ -41,7 +41,7 @@ non-interactive terminal — a script, CI job, or piped input — it **requires*
 powermise apply --name my-agent --target darwin --yes
 ```
 
-Use `--skip-bootstrap` when you only want Powermise to write and own the
+Use `--skip-bootstrap` when you only want powermise to write and own the
 configuration in automation, deferring the real install:
 
 ```sh

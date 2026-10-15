@@ -6,7 +6,7 @@ use powermise_registry::load_selection;
 
 use crate::{LifecycleError, PowermiseLayout};
 
-/// Manages named selection files under a Powermise layout.
+/// Manages named selection files under a powermise layout.
 pub struct SelectionStore<'a> {
     layout: &'a PowermiseLayout,
 }

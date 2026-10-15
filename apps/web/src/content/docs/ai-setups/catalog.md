@@ -1,9 +1,9 @@
 ---
 title: The curated catalog
-description: Powermise validates versioned harness and tool profiles, then resolves and converges them.
+description: powermise validates versioned harness and tool profiles, then resolves and converges them.
 ---
 
-The committed Powermise catalog contains versioned profiles: harnesses and the
+The committed powermise catalog contains versioned profiles: harnesses and the
 tools, apps, integrations, and MCP servers they declare. Registry validation
 checks the catalog structure and verifies that every reference resolves.
 
@@ -11,7 +11,7 @@ checks the catalog structure and verifies that every reference resolves.
 powermise registry validate
 ```
 
-A selection is eligible for compilation only when Powermise can:
+A selection is eligible for compilation only when powermise can:
 
 - Resolve its requested harnesses for the target platform.
 - Find a compatible mise provider for every selected tool.

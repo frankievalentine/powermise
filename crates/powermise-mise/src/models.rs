@@ -85,7 +85,7 @@ pub struct ConfigFile {
     pub tools: Vec<String>,
 }
 
-/// One task of `mise tasks ls --json` (the fields Powermise shows).
+/// One task of `mise tasks ls --json` (the fields powermise shows).
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Task {
     pub name: String,
@@ -102,7 +102,7 @@ pub struct Task {
     pub run: Vec<String>,
 }
 
-/// `mise doctor --json` (the fields Powermise shows).
+/// `mise doctor --json` (the fields powermise shows).
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Doctor {
     pub version: String,
@@ -151,7 +151,7 @@ pub struct MiseVersion {
 }
 
 impl MiseVersion {
-    /// The oldest mise Powermise supports: the release its `--json` contracts
+    /// The oldest mise powermise supports: the release its `--json` contracts
     /// were captured from.
     pub const MINIMUM: Self = Self {
         year: 2026,
@@ -159,7 +159,7 @@ impl MiseVersion {
         patch: 18,
     };
 
-    /// The release Powermise recommends and is designed around. Older
+    /// The release powermise recommends and is designed around. Older
     /// supported versions work, but features that need newer mise (for
     /// example `outdated --global`, auto-updates, `[vars]`) are disabled.
     pub const RECOMMENDED: Self = Self {

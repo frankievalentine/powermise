@@ -45,7 +45,7 @@ export function HarnessesView({ context, query }: { context: AppContext; query: 
           <div>
             <h1 className="page-title">Harnesses</h1>
             <p className="page-subtitle">
-              AI coding agents and the editors they live in. Pick the ones you want and Powermise
+              AI coding agents and the editors they live in. Pick the ones you want and powermise
               installs everything they need with mise.
             </p>
           </div>
