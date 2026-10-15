@@ -32,6 +32,8 @@ export interface Harness {
 
 export type ToolProviderKind =
   | "mise-tool"
+  /** Comes with the operating system: nothing to install. */
+  | "system"
   | "bootstrap-apt"
   | "bootstrap-brew"
   | "bootstrap-brew-cask"
@@ -128,6 +130,10 @@ export interface Preview {
   fragmentContents: string;
   change: FileChange;
   applyCommand: string;
+  /** Tools left out on this machine, with why (Homebrew formulas on an Intel Mac). */
+  skipped: { id: string; reason: string }[];
+  /** On Linux/WSL: Homebrew's folder, when it needs a one-time `sudo` to create. */
+  homebrewSetup: string | null;
 }
 
 export interface WrittenSetup {
@@ -555,6 +561,7 @@ export const api = {
   writeSetup: (name: string, target: Platform) => call<WrittenSetup>("write_setup", { name, target }),
   setupStatus: (name: string, target: Platform) => call<SetupStatus>("setup_status", { name, target }),
   bootstrapPlan: () => call<BootstrapPlan>("bootstrap_plan"),
+  bootstrapInTerminal: () => call<void>("bootstrap_in_terminal"),
   removeSetup: (name: string) => call<RemovedSetup>("remove_setup", { name }),
   reveal: (path: string) => call<void>("reveal_path", { path }),
 

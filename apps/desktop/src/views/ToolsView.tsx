@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { PLATFORMS, PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
-import { PROVIDER_LABEL, providerFor } from "../catalog";
+import { PROVIDER_HINT, PROVIDER_SHORT, providerFor } from "../catalog";
 
 export function ToolsView({ context, query }: { context: AppContext; query: string }) {
   const { catalog, env } = context;
@@ -57,9 +57,9 @@ export function ToolsView({ context, query }: { context: AppContext; query: stri
                       {provider ? (
                         <span
                           className={`badge${platform === env.hostTarget ? " accent" : ""}`}
-                          title={`${provider.package} ${provider.version}`}
+                          title={`${PROVIDER_HINT[provider.kind]}\n${provider.package} ${provider.version}`}
                         >
-                          {PROVIDER_LABEL[provider.kind]}
+                          {PROVIDER_SHORT[provider.kind]}
                         </span>
                       ) : (
                         <span className="dash">—</span>

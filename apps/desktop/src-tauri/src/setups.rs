@@ -183,6 +183,60 @@ pub struct PreviewView {
     fragment_contents: String,
     change: GeneratedFileChange,
     apply_command: String,
+    /// Tools left out on this machine, with why (Homebrew formulas on an
+    /// Intel Mac).
+    skipped: Vec<powermise_compiler::Skipped>,
+    /// On Linux and WSL, Homebrew's folder needs a one-time `sudo` to create;
+    /// set when this setup needs it and it isn't ready yet.
+    homebrew_setup: Option<PathBuf>,
+}
+
+/// Where mise installs Homebrew formulas on Linux.
+const LINUX_HOMEBREW_PREFIX: &str = "/home/linuxbrew/.linuxbrew";
+
+/// The Homebrew folder to set up first, when installing on this Linux or
+/// WSL machine needs Homebrew and the folder isn't there and writable yet.
+fn homebrew_setup_needed(
+    target: Platform,
+    installs: &[powermise_compiler::Install],
+) -> Option<PathBuf> {
+    let linux = matches!(target, Platform::Linux | Platform::Wsl)
+        && powermise_setups::host_platform() == target;
+    let uses_homebrew = installs
+        .iter()
+        .any(|install| install.kind == ToolProviderKind::BootstrapBrew);
+    let prefix = PathBuf::from(LINUX_HOMEBREW_PREFIX);
+    let writable = || {
+        let probe = prefix.join(".powermise-write-test");
+        let ok = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&probe)
+            .is_ok();
+        let _ = std::fs::remove_file(&probe);
+        ok
+    };
+    (linux && uses_homebrew && !(prefix.is_dir() && writable())).then_some(prefix)
+}
+
+/// Opens the terminal app running `mise bootstrap --yes --only
+/// packages,tools`, so a one-time `sudo` (to create Homebrew's folder on
+/// Linux) can ask for a password.
+#[tauri::command]
+pub fn bootstrap_in_terminal() -> CommandResult<()> {
+    let home = crate::home_dir().ok_or("could not determine your home directory")?;
+    let mise = crate::find_mise().ok_or("mise is not installed")?;
+    crate::terminal::open(
+        &home,
+        &mise,
+        &[
+            "bootstrap".into(),
+            "--yes".into(),
+            "--only".into(),
+            "packages,tools".into(),
+        ],
+    )
+    .map_err(message)
 }
 
 /// The draft name used while a new setup is still unnamed.
@@ -215,6 +269,8 @@ pub fn preview_selection(draft: SelectionDraft, target: Platform) -> CommandResu
             integration_ids: resolved.integration_ids,
             mcp_server_ids: resolved.mcp_server_ids,
         },
+        homebrew_setup: homebrew_setup_needed(target, &setup.compiled.installs),
+        skipped: setup.compiled.skipped,
         installs: setup
             .compiled
             .installs
@@ -309,6 +365,9 @@ pub async fn setup_status(name: String, target: Platform) -> CommandResult<Setup
             .into_iter()
             .map(|install| {
                 let (state, installed, overridden_by) = match install.key.split_once(':') {
+                    _ if install.kind == ToolProviderKind::System => {
+                        ("included with the system".to_owned(), true, None)
+                    }
                     Some((manager, package)) if install.kind != ToolProviderKind::MiseTool => {
                         let found = status.packages.get(manager).and_then(|manager| {
                             manager

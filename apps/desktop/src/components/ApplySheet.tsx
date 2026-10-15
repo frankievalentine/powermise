@@ -17,8 +17,10 @@ type Tab = "changes" | "file" | "commands";
 
 const GROUPS: { label: string; kinds: ToolProviderKind[] }[] = [
   { label: "Tools mise installs", kinds: ["mise-tool"] },
-  { label: "System packages", kinds: ["bootstrap-brew", "bootstrap-brew-cask", "bootstrap-apt"] },
+  { label: "Packages mise installs", kinds: ["bootstrap-brew", "bootstrap-apt"] },
+  { label: "Mac apps", kinds: ["bootstrap-brew-cask"] },
   { label: "Windows packages", kinds: ["winget", "scoop"] },
+  { label: "Already on this computer", kinds: ["system"] },
 ];
 
 /** Reviews a setup, then writes its mise fragment and hands off to a streamed
@@ -27,6 +29,7 @@ export function ApplySheet({
   open,
   name,
   target,
+  hostTarget,
   preview,
   catalog,
   onClose,
@@ -35,6 +38,8 @@ export function ApplySheet({
   open: boolean;
   name: string;
   target: Platform;
+  /** The platform powermise is running on. */
+  hostTarget: Platform;
   preview: Preview | null;
   catalog: CatalogIndex;
   onClose: () => void;
@@ -70,11 +75,24 @@ export function ApplySheet({
   const manual = preview ? [...preview.resolved.mcpServerIds, ...preview.resolved.integrationIds] : [];
   const pretty = (path: string) => path.replace(/^\/(Users|home)\/[^/]+/, "~");
 
-  const apply = async () => {
+  // On Linux/WSL, the first Homebrew install needs `sudo` to create its
+  // folder; the app has no terminal to ask for a password, so that first
+  // run happens in the terminal app.
+  const inTerminal = !!preview?.homebrewSetup;
+  // apt (and the first Homebrew install) may need a password on Linux, which
+  // only a terminal can ask for — so it's always an option there.
+  const linuxHost = (target === "linux" || target === "wsl") && hostTarget === target;
+
+  const apply = async (terminal = inTerminal) => {
     setWriting(true);
     setError(null);
     try {
       await api.writeSetup(name, target);
+      if (terminal) {
+        await api.bootstrapInTerminal();
+        onClose();
+        return;
+      }
       onClose();
       onApply();
     } catch (reason) {
@@ -143,6 +161,32 @@ export function ApplySheet({
                     </div>
                   </div>
                 )}
+                {preview.skipped.length > 0 && (
+                  <div className="callout warn" style={{ marginBottom: 14 }}>
+                    <AlertTriangle size={14} />
+                    <div>
+                      <strong>Not installed on this Mac:</strong>{" "}
+                      {preview.skipped.map((skip) => titleFor(catalog, skip.id)).join(", ")}.{" "}
+                      {preview.skipped[0].reason}; this Mac has an Intel processor.
+                    </div>
+                  </div>
+                )}
+                {preview.homebrewSetup && (
+                  <div className="callout info" style={{ marginBottom: 14 }}>
+                    <Info size={14} />
+                    <div>
+                      <strong>Homebrew needs a one-time setup.</strong> mise installs Homebrew packages into{" "}
+                      <span className="mono">{preview.homebrewSetup}</span>, and creating that folder needs your
+                      password once. powermise can’t type it for you, so this first install opens in your terminal
+                      app. After that, installs run here as usual. To set it up yourself instead:
+                      <div style={{ marginTop: 6 }}>
+                        <CommandBlock
+                          command={`sudo mkdir -p ${preview.homebrewSetup} && sudo chown -R "$USER" ${preview.homebrewSetup.replace(/\/\.linuxbrew$/, "")}`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {plan === null && (
                   <p className="field-hint">
                     <Loader2 size={12} className="spin" /> Checking the rest of your mise config…
@@ -204,8 +248,18 @@ export function ApplySheet({
         <button className="button large" onClick={onClose} disabled={writing}>
           Cancel
         </button>
-        <button className="button primary large" onClick={apply} disabled={!preview || writing}>
-          {writing && <Loader2 size={14} className="spin" />} Apply
+        {linuxHost && !inTerminal && (
+          <button
+            className="button large"
+            onClick={() => void apply(true)}
+            disabled={!preview || writing}
+            title="Runs mise bootstrap in your terminal app, where sudo can ask for your password"
+          >
+            Run in Terminal
+          </button>
+        )}
+        <button className="button primary large" onClick={() => void apply()} disabled={!preview || writing}>
+          {writing && <Loader2 size={14} className="spin" />} {inTerminal ? "Apply in Terminal" : "Apply"}
         </button>
       </div>
     </Sheet>

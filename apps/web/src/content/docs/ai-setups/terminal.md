@@ -26,16 +26,21 @@ the same place mise looks.) It looks like this:
 [tools]
 claude-code = "2.1.251"
 node = "26.8.1"
+"npm:@openai/codex" = "0.151.0"
 ripgrep = "15.2.0"
 
 [bootstrap.packages]
-"brew-cask:codex" = "latest"
-"brew:git" = "latest"
+"brew-cask:claude" = "latest"
 ```
+
+(That's on a Mac with **Include desktop apps** on: the Claude app comes from
+Homebrew Cask. On Linux, packages like git come from apt instead.)
 
 mise always reads files in `conf.d`, so there's no environment to switch on:
 the setup's tools work in every terminal where mise is activated. Homebrew
 can't install a specific version, so Homebrew packages are always `latest`.
+mise installs Homebrew packages and casks itself — Homebrew doesn't need to be
+installed.
 
 The setup itself — which harnesses you picked — is saved separately, in
 `~/.config/powermise/selections/<name>.toml`.

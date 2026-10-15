@@ -59,6 +59,9 @@ pub struct ToolCatalog {
 #[serde(rename_all = "kebab-case")]
 pub enum ToolProviderKind {
     MiseTool,
+    /// Comes with the operating system (git and curl on macOS): nothing to
+    /// install, so it adds nothing to the mise file.
+    System,
     BootstrapApt,
     BootstrapBrew,
     BootstrapBrewCask,

@@ -15,7 +15,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use powermise_compiler::{Compiled, compile};
+use powermise_compiler::{CompileOptions, Compiled, compile_with};
 use powermise_domain::Platform;
 use powermise_registry::{
     ResolvedSelection, load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog,
@@ -106,6 +106,30 @@ pub fn host_platform() -> Platform {
     }
 }
 
+/// What this machine can install when a setup is compiled for `target`.
+/// Previews for other platforms assume their usual hardware; only the Mac
+/// powermise runs on can turn out to be an Intel Mac, where mise skips
+/// Homebrew formulas.
+pub fn compile_options(target: Platform) -> CompileOptions {
+    let intel_mac =
+        target == Platform::Darwin && host_platform() == Platform::Darwin && !apple_silicon();
+    CompileOptions {
+        homebrew_formulas: !intel_mac,
+    }
+}
+
+/// Whether this Mac has Apple Silicon — also when powermise itself runs as
+/// an Intel build under Rosetta.
+fn apple_silicon() -> bool {
+    if cfg!(target_arch = "aarch64") {
+        return true;
+    }
+    std::process::Command::new("sysctl")
+        .args(["-n", "hw.optional.arm64"])
+        .output()
+        .is_ok_and(|output| String::from_utf8_lossy(&output.stdout).trim() == "1")
+}
+
 /// Validates a setup name before it's used in a file name.
 pub(crate) fn validate_selection_name(name: &str) -> Result<(), SetupsError> {
     Ok(powermise_state::validate_selection_name(name)?)
@@ -135,7 +159,7 @@ pub fn compile_setup(
     let selection = load_selection(selection_path)?;
     validate_selection(&selection, &catalog, target)?;
     let resolved = resolve_selection(&selection, &catalog, &tools, &integrations, &mcp, target)?;
-    let compiled = compile(&resolved, &tools, target)?;
+    let compiled = compile_with(&resolved, &tools, target, compile_options(target))?;
     let toml = compiled.config.to_toml()?;
     let read = |path: &Path| {
         fs::read(path).map_err(|source| SetupsError::Io {

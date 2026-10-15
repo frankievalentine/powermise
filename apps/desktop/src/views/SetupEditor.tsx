@@ -354,6 +354,7 @@ export function SetupEditor({
       </aside>
 
       <ApplySheet
+        hostTarget={env.hostTarget}
         open={applyOpen}
         name={name}
         target={target}

@@ -3,7 +3,7 @@ import { AlertTriangle, Blocks, CheckCircle2, FolderOpen, Info, Loader2, Pencil,
 import { api, type Preview, type RemovedSetup } from "../api";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
-import { PROVIDER_LABEL, titleFor } from "../catalog";
+import { PROVIDER_HINT, PROVIDER_LABEL, titleFor } from "../catalog";
 import { ApplySheet } from "../components/ApplySheet";
 import { CommandBlock, Monogram, Section } from "../components/ui";
 import { Sheet } from "../components/Sheet";
@@ -183,7 +183,9 @@ export function SetupView({ context, name }: { context: AppContext; name: string
                     </div>
                     <div className="row-trailing">
                       <span className="mono">{item.key}</span>
-                      <span className="badge">{PROVIDER_LABEL[item.kind]}</span>
+                      <span className="badge" title={PROVIDER_HINT[item.kind]}>
+                        {PROVIDER_LABEL[item.kind]}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -216,6 +218,7 @@ export function SetupView({ context, name }: { context: AppContext; name: string
       </div>
 
       <ApplySheet
+        hostTarget={env.hostTarget}
         open={applyOpen}
         name={name}
         target={target}

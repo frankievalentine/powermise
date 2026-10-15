@@ -267,7 +267,17 @@ One section of the app. A setup is a selection file
 - [ ] An "Extra apps" picker for setups. `catalog/profiles/apps.toml` (Slack,
       Figma, 1Password, …) was only reachable through machine roles, so it has
       no way in today.
-- [ ] Fill catalog gaps: WSL providers for several harnesses, `hermes`, desktop
+- [x] Install-source order: mise → comes with the system → Homebrew → cask → apt →
+      winget → Scoop. mise installs Homebrew formulas and casks itself (no
+      Homebrew needed). git and curl come with macOS; codex, gemini-cli, and
+      opencode install through mise everywhere; WSL gets Linux providers.
+- [x] Intel Macs: Homebrew formulas are skipped (mise needs Apple Silicon for
+      them) and listed in the preview; casks still install.
+- [x] Linux/WSL: the one-time `sudo` for `/home/linuxbrew/.linuxbrew` runs in the
+      terminal app (Apply in Terminal); Run in Terminal for apt as well.
+- [ ] Linux desktop apps via Flatpak (`flatpak-user:`) once catalog apps have
+      developer-verified Flathub listings (none do today).
+- [ ] Fill catalog gaps: `hermes`, desktop
       apps on Linux and Windows (see the harness reference).
 - [ ] Linux, Windows, and WSL verification of the apply path.
 - [ ] Offer mise's own MCP server (`mise mcp`) to agents, so they can see and install

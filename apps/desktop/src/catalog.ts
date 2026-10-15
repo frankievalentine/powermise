@@ -45,9 +45,10 @@ export function indexCatalog(bundle: CatalogBundle): CatalogIndex {
  *  compiling; setup previews use the compiler's own answer (`Preview.installs`). */
 const PROVIDER_PRIORITY: ToolProviderKind[] = [
   "mise-tool",
-  "bootstrap-apt",
+  "system",
   "bootstrap-brew",
   "bootstrap-brew-cask",
+  "bootstrap-apt",
   "winget",
   "scoop",
 ];
@@ -61,11 +62,36 @@ export function providerFor(tool: Tool | undefined, target: Platform): ToolProvi
 
 export const PROVIDER_LABEL: Record<ToolProviderKind, string> = {
   "mise-tool": "mise",
+  system: "Comes with the system",
   "bootstrap-apt": "apt",
-  "bootstrap-brew": "Homebrew",
-  "bootstrap-brew-cask": "Homebrew Cask",
+  "bootstrap-brew": "Homebrew · via mise",
+  "bootstrap-brew-cask": "Mac app · Homebrew Cask",
   winget: "winget",
   scoop: "Scoop",
+};
+
+/** Short labels for tight spaces, like the Agent Tools table. */
+export const PROVIDER_SHORT: Record<ToolProviderKind, string> = {
+  "mise-tool": "mise",
+  system: "Built in",
+  "bootstrap-apt": "apt",
+  "bootstrap-brew": "Homebrew",
+  "bootstrap-brew-cask": "Mac app",
+  winget: "winget",
+  scoop: "Scoop",
+};
+
+/** What each install source means, for tooltips. */
+export const PROVIDER_HINT: Record<ToolProviderKind, string> = {
+  "mise-tool": "mise downloads and manages this version itself.",
+  system: "Already part of the operating system, so nothing is installed.",
+  "bootstrap-apt": "Installed with apt, which needs an administrator password.",
+  "bootstrap-brew":
+    "A Homebrew package. mise downloads and installs it itself — you don’t need Homebrew installed.",
+  "bootstrap-brew-cask":
+    "A Mac app from Homebrew Cask, installed into Applications by mise — no Homebrew needed.",
+  winget: "Installed with Windows’ winget package manager.",
+  scoop: "Installed with Scoop.",
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {

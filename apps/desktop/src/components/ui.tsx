@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Check, Copy } from "lucide-react";
 import { PLATFORMS, PLATFORM_LABEL, type Platform, type ToolProvider } from "../api";
-import { PROVIDER_LABEL, monogramColors, monogramLetters } from "../catalog";
+import { PROVIDER_HINT, PROVIDER_LABEL, monogramColors, monogramLetters } from "../catalog";
 
 export function Monogram({ id, title, size = 36 }: { id: string; title: string; size?: number }) {
   const [from, to] = monogramColors(id);
@@ -47,7 +47,10 @@ export function ProviderBadge({
 }) {
   if (!provider) return <span className="badge red">Not available</span>;
   return (
-    <span className="badge" title={`${provider.key ?? provider.package ?? ""} ${provider.version}`.trim()}>
+    <span
+      className="badge"
+      title={`${PROVIDER_HINT[provider.kind]}\n${provider.key ?? provider.package ?? ""} ${provider.version}`.trim()}
+    >
       {PROVIDER_LABEL[provider.kind]}
     </span>
   );

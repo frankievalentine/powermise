@@ -220,6 +220,7 @@ pub fn run() {
             setups::setup_status,
             setups::bootstrap_plan,
             setups::remove_setup,
+            setups::bootstrap_in_terminal,
             machine::settings,
             machine::github_status,
             machine::prunable_versions,

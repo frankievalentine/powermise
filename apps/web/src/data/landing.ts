@@ -38,7 +38,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Codex',
     description: "OpenAI's terminal coding agent with a desktop companion.",
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32'],
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
     status: 'catalogued',
   },
   {
@@ -62,7 +62,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Gemini',
     description: "Google's Gemini CLI agent for terminal-first work.",
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32'],
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
     status: 'catalogued',
   },
   {
@@ -78,7 +78,7 @@ export const harnesses: LandingHarness[] = [
     title: 'Goose',
     description: "Block's open-source, extensible AI agent.",
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32'],
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
     status: 'catalogued',
   },
   {
@@ -94,7 +94,7 @@ export const harnesses: LandingHarness[] = [
     title: 'OpenClaw',
     description: 'A personal AI assistant for everyday workflows.',
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32'],
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
     status: 'catalogued',
   },
   {
@@ -102,7 +102,7 @@ export const harnesses: LandingHarness[] = [
     title: 'OpenCode',
     description: 'A provider-agnostic open source coding agent.',
     category: 'Terminal',
-    platforms: ['darwin', 'linux', 'win32'],
+    platforms: ['darwin', 'linux', 'win32', 'wsl'],
     status: 'catalogued',
   },
   {
