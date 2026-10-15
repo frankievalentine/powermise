@@ -357,6 +357,11 @@ pub enum MiseAction {
         tools: Vec<(String, String)>,
         packages: Vec<String>,
     },
+    /// `[tool_alias] <tool> = "core:<tool>"` in the global config, so mise's
+    /// built-in installer wins over a same-named plugin.
+    UseCoreInstaller {
+        tool: String,
+    },
     /// `mise use -g` for several `(tool, version)` pairs at once.
     UseGlobalMany {
         tools: Vec<(String, String)>,
@@ -518,6 +523,10 @@ impl MiseAction {
             Self::SetSetting { key, value } => MiseCommand::set_setting(key, value),
             Self::UnsetSetting { key } => MiseCommand::unset_setting(key),
             Self::UseGlobalMany { tools } => MiseCommand::use_global_many(tools),
+            Self::UseCoreInstaller { tool } => {
+                let global = crate::mise_config_dir()?.join("config.toml");
+                return MiseCommand::use_core_installer(&global, tool).map_err(message);
+            }
             Self::Untrust { path } => MiseCommand::untrust(path),
             Self::Lock { project } => Ok(MiseCommand::lock(project)),
             Self::ConfigSet {

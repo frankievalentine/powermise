@@ -48,7 +48,13 @@ export function prettyPath(path: string, home?: string | null): string {
   return path.replace(/^(\/(Users|home)\/[^/]+|[A-Za-z]:\\Users\\[^\\]+)/, "~");
 }
 
+/** mise's core tools: languages whose installers are built in
+ *  (https://mise.jdx.dev/core-tools.html). */
+export const CORE_TOOLS = ["bun", "deno", "dotnet", "elixir", "erlang", "go", "java", "node", "python", "ruby", "rust", "swift", "zig"];
+
 /** Short backend label from a registry backend like `aqua:jqlang/jq`. */
 export function backendLabel(backend: string): string {
-  return backend.split(":")[0];
+  const name = backend.split(":")[0];
+  // Core tools' installers are part of mise itself.
+  return name === "core" ? "built in" : name;
 }

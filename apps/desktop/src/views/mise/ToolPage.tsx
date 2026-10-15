@@ -231,7 +231,9 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
                         className={`badge${index === 0 && info.data ? " accent" : ""}`}
                         title={index === 0 && info.data ? `${backend} — what mise uses here` : backend}
                       >
-                        {backendLabel(backend)} · {backend.split(":").slice(1).join(":")}
+                        {backend.startsWith("core:")
+                          ? "Built into mise"
+                          : `${backendLabel(backend)} · ${backend.split(":").slice(1).join(":")}`}
                       </span>
                     ),
                   )}

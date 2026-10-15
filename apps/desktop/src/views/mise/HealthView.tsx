@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw } from "lucide-re
 import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { activationCommand, healthSummary } from "../../health";
-import { prettyPath } from "../../mise";
+import { CORE_TOOLS, prettyPath } from "../../mise";
 import { useAsync } from "../../hooks";
 import { usePlatform } from "../../platform";
 import {
@@ -47,6 +47,14 @@ export function HealthView({ context, section }: { context: AppContext; section?
   const disk = useAsync(() => api.diskUsage(), [mise.revision]);
   const trust = useAsync(() => api.trustedFolders(), [mise.revision]);
   const plugins = useAsync(() => api.plugins(), [mise.revision]);
+  // A plugin named like a core tool replaces mise's built-in installer for it.
+  const shadowing = useAsync(async () => {
+    const names = (plugins.data ?? []).map((plugin) => plugin.name).filter((name) => CORE_TOOLS.includes(name));
+    const checked = await Promise.all(
+      names.map(async (name) => ({ name, backend: (await api.toolInfo(name).catch(() => null))?.backend ?? null })),
+    );
+    return checked.filter((entry) => entry.backend && !entry.backend.startsWith("core:"));
+  }, [plugins.data, mise.revision]);
   const pretty = (path: string) => prettyPath(path, context.env.home);
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const healthy = !!doctor.data && summary.count === 0;
@@ -329,15 +337,42 @@ export function HealthView({ context, section }: { context: AppContext; section?
               note="Legacy asdf and vfox plugins. Most tools no longer need one; mise’s registry and backends cover them."
             >
               <div className="list">
-                {plugins.data.map((plugin) => (
-                  <div className="list-row" key={plugin.name}>
-                    <div className="row-main">
-                      <div className="row-title mono">{plugin.name}</div>
-                      {plugin.url && <div className="row-subtitle mono selectable">{plugin.url}</div>}
+                {plugins.data.map((plugin) => {
+                  const shadows = shadowing.data?.find((entry) => entry.name === plugin.name);
+                  return (
+                    <div className="list-row" key={plugin.name}>
+                      {shadows && <AlertTriangle size={16} color="var(--orange)" />}
+                      <div className="row-main">
+                        <div className="row-title mono">{plugin.name}</div>
+                        {shadows ? (
+                          <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
+                            Installs {plugin.name} instead of mise’s built-in installer ({shadows.backend}). That changes
+                            how {plugin.name} installs and whose code you trust.
+                          </div>
+                        ) : (
+                          plugin.url && <div className="row-subtitle mono selectable">{plugin.url}</div>
+                        )}
+                      </div>
+                      {shadows ? (
+                        <button
+                          className="button"
+                          onClick={() =>
+                            run({
+                              action: { kind: "useCoreInstaller", tool: plugin.name },
+                              title: `Use mise’s built-in ${plugin.name}?`,
+                              description: `mise adds [tool_alias] ${plugin.name} = "core:${plugin.name}" to your global config, so every project installs ${plugin.name} with mise’s own installer. The plugin stays installed; remove it later if nothing else needs it.`,
+                              verb: "Use Built-In",
+                            })
+                          }
+                        >
+                          Use Built-In
+                        </button>
+                      ) : (
+                        plugin.revision && <span className="row-subtitle mono">{plugin.revision}</span>
+                      )}
                     </div>
-                    {plugin.revision && <span className="row-subtitle mono">{plugin.revision}</span>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Section>
           )}

@@ -466,35 +466,143 @@ pub struct IdiomaticFile {
     pub version: String,
 }
 
-/// Idiomatic version files in a project folder, with the version they ask for.
+/// One-line version files (the first line that isn't a comment), by tool,
+/// as mise's core tools read them (<https://mise.jdx.dev/core-tools.html>),
+/// plus `.terraform-version` from the registry.
+const VERSION_FILES: &[(&str, &str)] = &[
+    (".nvmrc", "node"),
+    (".node-version", "node"),
+    (".python-version", "python"),
+    (".python-versions", "python"),
+    (".ruby-version", "ruby"),
+    (".go-version", "go"),
+    (".java-version", "java"),
+    (".bun-version", "bun"),
+    (".deno-version", "deno"),
+    (".exenv-version", "elixir"),
+    (".swift-version", "swift"),
+    (".zig-version", "zig"),
+    (".terraform-version", "terraform"),
+];
+
+/// Idiomatic version files in a project folder, with the version they ask
+/// for: one-line files, and the version mise reads from `package.json`,
+/// `go.mod`/`go.work`, `Gemfile`, `rust-toolchain.toml`, `global.json`, and
+/// `.sdkmanrc`.
 pub fn idiomatic_files(project: &Path) -> Vec<IdiomaticFile> {
-    const FILES: &[(&str, &str)] = &[
-        (".nvmrc", "node"),
-        (".node-version", "node"),
-        (".python-version", "python"),
-        (".ruby-version", "ruby"),
-        (".go-version", "go"),
-        (".java-version", "java"),
-        (".terraform-version", "terraform"),
-        (".bun-version", "bun"),
-        (".deno-version", "deno"),
-    ];
-    FILES
-        .iter()
-        .filter_map(|(file, tool)| {
-            let contents = fs::read_to_string(project.join(file)).ok()?;
-            let version = contents
-                .lines()
+    let read = |name: &str| fs::read_to_string(project.join(name)).ok();
+    let mut found: Vec<IdiomaticFile> = Vec::new();
+    let mut push = |file: &str, tool: &str, version: String| {
+        found.push(IdiomaticFile {
+            file: file.into(),
+            tool: tool.into(),
+            version,
+        });
+    };
+    for (file, tool) in VERSION_FILES {
+        if let Some(version) = read(file).and_then(|text| {
+            text.lines()
                 .map(str::trim)
-                .find(|line| !line.is_empty() && !line.starts_with('#'))?
-                .to_owned();
-            Some(IdiomaticFile {
-                file: (*file).into(),
-                tool: (*tool).into(),
-                version,
-            })
+                .find(|line| !line.is_empty() && !line.starts_with('#'))
+                .map(str::to_owned)
+        }) {
+            push(file, tool, version);
+        }
+    }
+    // package.json: `devEngines.runtime` (object, or the first of an array)
+    // for node, bun, or deno; Bun also reads `devEngines.packageManager` and
+    // `packageManager` (`bun@1.3.14`). `engines` isn't used.
+    if let Some(json) =
+        read("package.json").and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+    {
+        let entry = |value: Option<&serde_json::Value>| -> Option<(String, String)> {
+            let value = value?;
+            let value = value
+                .as_array()
+                .and_then(|array| array.first())
+                .unwrap_or(value);
+            Some((
+                value.get("name")?.as_str()?.to_owned(),
+                value.get("version")?.as_str()?.to_owned(),
+            ))
+        };
+        let mut seen = Vec::new();
+        if let Some((name, version)) = entry(json.pointer("/devEngines/runtime"))
+            && ["node", "bun", "deno"].contains(&name.as_str())
+        {
+            seen.push(name.clone());
+            push("package.json", &name, version);
+        }
+        if !seen.iter().any(|name| name == "bun") {
+            let bun = entry(json.pointer("/devEngines/packageManager"))
+                .filter(|(name, _)| name == "bun")
+                .map(|(_, version)| version)
+                .or_else(|| {
+                    json.get("packageManager")?
+                        .as_str()?
+                        .strip_prefix("bun@")
+                        .map(|version| version.split('+').next().unwrap_or(version).to_owned())
+                });
+            if let Some(version) = bun {
+                push("package.json", "bun", version);
+            }
+        }
+    }
+    // go.mod / go.work: `toolchain goX.Y.Z`, else `go X.Y.Z` with a patch.
+    for file in ["go.mod", "go.work"] {
+        let Some(text) = read(file) else { continue };
+        let line = |prefix: &str| {
+            text.lines()
+                .map(str::trim)
+                .find_map(|line| line.strip_prefix(prefix).map(|rest| rest.trim().to_owned()))
+        };
+        let version = line("toolchain go")
+            .or_else(|| line("go ").filter(|version| version.matches('.').count() >= 2));
+        if let Some(version) = version {
+            push(file, "go", version);
+            break;
+        }
+    }
+    // Gemfile: `ruby "3.3.0"` (Bundler's `ruby file:` is the .ruby-version above).
+    if let Some(version) = read("Gemfile").and_then(|text| {
+        text.lines().map(str::trim).find_map(|line| {
+            let rest = line.strip_prefix("ruby ")?.trim();
+            let quote = rest.chars().next().filter(|c| *c == '"' || *c == '\'')?;
+            rest[1..].split(quote).next().map(str::to_owned)
         })
-        .collect()
+    }) {
+        push("Gemfile", "ruby", version);
+    }
+    // rust-toolchain.toml: `[toolchain] channel`.
+    if let Some(channel) = read("rust-toolchain.toml")
+        .and_then(|text| text.parse::<toml::Table>().ok())
+        .and_then(|table| {
+            table
+                .get("toolchain")?
+                .get("channel")?
+                .as_str()
+                .map(str::to_owned)
+        })
+    {
+        push("rust-toolchain.toml", "rust", channel);
+    }
+    // global.json: `sdk.version`.
+    if let Some(version) = read("global.json")
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+        .and_then(|json| json.pointer("/sdk/version")?.as_str().map(str::to_owned))
+    {
+        push("global.json", "dotnet", version);
+    }
+    // .sdkmanrc: `java=21.0.9-tem` (mise maps SDKMAN's vendors to its own).
+    if let Some(version) = read(".sdkmanrc").and_then(|text| {
+        text.lines().map(str::trim).find_map(|line| {
+            line.strip_prefix("java=")
+                .map(|rest| rest.trim().to_owned())
+        })
+    }) {
+        push(".sdkmanrc", "java", version);
+    }
+    found
 }
 
 /// One tool's pending lockfile change (`mise lock --dry-run --json`).
@@ -712,6 +820,62 @@ mod extra_tests {
         assert_eq!(files[0].tool, "node");
         assert_eq!(files[0].version, "22");
         assert_eq!(files[1].version, "3.12.4");
+        let _ = fs::remove_dir_all(project);
+    }
+
+    #[test]
+    fn idiomatic_files_read_versions_inside_project_files() {
+        let project = scratch("idiomatic-structured");
+        let write = |name: &str, text: &str| fs::write(project.join(name), text).unwrap();
+        write(
+            "package.json",
+            r#"{"devEngines":{"runtime":[{"name":"node","version":"26.10.0"}]},"packageManager":"bun@1.3.14+sha512.abc","engines":{"node":">=20"}}"#,
+        );
+        write("go.mod", "module x\n\ngo 1.27\n\ntoolchain go1.27.3\n");
+        write(
+            "Gemfile",
+            "source \"https://rubygems.org\"\nruby \"3.4.1\"\n",
+        );
+        write(
+            "rust-toolchain.toml",
+            "[toolchain]\nchannel = \"1.90.0\"\ncomponents = [\"clippy\"]\n",
+        );
+        write(
+            "global.json",
+            r#"{"sdk":{"version":"8.0.425","rollForward":"disable"}}"#,
+        );
+        write(".sdkmanrc", "# sdk env\njava=21.0.9-tem\n");
+        write(".zig-version", "0.15.1\n");
+        let files = idiomatic_files(&project);
+        let _ = fs::remove_dir_all(&project);
+        let found: Vec<_> = files
+            .iter()
+            .map(|file| {
+                (
+                    file.file.as_str(),
+                    file.tool.as_str(),
+                    file.version.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            found,
+            [
+                (".zig-version", "zig", "0.15.1"),
+                ("package.json", "node", "26.10.0"),
+                ("package.json", "bun", "1.3.14"),
+                ("go.mod", "go", "1.27.3"),
+                ("Gemfile", "ruby", "3.4.1"),
+                ("rust-toolchain.toml", "rust", "1.90.0"),
+                ("global.json", "dotnet", "8.0.425"),
+                (".sdkmanrc", "java", "21.0.9-tem"),
+            ]
+        );
+
+        // `go 1.27` without a patch or toolchain isn't a version request.
+        let project = scratch("idiomatic-go");
+        fs::write(project.join("go.mod"), "module x\n\ngo 1.27\n").unwrap();
+        assert!(idiomatic_files(&project).is_empty());
         let _ = fs::remove_dir_all(project);
     }
 

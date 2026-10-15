@@ -156,7 +156,12 @@ function overview(path: string, environment: string | null): ProjectOverview {
     problems: [],
     environments,
     environment: env,
-    idiomatic: isWeb ? [{ file: ".nvmrc", tool: "node", version: "22", enabled: idiomaticEnabled.has("node") }] : [],
+    idiomatic: isWeb
+      ? [
+          { file: ".nvmrc", tool: "node", version: "22", enabled: idiomaticEnabled.has("node"), disabledFile: false, disabledFiles: [] },
+          { file: "package.json", tool: "bun", version: "1.3.14", enabled: idiomaticEnabled.has("bun"), disabledFile: false, disabledFiles: [] },
+        ]
+      : [],
     lockfile: isWeb
       ? {
           path: `${WEB}/mise.lock`,

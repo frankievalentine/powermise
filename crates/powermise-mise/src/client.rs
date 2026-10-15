@@ -1076,6 +1076,23 @@ impl MiseCommand {
         Ok(Self::new(arguments).in_project(project))
     }
 
+    /// `mise config set --file <global config> tool_alias.<tool> core:<tool>`:
+    /// use mise's built-in installer for a core tool even when a plugin of
+    /// the same name is installed (<https://mise.jdx.dev/core-tools.html>).
+    pub fn use_core_installer(global_config: &Path, tool: &str) -> Result<Self, MiseAdapterError> {
+        if !CORE_TOOLS.contains(&tool) {
+            return Err(MiseAdapterError::InvalidArgument { value: tool.into() });
+        }
+        Ok(Self::new(vec![
+            "config".into(),
+            "set".into(),
+            "--file".into(),
+            global_config.display().to_string(),
+            format!("tool_alias.{tool}"),
+            format!("core:{tool}"),
+        ]))
+    }
+
     /// `mise config set --global tools.<tool>.auto_update <on>` (2026.10+):
     /// let mise upgrade one global tool in the background.
     pub fn tool_auto_update(tool: &str, on: bool) -> Result<Self, MiseAdapterError> {
@@ -1308,6 +1325,13 @@ pub fn validate_package_spec(spec: &str) -> Result<(), MiseAdapterError> {
         Err(MiseAdapterError::InvalidArgument { value: spec.into() })
     }
 }
+
+/// mise's core tools: languages whose installers are built in
+/// (`mise registry -b core`).
+pub const CORE_TOOLS: &[&str] = &[
+    "bun", "deno", "dotnet", "elixir", "erlang", "go", "java", "node", "python", "ruby", "rust",
+    "swift", "zig",
+];
 
 /// Bootstrap parts `--only` accepts (2026.7.18 and 2026.10).
 const BOOTSTRAP_PARTS: &[&str] = &[

@@ -118,8 +118,25 @@ export const COMMON_SETTINGS: CommonGroup[] = [
         title: "Use version files from other tools",
         description:
           "Pick tools whose usual version file mise should follow — like .nvmrc for Node.js or .python-version for Python.",
-        control: { kind: "tools", suggestions: ["node", "python", "ruby", "go", "java", "terraform", "bun", "deno"] },
-        keywords: ["nvmrc", "node-version", "python-version", "ruby-version", "version file", "idiomatic"],
+        // mise's core tools (https://mise.jdx.dev/core-tools.html), plus terraform.
+        control: {
+          kind: "tools",
+          suggestions: ["node", "python", "ruby", "go", "java", "rust", "bun", "deno", "dotnet", "elixir", "swift", "zig", "terraform"],
+        },
+        keywords: [
+          "nvmrc",
+          "node-version",
+          "python-version",
+          "ruby-version",
+          "package.json",
+          "go.mod",
+          "Gemfile",
+          "rust-toolchain",
+          "global.json",
+          "sdkmanrc",
+          "version file",
+          "idiomatic",
+        ],
       },
       {
         key: "trusted_config_paths",

@@ -74,20 +74,33 @@ export function IdiomaticCallout({ data, context }: { data: ProjectOverview; con
               <span className="mono">{file.file}</span> asks for {file.tool} {file.version}
             </div>
             <div className="row-subtitle">
-              mise ignores version files from other tools until you turn them on for {file.tool}. Turning it on
-              applies to every project.
+              {file.disabledFile
+                ? `mise reads ${file.tool}’s version files, but ${file.file} is turned off on its own. Turning it back on applies to every project.`
+                : `mise ignores version files from other tools until you turn them on for ${file.tool}. Turning it on applies to every project.`}
             </div>
           </div>
           <button
             className="button"
-            onClick={() =>
+            onClick={() => {
+              if (file.disabledFile) {
+                const rest = file.disabledFiles.filter((entry) => entry !== `${file.tool}:${file.file}`);
+                context.run({
+                  action: rest.length
+                    ? { kind: "setSetting", key: "idiomatic_version_file_disable_files", value: rest.join(",") }
+                    : { kind: "unsetSetting", key: "idiomatic_version_file_disable_files" },
+                  title: `Read ${file.file} for ${file.tool} again?`,
+                  description: `mise will read ${file.file} for ${file.tool} in every project, unless a mise config asks for a version.`,
+                  verb: "Turn On",
+                });
+                return;
+              }
               context.run({
                 action: { kind: "addSetting", key: "idiomatic_version_file_enable_tools", value: file.tool },
                 title: `Use ${file.file} files for ${file.tool}?`,
-                description: `mise will read ${file.file} (and similar files) for ${file.tool} in every project, unless a mise config asks for a version.`,
+                description: `mise will read ${file.file} (and ${file.tool}’s other version files) in every project, unless a mise config asks for a version.`,
                 verb: "Turn On",
-              })
-            }
+              });
+            }}
           >
             Use {file.file}
           </button>

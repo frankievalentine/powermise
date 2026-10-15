@@ -410,6 +410,8 @@ export type MiseAction =
   | { kind: "unsetSetting"; key: string }
   | { kind: "importVersions"; source: ImportSource; tool: string; makeDefault: boolean }
   | { kind: "useGlobalMany"; tools: [string, string][] }
+  /** `[tool_alias] <tool> = "core:<tool>"`: mise's built-in installer over a same-named plugin. */
+  | { kind: "useCoreInstaller"; tool: string }
   | { kind: "importDryRun"; tools: [string, string][]; packages: string[] }
   | {
       kind: "applyImport";
@@ -721,7 +723,15 @@ export interface ProjectOverview {
   environments: string[];
   /** The environment this overview previews, if any. */
   environment: string | null;
-  idiomatic: { file: string; tool: string; version: string; enabled: boolean }[];
+  idiomatic: {
+    file: string;
+    tool: string;
+    version: string;
+    enabled: boolean;
+    /** Turned off on its own in `idiomatic_version_file_disable_files`. */
+    disabledFile: boolean;
+    disabledFiles: string[];
+  }[];
   lockfile: { path: string; changes: LockChange[] } | null;
   /** `[vars]` on mise 2026.10.6+, null on older mise. */
   vars: VarView[] | null;

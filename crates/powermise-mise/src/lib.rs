@@ -15,8 +15,8 @@ mod updater;
 
 pub use agents::{AgentCli, AgentPlugin, gemini_extensions, parse_plugin_list};
 pub use client::{
-    MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program, validate_import_package,
-    validate_package_spec,
+    CORE_TOOLS, MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program,
+    validate_import_package, validate_package_spec,
 };
 pub use import_sources::{
     BrewItem, Brewfile, DefaultPackage, HomebrewInventory, MasApp, brewfile_paths,

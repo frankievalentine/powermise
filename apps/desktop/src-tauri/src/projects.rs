@@ -248,8 +248,14 @@ pub struct IdiomaticView {
     file: String,
     tool: String,
     version: String,
-    /// Listed in `idiomatic_version_file_enable_tools`, so mise reads it.
+    /// mise reads it: the tool is in `idiomatic_version_file_enable_tools`
+    /// and the file isn't in `idiomatic_version_file_disable_files`.
     enabled: bool,
+    /// Turned off on its own (`tool:file` in
+    /// `idiomatic_version_file_disable_files`), with the list's other entries
+    /// so turning it back on can keep them.
+    disabled_file: bool,
+    disabled_files: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -362,23 +368,28 @@ pub async fn project_overview(
 
         let found = idiomatic_files(&path);
         if !found.is_empty() {
-            let enabled: Vec<String> = base
-                .settings()
-                .ok()
-                .and_then(|settings| {
-                    settings
-                        .into_iter()
-                        .find(|setting| setting.key == "idiomatic_version_file_enable_tools")
-                })
-                .and_then(|setting| serde_json::from_value(setting.value).ok())
-                .unwrap_or_default();
+            let settings = base.settings().unwrap_or_default();
+            let list = |key: &str| -> Vec<String> {
+                settings
+                    .iter()
+                    .find(|setting| setting.key == key)
+                    .and_then(|setting| serde_json::from_value(setting.value.clone()).ok())
+                    .unwrap_or_default()
+            };
+            let enabled = list("idiomatic_version_file_enable_tools");
+            let disabled = list("idiomatic_version_file_disable_files");
             overview.idiomatic = found
                 .into_iter()
-                .map(|file| IdiomaticView {
-                    enabled: enabled.contains(&file.tool),
-                    file: file.file,
-                    tool: file.tool,
-                    version: file.version,
+                .map(|file| {
+                    let disabled_file = disabled.contains(&format!("{}:{}", file.tool, file.file));
+                    IdiomaticView {
+                        enabled: enabled.contains(&file.tool) && !disabled_file,
+                        disabled_file,
+                        disabled_files: disabled.clone(),
+                        file: file.file,
+                        tool: file.tool,
+                        version: file.version,
+                    }
                 })
                 .collect();
         }
