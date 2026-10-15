@@ -138,10 +138,20 @@ pub async fn disk_usage() -> CommandResult<DiskUsage> {
             .map_err(message)?
             .dirs
             .ok_or("this mise doesn't report its folders")?;
-        let installs = dirs.data.join("installs");
+        // mise's defaults, unless moved (https://mise.jdx.dev/directories.html).
+        let installs = std::env::var_os("MISE_INSTALLS_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| dirs.data.join("installs"));
+        // The identity layout keeps installations in a separate store (`i\`
+        // beside `installs` on Windows) and only links them from `installs`.
+        let store = std::env::var_os("MISE_INSTALL_STORE_DIR")
+            .map(PathBuf::from)
+            .or_else(|| cfg!(windows).then(|| dirs.data.join("i")))
+            .filter(|store| store.is_dir() && !store.starts_with(&installs));
         Ok(DiskUsage {
             cache_bytes: directory_size(&dirs.cache),
-            installs_bytes: directory_size(&installs),
+            installs_bytes: directory_size(&installs)
+                + store.as_deref().map(directory_size).unwrap_or_default(),
             cache_dir: dirs.cache,
             installs_dir: installs,
         })

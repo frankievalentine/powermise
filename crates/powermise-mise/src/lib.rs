@@ -7,6 +7,7 @@ mod client;
 mod machine;
 mod models;
 mod project;
+mod updater;
 
 pub use client::{
     MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program, validate_package_spec,
@@ -29,6 +30,7 @@ pub use project::{
     idiomatic_files, is_untrusted_error, looks_secret, parse_task_details, parse_trust_show,
     parse_vars, preview_config, preview_project_configs, project_environments,
 };
+pub use updater::{MiseUpdater, mise_updater};
 
 use thiserror::Error;
 

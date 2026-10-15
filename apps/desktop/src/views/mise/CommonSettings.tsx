@@ -58,6 +58,8 @@ export function CommonSettings({
     settings: group.settings.filter(
       (setting) =>
         byKey.has(setting.key) &&
+        // Packaged installs (Homebrew, apt, …) can't update themselves.
+        !(setting.key === "self_update.auto" && context.mise.doctor?.self_update_available === false) &&
         (!needle ||
           `${setting.title} ${setting.description} ${setting.key} ${setting.keywords.join(" ")}`
             .toLowerCase()

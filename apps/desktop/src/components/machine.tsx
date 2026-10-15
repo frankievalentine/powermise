@@ -3,6 +3,7 @@ import { CheckCircle2, Download, ExternalLink, Github, Info, Loader2, Trash2 } f
 import { api, type DetectedImport, type ImportSource } from "../api";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
+import type { Activation } from "../health";
 import { CommandBlock } from "./ui";
 import { Sheet } from "./Sheet";
 
@@ -411,5 +412,108 @@ export function LinkSheet({
         </button>
       </div>
     </Sheet>
+  );
+}
+
+const MANAGER_UPDATE: Record<"homebrew" | "winget" | "scoop", { name: string; command: string }> = {
+  homebrew: { name: "Homebrew", command: "brew upgrade mise" },
+  winget: { name: "winget", command: "winget upgrade --id jdx.mise --exact" },
+  scoop: { name: "Scoop", command: "scoop update mise" },
+};
+
+/** Updates mise the way this install allows: `mise self-update`, the package
+ *  manager that installed it, or — when that needs an administrator — the
+ *  steps to run yourself. */
+export function UpdateMise({ context, label = "Update mise" }: { context: AppContext; label?: string }) {
+  const { mise, run } = context;
+  const [showSteps, setShowSteps] = useState(false);
+  const info = mise.info;
+  const to = info?.latest ? ` to ${info.latest}` : "";
+  const updater = info?.updater;
+  // Without doctor yet, assume the usual case (self-update works).
+  if (mise.doctor?.self_update_available !== false) {
+    return (
+      <button
+        className="button primary"
+        onClick={() =>
+          run({
+            action: { kind: "selfUpdate" },
+            title: `Update mise${to}?`,
+            description: "mise downloads its newest release and replaces itself. Your tools and settings stay as they are.",
+            verb: "Update mise",
+          })
+        }
+      >
+        {label}
+      </button>
+    );
+  }
+  if (updater && updater.kind in MANAGER_UPDATE) {
+    const manager = MANAGER_UPDATE[updater.kind as keyof typeof MANAGER_UPDATE];
+    return (
+      <button
+        className="button primary"
+        onClick={() =>
+          run({
+            action: { kind: "updateMiseWithManager" },
+            title: `Update mise${to} with ${manager.name}?`,
+            description: `${manager.name} installed mise, so it updates it too. Your tools and settings stay as they are.`,
+            verb: "Update mise",
+          })
+        }
+      >
+        {label}
+      </button>
+    );
+  }
+  const steps =
+    updater?.kind === "instructions"
+      ? updater.message
+      : "This mise can’t update itself. Update it the same way you installed it (for example with your system’s package manager).";
+  return (
+    <>
+      <button className="button" onClick={() => setShowSteps((open) => !open)} aria-expanded={showSteps}>
+        How to Update
+      </button>
+      <Sheet open={showSteps} onDismiss={() => setShowSteps(false)} labelledBy="update-mise-title">
+        <div className="sheet-head">
+          <h2 id="update-mise-title">Update mise{to}</h2>
+        </div>
+        <div className="sheet-body">
+          <p className="selectable" style={{ whiteSpace: "pre-wrap" }}>
+            {steps}
+          </p>
+          <ExternalLinkButton url="https://mise.jdx.dev/installing-mise.html#updating">
+            More about updating mise
+          </ExternalLinkButton>
+        </div>
+        <div className="sheet-foot">
+          <button className="button large" onClick={() => setShowSteps(false)}>
+            Done
+          </button>
+        </div>
+      </Sheet>
+    </>
+  );
+}
+
+/** mise's setup command for the current shell, plus anything else that shell
+ *  needs. powermise doesn't edit shell files itself. */
+export function ActivationSteps({ activation }: { activation: Activation }) {
+  return (
+    <div className="activation-steps">
+      <p className="section-note">
+        Run this once in {activation.shell}, then open a new terminal window. It adds mise to {activation.file} if
+        it isn’t there already.
+      </p>
+      <CommandBlock command={activation.command} prompt={activation.prompt} />
+      {activation.extra && (
+        <>
+          <p className="section-note">{activation.extra.text}</p>
+          <CommandBlock command={activation.extra.command} prompt={activation.prompt} />
+        </>
+      )}
+      {activation.note && <p className="field-hint">{activation.note}</p>}
+    </div>
   );
 }

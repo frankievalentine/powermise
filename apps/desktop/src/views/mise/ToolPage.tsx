@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowUpCircle, Download, ExternalLink, Link2, Loader2, ShieldCheck } from "lucide-react";
-import { api } from "../../api";
+import { AlertTriangle, ArrowUpCircle, Download, ExternalLink, Link2, Loader2, ShieldCheck } from "lucide-react";
+import { api, PLATFORM_LABEL } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
-import { backendLabel, homeFrom, isGlobalPath, sourceLabel, upgradeTarget } from "../../mise";
+import { backendLabel, homeFrom, isGlobalPath, sourceLabel, runsOn, toolPlatforms, upgradeTarget } from "../../mise";
 import { CommandBlock, Monogram, Section, Switch } from "../../components/ui";
 import { ExternalLinkButton, LinkSheet, canOpen } from "../../components/machine";
 
@@ -101,6 +101,17 @@ export function ToolPage({ context, name }: { context: AppContext; name: string 
           <p className="page-subtitle selectable" style={{ marginTop: 16, maxWidth: 680 }}>
             {entry.description}
           </p>
+        )}
+
+        {!runsOn(name, env.hostTarget) && (
+          <div className="callout warn" style={{ marginTop: 16 }}>
+            <AlertTriangle size={14} />
+            <span>
+              mise installs {name} only on{" "}
+              {[...new Set((toolPlatforms(name) ?? []).map((platform) => PLATFORM_LABEL[platform === "wsl" ? "linux" : platform]))].join(" and ")}
+              , so it skips it on this computer.
+            </span>
+          </div>
         )}
 
         <Section

@@ -3,6 +3,7 @@ import { ArrowRight, Blocks, Compass, Folder, Layers, Search, SlidersHorizontal 
 import type { AppContext, Route } from "../App";
 import { COMMON_SETTINGS } from "../data/commonSettings";
 import popularity from "../data/popularity.json";
+import { runsOn } from "../mise";
 
 const RANKS = (popularity as { ranks: Record<string, number> }).ranks;
 
@@ -80,7 +81,10 @@ export function CommandPalette({
     }
     const installed = new Set(Object.keys(mise.inventory ?? {}));
     const registry = (mise.registry ?? [])
-      .filter((entry) => !installed.has(entry.short) && matches(entry.short, ...entry.aliases))
+      .filter(
+        (entry) =>
+          !installed.has(entry.short) && runsOn(entry.short, env.hostTarget) && matches(entry.short, ...entry.aliases),
+      )
       .sort((a, b) => (RANKS[a.short] ?? 1e9) - (RANKS[b.short] ?? 1e9) || a.short.localeCompare(b.short))
       .slice(0, 6);
     for (const entry of registry) {

@@ -2454,3 +2454,14 @@ button {
     --separator: rgba(127, 127, 127, 0.5);
   }
 }
+
+.activation-steps {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.activation-steps .section-note,
+.activation-steps .field-hint {
+  margin: 0;
+}

@@ -29,6 +29,8 @@ export function UpdatesView({ context }: { context: AppContext }) {
   const settings = useAsync(() => api.settings(), [mise.revision]);
   const autoSettings = AUTO_UPDATES.flatMap((item) => {
     const setting = settings.data?.find((entry) => entry.key === item.key);
+    // Packaged installs (Homebrew, apt, …) can't update themselves.
+    if (item.key === "self_update.auto" && mise.doctor?.self_update_available === false) return [];
     return setting ? [{ ...item, on: setting.value === true }] : [];
   });
   const projects = projectUpdates.data ?? [];

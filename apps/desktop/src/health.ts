@@ -20,13 +20,89 @@ export function healthSummary(info: MiseInfo | null, doctor: Doctor | null): Hea
   return { count, severity: errors ? "error" : warnings ? "warning" : null };
 }
 
-/** The line that turns mise on in a shell, and the file it goes in. With no
- *  shell reported (apps on Windows don't get `SHELL`), the platform's default. */
-export function activationCommand(shell: string | undefined, platform: Platform): { file: string; line: string } {
-  shell ??= platform === "win32" ? "pwsh" : platform === "darwin" ? "zsh" : "bash";
-  if (shell.includes("bash")) return { file: "~/.bashrc", line: 'eval "$(mise activate bash)"' };
-  if (shell.includes("fish")) return { file: "~/.config/fish/config.fish", line: "mise activate fish | source" };
-  if (shell.includes("pwsh") || shell.includes("powershell"))
-    return { file: "$PROFILE", line: "mise activate pwsh | Out-String | Invoke-Expression" };
-  return { file: "~/.zshrc", line: 'eval "$(mise activate zsh)"' };
+/** How to turn mise on in a shell: mise's own setup commands
+ *  (https://mise.jdx.dev/shell-setup.html), which add the line only once and
+ *  create the startup file if needed. */
+export interface Activation {
+  /** For prose: "zsh", "PowerShell", … */
+  shell: string;
+  /** The startup file, as written in the command. */
+  file: string;
+  /** The command to run once in that shell. */
+  command: string;
+  /** The prompt shown before the command. */
+  prompt: string;
+  /** Something else worth knowing for this shell. */
+  note?: string;
+  /** A second command some setups need (bash on macOS). */
+  extra?: { text: string; command: string };
+}
+
+/** With no shell reported (apps on Windows don't get `SHELL`), the platform's
+ *  default shell. `misePath` matters when mise lives in `~/.local/bin`, which
+ *  isn't on every shell's PATH: the line then names mise by its full path. */
+export function activationCommand(
+  shellName: string | undefined,
+  platform: Platform,
+  misePath?: string | null,
+): Activation {
+  const name = (shellName ?? (platform === "win32" ? "pwsh" : platform === "darwin" ? "zsh" : "bash")).toLowerCase();
+  const local = platform !== "win32" && !!misePath && /[\\/]\.local[\\/]bin[\\/]mise$/.test(misePath);
+  const mise = local ? "~/.local/bin/mise" : "mise";
+  const once = (line: string, file: string) =>
+    `grep -qxF '${line}' ${file} 2>/dev/null || echo '${line}' >> ${file}`;
+
+  if (name.includes("pwsh") || name.includes("powershell")) {
+    const line = "(&mise activate pwsh) | Out-String | Invoke-Expression";
+    return {
+      shell: "PowerShell",
+      file: "$PROFILE",
+      prompt: "PS>",
+      command: `if (-not (Test-Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force | Out-Null }; $line = '${line}'; if (-not (Select-String -Path $PROFILE -SimpleMatch $line -Quiet)) { Add-Content $PROFILE $line }`,
+      note: "Windows PowerShell 5.1 picks up changes at the next prompt; PowerShell 7 and newer switch versions as soon as you change folders.",
+    };
+  }
+  if (name.endsWith("cmd") || name.endsWith("cmd.exe")) {
+    return {
+      shell: "Command Prompt",
+      file: "your user Path",
+      prompt: "PS>",
+      command: `$shims = "$env:LOCALAPPDATA\\mise\\shims"; $userPath = [Environment]::GetEnvironmentVariable('Path', 'User'); if (($userPath -split ';') -notcontains $shims) { [Environment]::SetEnvironmentVariable('Path', "$shims;$userPath", 'User') }`,
+      note: "Command Prompt can’t turn mise on, so this puts mise’s shims on your Path instead. Run it in PowerShell, then open a new window.",
+    };
+  }
+  if (name.includes("fish")) {
+    const line = `${mise} activate fish | source`;
+    const file = "~/.config/fish/config.fish";
+    return {
+      shell: "fish",
+      file,
+      prompt: "$",
+      command: `mkdir -p ~/.config/fish; grep -qxF '${line}' ${file} 2>/dev/null; or echo '${line}' >> ${file}`,
+      note: "If fish came from Homebrew, mise may already turn itself on there; open a new window first to check.",
+    };
+  }
+  if (name.includes("bash")) {
+    const line = `eval "$(${mise} activate bash)"`;
+    return {
+      shell: "bash",
+      file: "~/.bashrc",
+      prompt: "$",
+      command: once(line, "~/.bashrc"),
+      extra:
+        platform === "darwin"
+          ? {
+              text: "Terminal on macOS starts bash as a login shell, which reads ~/.bash_profile. If yours doesn’t load ~/.bashrc already, run this too:",
+              command: once("[ -f ~/.bashrc ] && . ~/.bashrc", "~/.bash_profile"),
+            }
+          : undefined,
+    };
+  }
+  const line = `eval "$(${mise} activate zsh)"`;
+  return {
+    shell: "zsh",
+    file: "~/.zshrc",
+    prompt: "$",
+    command: `zshrc="\${ZDOTDIR:-$HOME}/.zshrc"; mkdir -p "$(dirname "$zshrc")"; ${once(line, '"$zshrc"')}`,
+  };
 }

@@ -128,6 +128,10 @@ pub struct MiseInfo {
     supported: bool,
     /// Whether it meets the recommended version, so every feature is on.
     recommended_met: bool,
+    /// Whether `latest` is newer than the installed version.
+    update_available: bool,
+    /// Who updates mise when `mise self-update` is turned off for this install.
+    updater: Option<powermise_mise::MiseUpdater>,
 }
 
 #[tauri::command]
@@ -144,6 +148,8 @@ pub async fn mise_info() -> CommandResult<MiseInfo> {
                 recommended,
                 supported: false,
                 recommended_met: false,
+                update_available: false,
+                updater: None,
             });
         };
         let info = client.version_info().ok();
@@ -153,6 +159,13 @@ pub async fn mise_info() -> CommandResult<MiseInfo> {
         Ok(MiseInfo {
             path: Some(client.executable().to_path_buf()),
             version: info.as_ref().map(|info| info.version.clone()),
+            update_available: installed.is_some_and(|installed| {
+                info.as_ref()
+                    .and_then(|info| info.latest.as_deref())
+                    .and_then(MiseVersion::parse)
+                    .is_some_and(|latest| latest > installed)
+            }),
+            updater: Some(powermise_mise::mise_updater(client.executable())),
             latest: info.and_then(|info| info.latest),
             minimum,
             recommended,
@@ -253,6 +266,8 @@ pub enum MiseAction {
         tool: Option<String>,
     },
     SelfUpdate,
+    /// Updates mise with the package manager that installed it.
+    UpdateMiseWithManager,
     // Project actions run inside the project folder.
     InstallProject {
         project: PathBuf,
@@ -496,7 +511,7 @@ impl MiseAction {
                 version,
                 path,
             } => MiseCommand::link(tool, version, path),
-            Self::InstallMise { .. } | Self::RelaunchApp { .. } => {
+            Self::InstallMise { .. } | Self::RelaunchApp { .. } | Self::UpdateMiseWithManager => {
                 return Err("this action doesn't run mise".into());
             }
         }
@@ -522,6 +537,23 @@ impl MiseAction {
                         app.clone()
                     }
                 ),
+            });
+        }
+        if let Self::UpdateMiseWithManager = self {
+            let mise = find_mise().ok_or("mise is not installed")?;
+            let updater = powermise_mise::mise_updater(&mise);
+            let (name, arguments) = updater
+                .command()
+                .ok_or("update mise the same way you installed it")?;
+            let program = crate::find_program(name)
+                .ok_or_else(|| format!("{name} isn't available on this computer"))?;
+            return Ok(Job::Program {
+                display: std::iter::once(name.to_owned())
+                    .chain(arguments.iter().cloned())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+                program,
+                arguments,
             });
         }
         if let Self::InstallMise { installer } = self {

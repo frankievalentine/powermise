@@ -4,7 +4,7 @@ import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { activationCommand } from "../../health";
 import { useAsync } from "../../hooks";
-import { ExternalLinkButton, GithubCard, ImportList } from "../../components/machine";
+import { ActivationSteps, ExternalLinkButton, GithubCard, ImportList } from "../../components/machine";
 import { CommandBlock } from "../../components/ui";
 
 export const WELCOMED_KEY = "powermise.welcomed";
@@ -35,7 +35,7 @@ export function WelcomeView({ context }: { context: AppContext }) {
   const installers = useAsync(() => (hasMise ? Promise.resolve([]) : api.miseInstallers()), [hasMise]);
   const imports = useAsync(() => (hasMise ? api.detectImports() : Promise.resolve([])), [hasMise, mise.revision]);
   const activated = hasMise && !!mise.doctor?.activated;
-  const shell = activationCommand(mise.doctor?.shell?.name, context.env.hostTarget);
+  const shell = activationCommand(mise.doctor?.shell?.name, context.env.hostTarget, env.misePath);
   const version = mise.info?.version?.split(" ")[0];
 
   const finish = () => {
@@ -113,10 +113,10 @@ export function WelcomeView({ context }: { context: AppContext }) {
           note={
             activated
               ? "Your shell switches tool versions automatically."
-              : `So tools switch as you move between projects in the terminal. Add this line to ${shell.file}, then open a new terminal window.`
+              : "So tools switch as you move between projects in the terminal."
           }
         >
-          {hasMise && !activated && <CommandBlock command={shell.line} />}
+          {hasMise && !activated && <ActivationSteps activation={shell} />}
         </Step>
 
         {hasMise && (

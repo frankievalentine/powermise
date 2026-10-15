@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
-import { api, type Setting } from "../../api";
+import { api, type Platform, type Setting } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { ExternalLinkButton } from "../../components/machine";
@@ -54,6 +54,14 @@ function initialTab(): Tab {
   }
 }
 
+/** Whether a setting does anything on this OS: `windows_*` settings only on
+ *  Windows, `unix_*` ones everywhere else. */
+function appliesHere(key: string, platform: Platform): boolean {
+  if (key.startsWith("windows_")) return platform === "win32";
+  if (key.startsWith("unix_")) return platform !== "win32";
+  return true;
+}
+
 export function SettingsView({ context, query }: { context: AppContext; query: string }) {
   const { mise, env } = context;
   const settings = useAsync(() => api.settings(), [mise.revision]);
@@ -76,6 +84,8 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
         (filter === "all" || setting.source) &&
         // Deprecated settings only show when something still sets them.
         (!setting.deprecated || setting.source) &&
+        // Settings for another OS (`windows_*`, `unix_*`) likewise.
+        (appliesHere(setting.key, env.hostTarget) || setting.source) &&
         (!needle ||
           setting.key.toLowerCase().includes(needle) ||
           setting.description.toLowerCase().includes(needle)),
@@ -86,7 +96,7 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
       byGroup.set(group, [...(byGroup.get(group) ?? []), setting]);
     }
     return [...byGroup.entries()].sort(([a], [b]) => (a === "" ? -1 : b === "" ? 1 : a.localeCompare(b)));
-  }, [settings.data, filter, query]);
+  }, [settings.data, filter, query, env.hostTarget]);
 
   const changedCount = (settings.data ?? []).filter((setting) => setting.source).length;
 

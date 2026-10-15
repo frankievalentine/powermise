@@ -3,7 +3,7 @@ import { ArrowRight, Check, Loader2, SquareTerminal } from "lucide-react";
 import { api, type RegistryEntry } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
-import { backendLabel } from "../../mise";
+import { backendLabel, runsOn } from "../../mise";
 import { Monogram } from "../../components/ui";
 import popularity from "../../data/popularity.json";
 import { CATEGORIES, DESCRIPTIONS, ECOSYSTEM, UTILITIES, type Utility } from "../../data/discoverCurated";
@@ -45,14 +45,22 @@ export function DiscoverView({ context, query }: { context: AppContext; query: s
   const backends = useAsync(() => api.backends(), []);
   const spec = query.trim().match(BACKEND_SPEC);
   const specBackend = spec && backends.data?.includes(spec[1]) ? spec[1] : null;
-  const registry = mise.registry ?? [];
+  // Tools mise only installs on other systems are left out.
+  const registry = useMemo(
+    () => (mise.registry ?? []).filter((entry) => runsOn(entry.short, env.hostTarget)),
+    [mise.registry, env.hostTarget],
+  );
+  const categories = useMemo(
+    () => CATEGORIES.filter((entry) => !entry.platforms || entry.platforms.includes(env.hostTarget)),
+    [env.hostTarget],
+  );
   const needle = query.trim().toLowerCase();
   // System utilities install as packages: Homebrew on macOS, apt on Linux.
   const utilitiesAvailable = env.hostTarget !== "win32";
 
   const results = useMemo(() => {
     if (!needle) {
-      const members = CATEGORIES.find((entry) => entry.id === category)?.tools;
+      const members = categories.find((entry) => entry.id === category)?.tools;
       const pool = members ? registry.filter((entry) => members.includes(entry.short)) : registry;
       return [...pool].sort(byPopularity);
     }
@@ -74,7 +82,7 @@ export function DiscoverView({ context, query }: { context: AppContext; query: s
       .filter(({ rank }) => rank < 9)
       .sort((a, b) => a.rank - b.rank || byPopularity(a.entry, b.entry))
       .map(({ entry }) => entry);
-  }, [registry, needle, category]);
+  }, [registry, needle, category, categories]);
 
   const popular = useMemo(
     () => registry.filter((entry) => RANKS[entry.short]).sort(byPopularity).slice(0, POPULAR_COUNT),
@@ -94,7 +102,7 @@ export function DiscoverView({ context, query }: { context: AppContext; query: s
   const showingUtilities = !needle && category === UTILITIES_ID;
   const chips = [
     { id: "all", title: "All" },
-    ...CATEGORIES.map(({ id, title }) => ({ id, title })),
+    ...categories.map(({ id, title }) => ({ id, title })),
     ...(utilitiesAvailable ? [{ id: UTILITIES_ID, title: "System utilities" }] : []),
   ];
 
@@ -106,7 +114,7 @@ export function DiscoverView({ context, query }: { context: AppContext; query: s
             <h1 className="page-title">Discover</h1>
             <p className="page-subtitle">
               {mise.registry
-                ? `${mise.registry.length.toLocaleString()} tools mise can install, most popular first.`
+                ? `${registry.length.toLocaleString()} tools mise can install, most popular first.`
                 : "Loading the mise registry…"}
             </p>
           </div>
@@ -210,7 +218,7 @@ export function DiscoverView({ context, query }: { context: AppContext; query: s
                 ? `Results for “${query}”`
                 : category === "all"
                   ? "All tools"
-                  : CATEGORIES.find((entry) => entry.id === category)?.title}
+                  : categories.find((entry) => entry.id === category)?.title}
             </h2>
             {results.length === 0 ? (
               <div className="empty">

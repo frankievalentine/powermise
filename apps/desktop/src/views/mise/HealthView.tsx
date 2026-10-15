@@ -6,7 +6,7 @@ import { activationCommand, healthSummary } from "../../health";
 import { prettyPath } from "../../mise";
 import { useAsync } from "../../hooks";
 import { usePlatform } from "../../platform";
-import { CleanupSheet, GithubCard, ImportList, formatBytes } from "../../components/machine";
+import { ActivationSteps, CleanupSheet, GithubCard, ImportList, UpdateMise, formatBytes } from "../../components/machine";
 import { CommandBlock, Section } from "../../components/ui";
 
 /** The line that hooks mise into a shell, by shell name. */
@@ -31,7 +31,7 @@ export function HealthView({ context, section }: { context: AppContext; section?
   };
   const info = mise.info;
   const problems = [...(doctor.data?.errors ?? []), ...(doctor.data?.warnings ?? [])];
-  const shell = activationCommand(doctor.data?.shell?.name, context.env.hostTarget);
+  const shell = activationCommand(doctor.data?.shell?.name, context.env.hostTarget, context.env.misePath);
   const summary = healthSummary(info, doctor.data);
   const imports = useAsync(() => api.detectImports(), [mise.revision]);
   const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
@@ -89,19 +89,7 @@ export function HealthView({ context, section }: { context: AppContext; section?
                         : `powermise needs mise ${info.minimum} or newer.`}
                     </div>
                   </div>
-                  <button
-                    className="button primary"
-                    onClick={() =>
-                      run({
-                        action: { kind: "selfUpdate" },
-                        title: `Update mise${info.latest ? ` to ${info.latest}` : ""}?`,
-                        description: "mise downloads its newest release and replaces itself. Your tools and settings stay as they are.",
-                        verb: "Update mise",
-                      })
-                    }
-                  >
-                    Update mise
-                  </button>
+                  <UpdateMise context={context} />
                 </div>
               )}
               {!doctor.data.activated && (
@@ -110,12 +98,9 @@ export function HealthView({ context, section }: { context: AppContext; section?
                   <div className="row-main">
                     <div className="row-title">mise isn’t turned on in your terminal</div>
                     <div className="row-subtitle">
-                      Terminals won’t switch tool versions as you move between projects. Run this once, then open a
-                      new terminal window (powermise doesn’t edit your shell files for you):
+                      Terminals won’t switch tool versions as you move between projects.
                     </div>
-                    <div style={{ marginTop: 8 }}>
-                      <CommandBlock command={`echo '${shell.line}' >> ${shell.file}`} />
-                    </div>
+                    <ActivationSteps activation={shell} />
                   </div>
                 </div>
               )}
@@ -155,20 +140,8 @@ export function HealthView({ context, section }: { context: AppContext; section?
                       Update recommended
                     </span>
                   )}
-                  {doctor.data?.self_update_available && (
-                    <button
-                      className="button"
-                      onClick={() =>
-                        run({
-                          action: { kind: "selfUpdate" },
-                          title: `Update mise${info?.latest ? ` to ${info.latest}` : ""}?`,
-                          description: "mise downloads its newest release and replaces itself. Your tools and settings stay as they are.",
-                          verb: "Update mise",
-                        })
-                      }
-                    >
-                      Update{info?.latest ? ` to ${info.latest}` : ""}
-                    </button>
+                  {info?.updateAvailable && info.recommendedMet && (
+                    <UpdateMise context={context} label={`Update to ${info.latest}`} />
                   )}
                 </div>
               </div>
@@ -241,13 +214,7 @@ export function HealthView({ context, section }: { context: AppContext; section?
                 </div>
               )}
               {!doctor.data.activated && (
-                <div style={{ marginTop: 10 }}>
-                  <p className="section-note" style={{ margin: "0 0 8px" }}>
-                    Add this line to {shell.file}, then open a new terminal. powermise doesn’t edit your
-                    shell files for you.
-                  </p>
-                  <CommandBlock command={`echo '${shell.line}' >> ${shell.file}`} />
-                </div>
+                <ActivationSteps activation={shell} />
               )}
               <div className="callout info" style={{ marginTop: 10 }}>
                 <Info size={14} />

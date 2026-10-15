@@ -186,7 +186,19 @@ export interface MiseInfo {
   supported: boolean;
   /** Meets the recommended version, so every feature is available. */
   recommendedMet: boolean;
+  /** `latest` is newer than the installed version. */
+  updateAvailable: boolean;
+  /** Who updates mise when `mise self-update` is turned off for this install. */
+  updater: MiseUpdater | null;
 }
+
+/** How a packaged mise is updated (src/updater.rs in powermise-mise). */
+export type MiseUpdater =
+  | { kind: "homebrew" }
+  | { kind: "winget" }
+  | { kind: "scoop" }
+  | { kind: "instructions"; message: string }
+  | { kind: "unknown" };
 
 export interface ConfigSource {
   type: string;
@@ -232,6 +244,8 @@ export interface Doctor {
   version: string;
   activated: boolean;
   shims_on_path: boolean;
+  /** Whether `mise self-update` works for this install (packagers can turn
+   *  it off) — not whether a newer mise is out. */
   self_update_available: boolean;
   config_files: string[];
   errors: string[];
@@ -246,6 +260,7 @@ export type MiseAction =
   | { kind: "upgrade"; tool: string | null }
   | { kind: "upgradeProject"; project: string; tool: string | null }
   | { kind: "selfUpdate" }
+  | { kind: "updateMiseWithManager" }
   | { kind: "installProject"; project: string }
   | { kind: "trustProject"; project: string }
   | { kind: "runTask"; project: string; task: string; args: string[] }

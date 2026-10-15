@@ -1,0 +1,198 @@
+{
+ "source": "mise registry `os` lists (github.com/jdx/mise/registry)",
+ "os": {
+  "action-validator": [
+   "linux",
+   "macos"
+  ],
+  "apollo-ios": [
+   "macos"
+  ],
+  "apollo-ios-cli": [
+   "macos"
+  ],
+  "aws": [
+   "linux",
+   "macos"
+  ],
+  "aws-cli": [
+   "linux",
+   "macos"
+  ],
+  "awscli": [
+   "linux",
+   "macos"
+  ],
+  "bats": [
+   "linux",
+   "macos"
+  ],
+  "carthage": [
+   "macos"
+  ],
+  "chicken": [
+   "linux",
+   "macos"
+  ],
+  "cljstyle": [
+   "linux",
+   "macos"
+  ],
+  "cocoapods": [
+   "macos"
+  ],
+  "codon": [
+   "linux",
+   "macos"
+  ],
+  "conform": [
+   "linux",
+   "macos"
+  ],
+  "container": [
+   "macos"
+  ],
+  "cursor-agent": [
+   "linux",
+   "macos"
+  ],
+  "cursor-cli": [
+   "linux",
+   "macos"
+  ],
+  "desk": [
+   "linux",
+   "macos"
+  ],
+  "docker-slim": [
+   "linux",
+   "macos"
+  ],
+  "figma-export": [
+   "macos"
+  ],
+  "fluttergen": [
+   "linux",
+   "macos"
+  ],
+  "furyctl": [
+   "linux",
+   "macos"
+  ],
+  "gentle-ai": [
+   "linux",
+   "macos"
+  ],
+  "gsudo": [
+   "windows"
+  ],
+  "has": [
+   "linux",
+   "macos"
+  ],
+  "imessage-exporter": [
+   "macos",
+   "windows"
+  ],
+  "kpt": [
+   "linux",
+   "macos"
+  ],
+  "kubectl-kuttl": [
+   "linux",
+   "macos"
+  ],
+  "kuttl": [
+   "linux",
+   "macos"
+  ],
+  "libsql-server": [
+   "linux",
+   "macos"
+  ],
+  "license-plist": [
+   "macos"
+  ],
+  "mas": [
+   "macos"
+  ],
+  "melange": [
+   "linux",
+   "macos"
+  ],
+  "mole": [
+   "macos"
+  ],
+  "mosh": [
+   "linux",
+   "macos"
+  ],
+  "mpv": [
+   "linux",
+   "macos"
+  ],
+  "openshift-install": [
+   "linux",
+   "macos"
+  ],
+  "pipectl": [
+   "linux",
+   "macos"
+  ],
+  "sheldon": [
+   "linux",
+   "macos"
+  ],
+  "sourcery": [
+   "linux",
+   "macos"
+  ],
+  "swift": [
+   "linux",
+   "macos"
+  ],
+  "systemctl-tui": [
+   "linux"
+  ],
+  "tart": [
+   "macos"
+  ],
+  "tfc-agent": [
+   "linux"
+  ],
+  "tmux": [
+   "linux",
+   "macos"
+  ],
+  "tridentctl": [
+   "linux",
+   "macos"
+  ],
+  "tuist": [
+   "linux",
+   "macos"
+  ],
+  "umoci": [
+   "linux"
+  ],
+  "xchtmlreport": [
+   "macos"
+  ],
+  "xcodegen": [
+   "macos"
+  ],
+  "xcodes": [
+   "macos"
+  ],
+  "xcresultparser": [
+   "macos"
+  ],
+  "xcsift": [
+   "macos"
+  ],
+  "zmx": [
+   "linux",
+   "macos"
+  ]
+ }
+}

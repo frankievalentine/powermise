@@ -1,4 +1,22 @@
-import type { OutdatedTool, ToolVersion } from "./api";
+import type { OutdatedTool, Platform, ToolVersion } from "./api";
+import registryOs from "./data/registry-os.json";
+
+/** mise's OS names → powermise platforms (WSL runs Linux tools). */
+const MISE_OS: Record<string, Platform[]> = { linux: ["linux", "wsl"], macos: ["darwin"], windows: ["win32"] };
+const LIMITED = (registryOs as { os: Record<string, string[]> }).os;
+
+/** The platforms a registry tool installs on, or `null` when it has no limit.
+ *  From mise's registry `os` lists (scripts/registry-os.py); mise skips the
+ *  tool anywhere else. */
+export function toolPlatforms(short: string): Platform[] | null {
+  const systems = LIMITED[short];
+  return systems ? systems.flatMap((system) => MISE_OS[system] ?? []) : null;
+}
+
+/** Whether mise installs this registry tool on `platform`. */
+export function runsOn(short: string, platform: Platform): boolean {
+  return toolPlatforms(short)?.includes(platform) ?? true;
+}
 
 /** Where a tool version comes from, in words. */
 export function sourceLabel(version: ToolVersion, miseConfigDir: string, home: string): string {

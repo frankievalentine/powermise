@@ -58,7 +58,7 @@ export function ProviderBadge({
 
 /** A shell command shown verbatim with a copy button — the app's way of never
  *  hiding what it runs. */
-export function CommandBlock({ command }: { command: string }) {
+export function CommandBlock({ command, prompt = "$" }: { command: string; prompt?: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -71,7 +71,7 @@ export function CommandBlock({ command }: { command: string }) {
   };
   return (
     <div className="command">
-      <span className="prompt">$</span>
+      <span className="prompt">{prompt}</span>
       <code>{command}</code>
       <button className="icon-button" onClick={copy} aria-label="Copy command" title="Copy">
         {copied ? <Check size={14} /> : <Copy size={14} />}

@@ -83,7 +83,7 @@ const machine = new Map<string, { version: string; global: boolean }[]>([
   ["bun", [{ version: "1.3.14", global: true }]],
 ]);
 
-let selfUpdateAvailable = true;
+const selfUpdateAvailable = true;
 const autoUpdate = new Set<string>();
 let miseVersion = "2026.7.18";
 const activityLog: ActivityEntry[] = [];
@@ -175,6 +175,8 @@ function describe(action: MiseAction): string {
       return `cd ${action.project.replace("/Users/demo", "~")} && mise upgrade --local --bump${action.tool ? ` ${action.tool}` : ""}`;
     case "selfUpdate":
       return "mise self-update --yes";
+    case "updateMiseWithManager":
+      return "brew upgrade mise";
     case "toolAutoUpdate":
       return `mise config set --global tools.${action.tool}.auto_update ${action.on}`;
     default:
@@ -252,7 +254,6 @@ function perform(action: MiseAction): string[] {
       else autoUpdate.delete(action.tool);
       return [];
     case "selfUpdate":
-      selfUpdateAvailable = false;
       miseVersion = "2026.10.10";
       return ["Checking target-arch... mise-v2026.10.10-macos-arm64", "Downloading...", "Updated mise to 2026.10.10"];
     default:
@@ -299,6 +300,8 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
           recommended: "2026.10.0",
           supported: false,
           recommendedMet: false,
+          updateAvailable: false,
+          updater: null,
         } satisfies MiseInfo;
       }
       return {
@@ -309,6 +312,8 @@ export function demoMise(command: string, args: Record<string, unknown>): unknow
         recommended: "2026.10.0",
         supported: true,
         recommendedMet: miseVersion.startsWith("2026.10"),
+        updateAvailable: miseVersion !== "2026.10.10",
+        updater: { kind: "unknown" },
       } satisfies MiseInfo;
     case "installed_tools":
       return demoHasMise ? inventory() : {};

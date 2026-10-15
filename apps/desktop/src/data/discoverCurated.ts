@@ -1,3 +1,5 @@
+import type { Platform } from "../api";
+
 // Hand-curated Discover data. Popularity comes from popularity.json
 // (scripts/discover-popularity.py); this file adds what a ranking can't:
 // categories, friendlier descriptions, everyday system utilities mise
@@ -8,6 +10,8 @@ export interface DiscoverCategory {
   title: string;
   /** mise registry names, in no particular order (Discover sorts by popularity). */
   tools: string[];
+  /** Shown only on these platforms. */
+  platforms?: Platform[];
 }
 
 export const CATEGORIES: DiscoverCategory[] = [
@@ -59,6 +63,7 @@ export const CATEGORIES: DiscoverCategory[] = [
   {
     id: "mobile",
     title: "Mobile & Apple",
+    platforms: ["darwin"],
     tools: ["xcbeautify", "swiftlint", "swiftformat", "xcodegen", "tuist", "cocoapods", "mint", "periphery", "sourcery", "xcodes"],
   },
 ];

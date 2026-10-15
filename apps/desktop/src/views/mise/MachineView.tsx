@@ -12,31 +12,36 @@ import {
   Save,
   Undo2,
 } from "lucide-react";
-import { api, type MachineStatus } from "../../api";
+import { api, type MachineStatus, type Platform } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { ExternalLinkButton } from "../../components/machine";
 import { Section } from "../../components/ui";
 
-/** Titles for `mise bootstrap status` parts, and the `--only` name that
- *  applies just that part (where there is one). */
-const PARTS: Record<string, { title: string; only?: string }> = {
+const LINUX: Platform[] = ["linux", "wsl"];
+const UNIX: Platform[] = ["darwin", "linux", "wsl"];
+const MAC: Platform[] = ["darwin"];
+
+/** Titles for `mise bootstrap status` parts, the `--only` name that applies
+ *  just that part (where there is one), and the systems mise applies it on
+ *  (https://mise.jdx.dev/bootstrap.html); other systems hide it. */
+const PARTS: Record<string, { title: string; only?: string; platforms?: Platform[] }> = {
   packages: { title: "System packages", only: "packages" },
   tools: { title: "Tools", only: "tools" },
   dotfiles: { title: "Dotfiles", only: "dotfiles" },
   repos: { title: "Git repositories", only: "repos" },
-  files: { title: "Files", only: "files" },
+  files: { title: "Files", only: "files", platforms: UNIX },
   services: { title: "Services", only: "services" },
   user_services: { title: "User services", only: "services" },
-  accounts: { title: "Users and groups", only: "accounts" },
-  firewall: { title: "Firewall", only: "firewall" },
+  accounts: { title: "Users and groups", only: "accounts", platforms: LINUX },
+  firewall: { title: "Firewall", only: "firewall", platforms: LINUX },
   compose: { title: "Docker Compose", only: "compose" },
   mise_shell_activate: { title: "Shell activation", only: "mise-shell-activate" },
-  macos_defaults: { title: "macOS settings", only: "macos-defaults" },
-  macos_login_items: { title: "Login items" },
-  launchd: { title: "LaunchAgents", only: "macos-launchd-agents" },
-  systemd: { title: "systemd units", only: "linux-systemd-units" },
-  login_shell: { title: "Login shell", only: "user" },
+  macos_defaults: { title: "macOS settings", only: "macos-defaults", platforms: MAC },
+  macos_login_items: { title: "Login items", platforms: MAC },
+  launchd: { title: "LaunchAgents", only: "macos-launchd-agents", platforms: MAC },
+  systemd: { title: "systemd units", only: "linux-systemd-units", platforms: LINUX },
+  login_shell: { title: "Login shell", only: "user", platforms: UNIX },
   plugin_deps: { title: "Plugin dependencies", only: "plugins" },
   secrets: { title: "Secrets" },
 };
@@ -57,9 +62,6 @@ const GOOD = [
   "true",
 ];
 
-/** Parts mise applies only on macOS; hidden on Windows and Linux. */
-const MACOS_ONLY = ["macos_defaults", "macos_login_items", "launchd"];
-
 const titleOf = (id: string) => PARTS[id]?.title ?? id.replace(/_/g, " ").replace(/^\w/, (letter) => letter.toUpperCase());
 
 /** Machine setup: what the global config's `[bootstrap]` and `[dotfiles]`
@@ -67,10 +69,10 @@ const titleOf = (id: string) => PARTS[id]?.title ?? id.replace(/_/g, " ").replac
 export function MachineView({ context }: { context: AppContext }) {
   const { mise, run } = context;
   const status = useAsync(() => api.machineStatus(), [mise.revision]);
-  const mac = context.env.hostTarget === "darwin";
+  const platform = context.env.hostTarget;
   const data = status.data && {
     ...status.data,
-    sections: status.data.sections.filter((section) => mac || !MACOS_ONLY.includes(section.id)),
+    sections: status.data.sections.filter((section) => PARTS[section.id]?.platforms?.includes(platform) ?? true),
   };
 
   const preview = (only: string | null, title: string) =>
@@ -119,7 +121,21 @@ export function MachineView({ context }: { context: AppContext }) {
         </div>
 
 
-        {status.error && <div className="callout error selectable">{status.error}</div>}
+        {status.error && (
+          <div className="callout error selectable">
+            <span>
+              {status.error}
+              {/only supported on (unix|linux|macos)/i.test(status.error) && (
+                <>
+                  <br />
+                  Your config has a part this system can’t apply. In shared configs, give those entries an{" "}
+                  <code>os</code> setting such as <code>os = "unix"</code> so mise skips them here.{" "}
+                  <ExternalLinkButton url="https://mise.jdx.dev/bootstrap/files.html#choose-platforms">Learn more</ExternalLinkButton>
+                </>
+              )}
+            </span>
+          </div>
+        )}
         {status.loading && !data && (
           <div className="empty">
             <Loader2 size={20} className="spin" />
@@ -178,6 +194,13 @@ export function MachineView({ context }: { context: AppContext }) {
                   </div>
                 )}
               </div>
+              {section.id === "dotfiles" && context.env.hostTarget === "win32" && (
+                <p className="section-note">
+                  On Windows, mise links files only when Developer Mode is on, and copies them otherwise —{" "}
+                  <code>symlink-each</code> always copies. For a copy, edit the original in your dotfiles folder, then apply
+                  again. File permissions are ignored on Windows.
+                </p>
+              )}
               <div className="list">
                 {section.items.map((item, index) => (
                   <div className="list-row" key={`${item.name}-${index}`}>
