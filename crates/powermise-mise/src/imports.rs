@@ -507,7 +507,7 @@ pub fn shell_conflicts(home: &Path) -> Vec<ShellConflict> {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalPackage {
-    /// The mise backend: `npm`, `pipx`, or `cargo`.
+    /// The mise backend: `npm`, `pipx`, `cargo`, or `gem`.
     pub backend: &'static str,
     pub name: String,
     pub version: Option<String>,
@@ -658,6 +658,73 @@ pub fn global_packages(
                     name: name.to_owned(),
                     version: Some(version.to_owned()),
                     found_in: "cargo install".into(),
+                });
+            }
+        }
+    }
+    // Ruby gems that install commands, in each manager's default Ruby,
+    // Homebrew's Ruby, and your user gem folders. Gems that come with Ruby
+    // (`specifications/default`) and libraries without commands are skipped.
+    let mut gem_roots: Vec<(PathBuf, String)> = imports
+        .iter()
+        .filter(|import| import.tool == "ruby")
+        .filter_map(|import| {
+            let default = import.default_version.as_ref()?;
+            let version = import
+                .versions
+                .iter()
+                .find(|version| &version.version == default)?;
+            Some((
+                version.path.join("lib/ruby/gems"),
+                format!("{} Ruby {default}", label(import.source)),
+            ))
+        })
+        .collect();
+    for prefix in homebrew_prefixes {
+        gem_roots.push((
+            Path::new(prefix).join("lib/ruby/gems"),
+            "Homebrew’s Ruby".into(),
+        ));
+    }
+    gem_roots.push((home.join(".gem/ruby"), "your gems".into()));
+    gem_roots.push((home.join(".local/share/gem/ruby"), "your gems".into()));
+    for (root, where_) in gem_roots {
+        // `<root>/<abi version>/specifications/<name>-<version>.gemspec`.
+        for (_, abi) in dirs(&root) {
+            let Ok(entries) = fs::read_dir(abi.join("specifications")) else {
+                continue;
+            };
+            for entry in entries.filter_map(Result::ok) {
+                let file = entry.file_name().to_string_lossy().into_owned();
+                let Some(stem) = file.strip_suffix(".gemspec") else {
+                    continue;
+                };
+                // The version starts after the last `-` followed by a digit.
+                let Some(split) = stem
+                    .match_indices('-')
+                    .filter(|(index, _)| {
+                        stem[index + 1..].starts_with(|c: char| c.is_ascii_digit())
+                    })
+                    .map(|(index, _)| index)
+                    .next_back()
+                else {
+                    continue;
+                };
+                let Ok(spec) = fs::read_to_string(entry.path()) else {
+                    continue;
+                };
+                // `s.executables = ["rubocop".freeze]` — only gems with commands.
+                let has_commands = spec.lines().any(|line| {
+                    line.contains(".executables = [") && !line.contains(".executables = []")
+                });
+                if !has_commands {
+                    continue;
+                }
+                add(GlobalPackage {
+                    backend: "gem",
+                    name: stem[..split].to_owned(),
+                    version: Some(stem[split + 1..].to_owned()),
+                    found_in: format!("gem, in {where_}"),
                 });
             }
         }
@@ -940,6 +1007,23 @@ mod tests {
             r#"{"main_package":{"package_version":"24.8.0"}}"#,
         )
         .unwrap();
+        let gems = home.join(".gem/ruby/3.3.0/specifications");
+        fs::create_dir_all(gems.join("default")).unwrap();
+        fs::write(
+            gems.join("rubocop-1.65.0.gemspec"),
+            "  s.executables = [\"rubocop\".freeze]\n",
+        )
+        .unwrap();
+        fs::write(
+            gems.join("activesupport-7.2.1.gemspec"),
+            "  s.executables = []\n",
+        )
+        .unwrap();
+        fs::write(
+            gems.join("default/bundler-2.5.11.gemspec"),
+            "  s.executables = [\"bundle\".freeze]\n",
+        )
+        .unwrap();
         fs::create_dir_all(home.join(".cargo")).unwrap();
         fs::write(
             home.join(".cargo/.crates2.json"),
@@ -955,6 +1039,7 @@ mod tests {
             .map(|p| (p.backend, p.name.as_str(), p.version.as_deref()))
             .collect();
         let mut expected = vec![
+            ("gem", "rubocop", Some("1.65.0")),
             ("npm", "@biomejs/biome", Some("1.9.0")),
             ("npm", "prettier", Some("3.3.3")),
             ("pipx", "black", Some("24.8.0")),

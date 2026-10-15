@@ -312,6 +312,182 @@ pub fn default_packages(home: &Path) -> Vec<DefaultPackage> {
     found
 }
 
+// ---------------------------------------------------------------------------
+// Windows: winget, Scoop, and Chocolatey
+// ---------------------------------------------------------------------------
+
+/// A Windows package: `winget:<id>`, `scoop:[bucket/]<app>`, or a Chocolatey
+/// package (which mise can't install; the app matches it to a mise tool).
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowsPackage {
+    /// `winget`, `scoop`, or `choco`.
+    pub manager: &'static str,
+    /// The winget id, the Scoop app (`extras/vscode` outside `main`), or the
+    /// Chocolatey id.
+    pub name: String,
+    pub version: Option<String>,
+    /// Where it came from, in words (`winget export`, `Scoop`, …).
+    pub found_in: String,
+}
+
+/// `winget export` JSON: `Sources[].Packages[].PackageIdentifier`.
+pub fn parse_winget_export(text: &str, found_in: &str) -> Vec<WindowsPackage> {
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}'))
+    else {
+        return Vec::new();
+    };
+    json.get("Sources")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .flat_map(|source| {
+            source
+                .get("Packages")
+                .and_then(serde_json::Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+        })
+        .filter_map(|package| {
+            Some(WindowsPackage {
+                manager: "winget",
+                name: package.get("PackageIdentifier")?.as_str()?.to_owned(),
+                version: package
+                    .get("Version")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_owned),
+                found_in: found_in.to_owned(),
+            })
+        })
+        .collect()
+}
+
+/// `scoop export` JSON (`apps[].Name/Source/Version`; buckets other than
+/// `main` qualify the name).
+pub fn parse_scoop_export(text: &str, found_in: &str) -> Vec<WindowsPackage> {
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}'))
+    else {
+        return Vec::new();
+    };
+    json.get("apps")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|app| {
+            let name = app.get("Name")?.as_str()?;
+            let bucket = app.get("Source").and_then(serde_json::Value::as_str);
+            Some(WindowsPackage {
+                manager: "scoop",
+                name: scoop_name(name, bucket),
+                version: app
+                    .get("Version")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_owned),
+                found_in: found_in.to_owned(),
+            })
+        })
+        .collect()
+}
+
+/// `extras/vscode`, or just `ripgrep` from Scoop's `main` bucket. Apps
+/// installed from a URL or path (no bucket name) keep their bare name.
+fn scoop_name(name: &str, bucket: Option<&str>) -> String {
+    match bucket {
+        Some(bucket)
+            if bucket != "main"
+                && !bucket.is_empty()
+                && bucket
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || "-_".contains(c)) =>
+        {
+            format!("{bucket}/{name}")
+        }
+        _ => name.to_owned(),
+    }
+}
+
+/// Apps Scoop installed: `<SCOOP or ~/scoop>/apps/<app>/current/install.json`
+/// names the bucket, `manifest.json` the version.
+pub fn scoop_installed(home: &Path) -> Vec<WindowsPackage> {
+    let root = std::env::var_os("SCOOP")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| home.join("scoop"));
+    subdirs(&root.join("apps"))
+        .into_iter()
+        .filter(|(name, _)| name != "scoop")
+        .filter_map(|(name, path)| {
+            let current = path.join("current");
+            let bucket = receipt(&current.join("install.json"))
+                .and_then(|install| install.get("bucket")?.as_str().map(str::to_owned));
+            let version = receipt(&current.join("manifest.json"))
+                .and_then(|manifest| manifest.get("version")?.as_str().map(str::to_owned));
+            current.is_dir().then(|| WindowsPackage {
+                manager: "scoop",
+                name: scoop_name(&name, bucket.as_deref()),
+                version,
+                found_in: "Scoop".into(),
+            })
+        })
+        .collect()
+}
+
+/// Chocolatey's `packages.config`: `<package id="git" version="2.47.0" />`.
+pub fn parse_choco_config(text: &str, found_in: &str) -> Vec<WindowsPackage> {
+    let attribute = |tag: &str, name: &str| {
+        let start = tag.find(&format!("{name}=\""))? + name.len() + 2;
+        tag[start..].split('"').next().map(str::to_owned)
+    };
+    text.split("<package ")
+        .skip(1)
+        .filter_map(|tag| {
+            let tag = tag.split('>').next()?;
+            Some(WindowsPackage {
+                manager: "choco",
+                name: attribute(tag, "id")?,
+                version: attribute(tag, "version"),
+                found_in: found_in.to_owned(),
+            })
+        })
+        .collect()
+}
+
+/// Packages Chocolatey installed: `<ChocolateyInstall>/lib/<id>`.
+pub fn choco_installed() -> Vec<WindowsPackage> {
+    let root = std::env::var_os("ChocolateyInstall")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("C:/ProgramData/chocolatey"));
+    subdirs(&root.join("lib"))
+        .into_iter()
+        // Chocolatey's own and its `.install`/`.portable` halves.
+        .filter(|(name, _)| {
+            !name.starts_with("chocolatey")
+                && !name.ends_with(".install")
+                && !name.ends_with(".portable")
+        })
+        .map(|(name, _)| WindowsPackage {
+            manager: "choco",
+            name,
+            version: None,
+            found_in: "Chocolatey".into(),
+        })
+        .collect()
+}
+
+/// Reads an export file of any of these kinds, by its content.
+pub fn parse_package_list(path: &Path, text: &str) -> Vec<WindowsPackage> {
+    let found_in = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    if text.contains("<packages") {
+        return parse_choco_config(text, &found_in);
+    }
+    if text.contains("\"Sources\"") {
+        return parse_winget_export(text, &found_in);
+    }
+    parse_scoop_export(text, &found_in)
+}
+
 /// Homebrew's prefixes, for [`homebrew_inventory`].
 pub fn homebrew_prefixes() -> &'static [&'static str] {
     &HOMEBREW_PREFIXES
@@ -407,6 +583,37 @@ vscode "rust-lang.rust-analyzer"
         assert_eq!(apps[0].name, "Cursor Pro");
         assert_eq!(apps[1].id, "441258766");
         assert_eq!(apps[1].version.as_deref(), Some("3.0.7"));
+    }
+
+    #[test]
+    fn reads_windows_package_lists() {
+        let winget = parse_package_list(
+            Path::new("winget.json"),
+            &format!(
+                "\u{feff}{}",
+                r#"{"Sources":[{"Packages":[{"PackageIdentifier":"Git.Git","Version":"2.47.0"}],"SourceDetails":{"Name":"winget"}},{"Packages":[{"PackageIdentifier":"9PLM9XGG6VKS"}],"SourceDetails":{"Name":"msstore"}}]}"#
+            ),
+        );
+        assert_eq!(
+            winget.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(),
+            ["Git.Git", "9PLM9XGG6VKS"]
+        );
+        let scoop = parse_package_list(
+            Path::new("scoop.json"),
+            r#"{"apps":[{"Name":"ripgrep","Source":"main","Version":"14.1.1"},{"Name":"vscode","Source":"extras"}],"buckets":[]}"#,
+        );
+        assert_eq!(
+            scoop.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(),
+            ["ripgrep", "extras/vscode"]
+        );
+        let choco = parse_package_list(
+            Path::new("packages.config"),
+            r#"<?xml version="1.0" encoding="utf-8"?><packages><package id="git" version="2.47.0" /><package id="nodejs-lts" /></packages>"#,
+        );
+        assert_eq!(choco.len(), 2);
+        assert_eq!(choco[0].manager, "choco");
+        assert_eq!(choco[0].version.as_deref(), Some("2.47.0"));
+        assert_eq!(choco[1].name, "nodejs-lts");
     }
 
     #[test]

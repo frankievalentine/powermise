@@ -19,8 +19,10 @@ pub use client::{
     validate_import_package, validate_package_spec,
 };
 pub use import_sources::{
-    BrewItem, Brewfile, DefaultPackage, HomebrewInventory, MasApp, brewfile_paths,
-    default_packages, homebrew_inventory, homebrew_prefixes, parse_brewfile, parse_mas_list,
+    BrewItem, Brewfile, DefaultPackage, HomebrewInventory, MasApp, WindowsPackage, brewfile_paths,
+    choco_installed, default_packages, homebrew_inventory, homebrew_prefixes, parse_brewfile,
+    parse_choco_config, parse_mas_list, parse_package_list, parse_scoop_export,
+    parse_winget_export, scoop_installed,
 };
 pub use imports::{
     DetectedImport, GlobalPackage, HOMEBREW_PREFIXES, ImportSource, ImportVersion,

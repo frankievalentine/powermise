@@ -565,6 +565,15 @@ export interface DefaultPackage {
   file: string;
 }
 
+/** A Windows package from winget, Scoop, or Chocolatey. */
+export interface WindowsPackage {
+  manager: "winget" | "scoop" | "choco";
+  /** The winget id, the Scoop app (`extras/vscode` outside `main`), or the Chocolatey id. */
+  name: string;
+  version: string | null;
+  foundIn: string;
+}
+
 export interface ImportScan {
   homebrew: { formulas: BrewItem[]; casks: BrewItem[] };
   brewfiles: Brewfile[];
@@ -574,6 +583,8 @@ export interface ImportScan {
   importedPackages: string[];
   /** mise installs Homebrew formulas here (Apple Silicon Macs and Linux). */
   homebrewFormulas: boolean;
+  /** winget, Scoop, and Chocolatey packages (Windows only). */
+  windowsPackages: WindowsPackage[];
 }
 
 export interface ImportFile {
@@ -584,7 +595,7 @@ export interface ImportFile {
 
 /** A command-line package installed globally outside mise. */
 export interface GlobalPackage {
-  backend: "npm" | "pipx" | "cargo";
+  backend: "npm" | "pipx" | "cargo" | "gem";
   name: string;
   version: string | null;
   foundIn: string;
@@ -854,6 +865,7 @@ export const api = {
   installedPrograms: () => call<InstalledProgram[]>("installed_programs"),
   importScan: () => call<ImportScan>("import_scan"),
   readBrewfile: () => call<Brewfile | null>("read_brewfile"),
+  readPackageList: () => call<WindowsPackage[] | null>("read_package_list"),
   importFilePreview: (tools: [string, string][], packages: string[]) =>
     call<ImportFile>("import_file_preview", { tools, packages }),
   writeImport: (tools: [string, string][], packages: string[]) => call<string>("write_import", { tools, packages }),

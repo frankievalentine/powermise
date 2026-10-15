@@ -186,6 +186,16 @@ const importScan: ImportScan = {
   defaultPackages: [{ backend: "npm", name: "typescript", version: null, file: "/Users/demo/.default-npm-packages" }],
   importedPackages: [],
   homebrewFormulas: true,
+  windowsPackages: [
+    { manager: "winget", name: "Microsoft.VisualStudioCode", version: "1.105.0", foundIn: "winget" },
+    { manager: "winget", name: "GitHub.cli", version: "2.80.0", foundIn: "winget" },
+    { manager: "winget", name: "Git.Git", version: "2.51.0", foundIn: "winget" },
+    { manager: "winget", name: "Microsoft.VCRedist.2015+.x64", version: "14.44.35211.0", foundIn: "winget" },
+    { manager: "scoop", name: "ripgrep", version: "14.1.1", foundIn: "Scoop" },
+    { manager: "scoop", name: "extras/obsidian", version: "1.9.14", foundIn: "Scoop" },
+    { manager: "choco", name: "7zip", version: "25.1.0", foundIn: "Chocolatey" },
+    { manager: "choco", name: "jq", version: "1.8.1", foundIn: "Chocolatey" },
+  ],
 };
 
 /** Whether the demo machine already has a package (Homebrew or App Store). */
@@ -194,6 +204,11 @@ export function demoInstalledPackage(spec: string): boolean {
   if (spec.startsWith("brew:")) return importScan.homebrew.formulas.some((item) => item.name === name);
   if (spec.startsWith("brew-cask:")) return importScan.homebrew.casks.some((item) => item.name === name);
   if (spec.startsWith("mas:")) return importScan.masApps.some((app) => app.id === name);
+  for (const manager of ["winget", "scoop"] as const) {
+    if (spec.startsWith(`${manager}:`)) {
+      return importScan.windowsPackages.some((pkg) => pkg.manager === manager && pkg.name === name);
+    }
+  }
   return false;
 }
 
@@ -218,6 +233,7 @@ const globalPackages: GlobalPackage[] = [
   { backend: "npm", name: "prettier", version: "3.3.3", foundIn: "npm, in nvm’s Node 20.11.1" },
   { backend: "npm", name: "typescript", version: "5.6.2", foundIn: "npm, in nvm’s Node 20.11.1" },
   { backend: "pipx", name: "black", version: "24.8.0", foundIn: "pipx" },
+  { backend: "gem", name: "rubocop", version: "1.66.1", foundIn: "gem, in rbenv’s Ruby 3.3.5" },
 ];
 
 const installers: InstallerOption[] = [
@@ -435,6 +451,7 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
     case "import_scan":
       return { ...importScan, importedPackages: [...imported.packages] };
     case "read_brewfile":
+    case "read_package_list":
       return null;
     case "import_file_preview": {
       const tools = (args.tools as [string, string][]) ?? [];

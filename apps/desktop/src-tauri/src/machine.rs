@@ -155,6 +155,8 @@ pub struct ImportScan {
     /// mise installs Homebrew formulas here (Apple Silicon Macs and Linux;
     /// not Intel Macs or Windows).
     homebrew_formulas: bool,
+    /// winget, Scoop, and Chocolatey packages (Windows only).
+    windows_packages: Vec<powermise_mise::WindowsPackage>,
 }
 
 /// Homebrew's installs, Brewfiles in the usual places, Mac App Store apps,
@@ -185,6 +187,11 @@ pub async fn import_scan() -> CommandResult<ImportScan> {
             brewfiles,
             mas_apps,
             default_packages: powermise_mise::default_packages(&home),
+            windows_packages: if cfg!(windows) {
+                windows_packages(&home)
+            } else {
+                Vec::new()
+            },
             homebrew_formulas: !cfg!(windows)
                 && powermise_setups::compile_options(powermise_setups::host_platform())
                     .homebrew_formulas,
@@ -198,6 +205,51 @@ pub async fn import_scan() -> CommandResult<ImportScan> {
                 })
                 .unwrap_or_default(),
         })
+    })
+    .await
+}
+
+/// What winget (via `winget export`, which only writes a list), Scoop, and
+/// Chocolatey installed on this Windows computer.
+fn windows_packages(home: &std::path::Path) -> Vec<powermise_mise::WindowsPackage> {
+    let mut packages = Vec::new();
+    if let Some(winget) = find_program("winget") {
+        let list =
+            std::env::temp_dir().join(format!("powermise-winget-{}.json", std::process::id()));
+        let exported = std::process::Command::new(winget)
+            .args(["export", "--output"])
+            .arg(&list)
+            .args(["--accept-source-agreements", "--disable-interactivity"])
+            .output()
+            .is_ok_and(|output| output.status.success());
+        if exported && let Ok(text) = std::fs::read_to_string(&list) {
+            packages.extend(powermise_mise::parse_winget_export(&text, "winget"));
+        }
+        let _ = std::fs::remove_file(&list);
+    }
+    packages.extend(powermise_mise::scoop_installed(home));
+    packages.extend(powermise_mise::choco_installed());
+    packages
+}
+
+/// Reads a `winget export`, `scoop export`, or Chocolatey `packages.config`
+/// file you pick.
+#[tauri::command]
+pub async fn read_package_list(
+    app: AppHandle,
+) -> CommandResult<Option<Vec<powermise_mise::WindowsPackage>>> {
+    blocking(move || {
+        let Some(path) = app
+            .dialog()
+            .file()
+            .set_title("Choose a winget, Scoop, or Chocolatey export")
+            .blocking_pick_file()
+            .and_then(|picked| picked.into_path().ok())
+        else {
+            return Ok(None);
+        };
+        let text = std::fs::read_to_string(&path).map_err(message)?;
+        Ok(Some(powermise_mise::parse_package_list(&path, &text)))
     })
     .await
 }

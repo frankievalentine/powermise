@@ -2499,6 +2499,12 @@ button {
   cursor: default;
 }
 
+/* Lines up a row that can't be picked with the checkboxed ones. */
+.import-row-spacer {
+  flex: none;
+  width: 18px;
+}
+
 .import-row .row-trailing {
   flex-wrap: wrap;
   justify-content: flex-end;

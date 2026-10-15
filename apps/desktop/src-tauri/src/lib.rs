@@ -244,6 +244,7 @@ pub fn run() {
             machine::installed_programs,
             machine::import_scan,
             machine::read_brewfile,
+            machine::read_package_list,
             machine::import_file_preview,
             machine::write_import,
             machine::mise_installers,

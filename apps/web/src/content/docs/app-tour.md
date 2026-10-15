@@ -210,25 +210,33 @@ already have, in one list with a dry run before anything changes:
   fnm, Volta, n, nvm for Windows, rbenv, RVM, chruby, goenv, and asdf (`mise
   link`), with each manager's default as your mise default if you keep **Use
   …** checked.
-- **Command-line packages** — `npm -g`, pipx, `uv tool`, `cargo install`, and
-  asdf-style default-package files (`~/.default-npm-packages`, `-python-`,
+- **Command-line packages** — `npm -g`, pipx, `uv tool`, `cargo install`,
+  Ruby gems that install commands, and asdf-style default-package files (`~/.default-npm-packages`, `-python-`,
   `~/.default-gems`, which mise is retiring), as mise tools.
 - **Homebrew** — formulas you installed yourself, casks, and every Brewfile
   (`~/Brewfile`, `~/.Brewfile`, `~/.config/homebrew/Brewfile`, or **Add a
   Brewfile…**). Formulas mise has as its own tools become mise tools; the rest
   become `brew:` and `brew-cask:` packages, tap-qualified where needed.
 - **Mac App Store** — apps from `mas list` and your Brewfile's `mas` lines.
-- **Installed another way** — install scripts, `go install`, Snap, winget, and
-  Scoop.
+- **winget and Scoop** (Windows) — what `winget export` lists and Scoop's
+  installed apps, or a `winget export` / `scoop export` file from another PC
+  (**Add an Export File…**). Tools mise has itself become mise tools; the rest
+  become `winget:` and `scoop:` packages.
+- **Chocolatey** (Windows) — installed packages or a `packages.config`. mise
+  can't install Chocolatey packages, so only the ones mise has as its own
+  tools come over; the rest are listed so you know to keep them.
+- **Installed another way** — install scripts, `go install`, Snap, and so on.
 
-Brewfile entries are checked to start; things only found installed aren't.
+Brewfile and export-file entries are checked to start; things only found
+installed aren't.
 Each row says what it becomes in mise and whether it's already installed.
 **Dry Run** runs `mise install --dry-run` and `mise bootstrap packages apply
 --dry-run` for your picks. **Review & Import** shows the file powermise writes —
 `conf.d/powermise-imported.toml`, its own, which it adds to on later imports and
 which you can delete to undo — then links versions, sets defaults, and installs
 only what isn't here yet. What Homebrew already installed stays Homebrew's; on
-your next Mac, `mise bootstrap` installs it all without Homebrew.
+your next Mac, `mise bootstrap` installs it all without Homebrew (and on
+Windows, through winget and Scoop).
 
 ## Health
 

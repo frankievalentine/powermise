@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, FileUp, Loader2, ScanSearch } from "lucide-react";
-import { api, type Brewfile, type ImportFile, type ImportSource, type Platform, type RegistryEntry } from "../../api";
+import {
+  api,
+  type Brewfile,
+  type ImportFile,
+  type ImportSource,
+  type Platform,
+  type RegistryEntry,
+  type WindowsPackage,
+} from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { prettyPath } from "../../mise";
@@ -21,7 +29,9 @@ import { Checkbox, CommandBlock, Section } from "../../components/ui";
 type Becomes =
   | { kind: "versions"; source: ImportSource; tool: string; links: number; defaultVersion: string | null }
   | { kind: "tool"; tool: string; version: string }
-  | { kind: "package"; spec: string };
+  | { kind: "package"; spec: string }
+  /** Shown so you know it was seen, but mise can't install it. */
+  | { kind: "unsupported"; reason: string };
 
 interface ImportItem {
   key: string;
@@ -37,7 +47,17 @@ interface ImportItem {
 
 const groups = (platform: Platform) => [
   { id: "versions", title: "Version managers", note: "Versions mise can use where they are, without downloading them again." },
-  { id: "packages", title: "Command-line packages", note: "From npm -g, pipx, uv, cargo, or default-package files. As mise tools, they stay put when you switch Node or Python versions." },
+  { id: "packages", title: "Command-line packages", note: "From npm -g, pipx, uv, cargo, gem, or default-package files. As mise tools, they stay put when you switch Node, Python, or Ruby versions." },
+  {
+    id: "windows",
+    title: "winget and Scoop",
+    note: "Apps and tools mise can install and keep track of itself, through winget and Scoop — so a new PC gets the same ones. What's already installed stays as it is.",
+  },
+  {
+    id: "choco",
+    title: "Chocolatey",
+    note: "mise can't install Chocolatey packages. Those mise has as its own tools can come over; for the rest, keep Chocolatey or look for them in winget.",
+  },
   {
     id: "homebrew",
     title: "Homebrew",
@@ -52,16 +72,54 @@ const groups = (platform: Platform) => [
     title: "Installed another way",
     note:
       platform === "win32"
-        ? "From winget, Scoop, an install script, go install, and so on — mise has them too."
+        ? "From an install script, go install, and so on — mise has them too."
         : "From an install script, go install, and so on — mise has them too.",
   },
 ];
 
+/** winget ids for tools mise has itself (a winget id is `Publisher.Name`). */
+const WINGET_TOOLS: Record<string, string> = {
+  "GitHub.cli": "gh",
+  "BurntSushi.ripgrep.MSVC": "ripgrep",
+  "BurntSushi.ripgrep.GNU": "ripgrep",
+  "sharkdp.fd": "fd",
+  "sharkdp.bat": "bat",
+  "junegunn.fzf": "fzf",
+  "jqlang.jq": "jq",
+  "MikeFarah.yq": "yq",
+  "Hashicorp.Terraform": "terraform",
+  "Kubernetes.kubectl": "kubectl",
+  "Helm.Helm": "helm",
+  "Stripe.StripeCli": "stripe",
+  "Neovim.Neovim": "neovim",
+  "dandavison.delta": "delta",
+  "ajeetdsouza.zoxide": "zoxide",
+  "eza-community.eza": "eza",
+  "Starship.Starship": "starship",
+  "Casey.Just": "just",
+  "astral-sh.uv": "uv",
+  "JesseDuffield.lazygit": "lazygit",
+  "Fly-io.flyctl": "flyctl",
+  "Task.Task": "task",
+  "Amazon.AWSCLI": "aws-cli",
+  "Google.CloudSDK": "gcloud",
+  "Microsoft.AzureCLI": "azure-cli",
+};
+
+/** Windows packages powermise leaves alone: mise itself, the runtimes
+ *  Bring Over and mise handle, and system libraries apps pull in. */
+const WINDOWS_SKIP =
+  /^(jdx\.mise|mise|Microsoft\.(VCRedist|VCLibs|DotNet|WindowsAppRuntime|UI\.Xaml|AppInstaller|WindowsTerminal|Edge|EdgeWebView2Runtime)|OpenJS\.NodeJS|Python\.Python|RubyInstallerTeam|GoLang\.Go|nodejs(-lts)?|python\d*|ruby|go|chocolatey|vcredist.*|dotnet.*|KB\d+)(\.|$)/i;
+
 /** Homebrew formulas whose same-named mise tool is a different project. */
 const SAME_NAME_DIFFERENT_TOOL = new Set(["coreutils"]);
 
+const WINDOWS_MANAGER = { winget: "winget", scoop: "Scoop", choco: "Chocolatey" } as const;
+
 const BECOMES_LABEL = (becomes: Becomes) =>
-  becomes.kind === "versions"
+  becomes.kind === "unsupported"
+    ? "Not in mise"
+    : becomes.kind === "versions"
     ? `${becomes.links ? `Link ${becomes.links}` : "Linked"}${becomes.defaultVersion ? ` · default ${becomes.defaultVersion}` : ""}`
     : becomes.kind === "tool"
       ? `mise tool · ${becomes.tool}`
@@ -71,7 +129,11 @@ const BECOMES_LABEL = (becomes: Becomes) =>
         ? `Mac app · ${becomes.spec}`
         : becomes.spec.startsWith("mas:")
           ? `App Store · ${becomes.spec}`
-          : `Homebrew package · ${becomes.spec}`;
+          : becomes.spec.startsWith("winget:")
+            ? `winget · ${becomes.spec.slice(7)}`
+            : becomes.spec.startsWith("scoop:")
+              ? `Scoop · ${becomes.spec.slice(6)}`
+              : `Homebrew package · ${becomes.spec}`;
 
 /** Bring over what you already have: one scan of every source, a review
  *  with mise's own dry run, and one file powermise owns
@@ -84,6 +146,7 @@ export function ImportView({ context }: { context: AppContext }) {
   const scan = useAsync(() => api.importScan(), [mise.revision]);
   const conflicts = useAsync(() => api.shellConflicts(), [mise.revision]);
   const [extraBrewfiles, setExtraBrewfiles] = useState<Brewfile[]>([]);
+  const [extraLists, setExtraLists] = useState<WindowsPackage[]>([]);
   const [picked, setPicked] = useState<Map<string, boolean>>(new Map());
   const [defaults, setDefaults] = useState<Map<string, boolean>>(new Map());
   const [review, setReview] = useState<ImportFile | null>(null);
@@ -223,7 +286,60 @@ export function ImportView({ context }: { context: AppContext }) {
       });
     }
 
-    // 5. Installed another way (Homebrew's are above).
+    // 5. Windows: winget and Scoop packages mise installs itself, and
+    // Chocolatey's (mise has no Chocolatey backend). Tools mise has in its
+    // registry come over as mise tools instead.
+    if (platform === "win32") {
+      const live = scan.data?.windowsPackages ?? [];
+      const id = (pkg: WindowsPackage) => `${pkg.manager}:${pkg.name.toLowerCase()}`;
+      const installedHere = new Set(live.map(id));
+      const fromFile = new Set(extraLists.map(id));
+      for (const pkg of [...extraLists, ...live]) {
+        const app = pkg.name.split("/").pop()!;
+        if (WINDOWS_SKIP.test(app)) continue;
+        const short = pkg.manager === "winget" ? WINGET_TOOLS[pkg.name] : app.toLowerCase();
+        const entry = short ? registry.get(short) : undefined;
+        const installed = installedHere.has(id(pkg));
+        const inFile = fromFile.has(id(pkg));
+        const where = inFile ? (installed ? `In ${pkg.foundIn} · installed` : `In ${pkg.foundIn}`) : `Installed with ${pkg.foundIn}`;
+        const version = pkg.version ? ` · ${pkg.version}` : "";
+        const group = pkg.manager === "choco" ? "choco" : "windows";
+        if (entry) {
+          if (inventory[entry.short]) continue;
+          add({
+            key: `${pkg.manager}:${pkg.name}`,
+            group,
+            title: pkg.name,
+            detail: `${where}${version} · mise has it as ${entry.short}`,
+            becomes: { kind: "tool", tool: entry.short, version: "latest" },
+            installed: false,
+            suggested: inFile,
+          });
+        } else if (pkg.manager === "choco") {
+          add({
+            key: `choco:${pkg.name}`,
+            group,
+            title: pkg.name,
+            detail: `${where}${version}`,
+            becomes: { kind: "unsupported", reason: "mise can't install Chocolatey packages" },
+            installed,
+            suggested: false,
+          });
+        } else {
+          add({
+            key: `${pkg.manager}:${pkg.name}`,
+            group,
+            title: pkg.name,
+            detail: `${where}${version}`,
+            becomes: { kind: "package", spec: `${pkg.manager}:${pkg.name}` },
+            installed,
+            suggested: inFile,
+          });
+        }
+      }
+    }
+
+    // 6. Installed another way (Homebrew's and Windows managers' are above).
     const packageNames = new Set((packages.data ?? []).map((pkg) => pkg.name.replace(/^@[^/]+\//, "")));
     const others = (programs.data ?? []).filter((program) => !program.package);
     for (const row of programTools(context, others, packageNames)) {
@@ -239,9 +355,9 @@ export function ImportView({ context }: { context: AppContext }) {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, imports.data, packages.data, programs.data, scan.data, extraBrewfiles, mise.inventory, mise.registry, context.env.hostTarget]);
+  }, [loading, imports.data, packages.data, programs.data, scan.data, extraBrewfiles, extraLists, mise.inventory, mise.registry, context.env.hostTarget]);
 
-  const isPicked = (item: ImportItem) => picked.get(item.key) ?? item.suggested;
+  const isPicked = (item: ImportItem) => item.becomes.kind !== "unsupported" && (picked.get(item.key) ?? item.suggested);
   const makesDefault = (item: ImportItem) =>
     item.becomes.kind === "versions" && !!item.becomes.defaultVersion && (defaults.get(item.key) ?? true);
   const toggle = (key: string, value: boolean) =>
@@ -260,7 +376,7 @@ export function ImportView({ context }: { context: AppContext }) {
         versions.push([becomes.source, becomes.tool, makesDefault(item)]);
         links += becomes.links;
       } else if (becomes.kind === "tool") tools.push([becomes.tool, becomes.version]);
-      else specs.push(becomes.spec);
+      else if (becomes.kind === "package") specs.push(becomes.spec);
     }
     const already = chosen.filter((item) => item.becomes.kind === "package" && item.installed).length;
     const install = tools.length + chosen.filter((item) => item.becomes.kind === "package" && !item.installed).length;
@@ -275,6 +391,19 @@ export function ImportView({ context }: { context: AppContext }) {
       const file = await api.readBrewfile();
       if (file) {
         setExtraBrewfiles((current) => [...current.filter((existing) => existing.path !== file.path), file]);
+      }
+    } catch (reason) {
+      setError((reason as Error).message);
+    }
+  };
+
+  const addPackageList = async () => {
+    setError(null);
+    try {
+      const list = await api.readPackageList();
+      if (list) {
+        const names = new Set(list.map((pkg) => `${pkg.manager}:${pkg.name}`));
+        setExtraLists((current) => [...current.filter((pkg) => !names.has(`${pkg.manager}:${pkg.name}`)), ...list]);
       }
     } catch (reason) {
       setError((reason as Error).message);
@@ -325,6 +454,13 @@ export function ImportView({ context }: { context: AppContext }) {
       : []),
     ...brewfiles.map((file) => prettyPath(file.path, context.env.home)),
     ...(platform === "darwin" && scan.data?.masApps.length ? [`App Store (${scan.data.masApps.length})`] : []),
+    ...(platform === "win32"
+      ? (["winget", "scoop", "choco"] as const).flatMap((manager) => {
+          const count = (scan.data?.windowsPackages ?? []).filter((pkg) => pkg.manager === manager).length;
+          return count ? [`${WINDOWS_MANAGER[manager]} (${count})`] : [];
+        })
+      : []),
+    ...(platform === "win32" ? [...new Set(extraLists.map((pkg) => pkg.foundIn))] : []),
   ];
 
   return (
@@ -344,13 +480,21 @@ export function ImportView({ context }: { context: AppContext }) {
               in your mise config.
             </p>
           </div>
-          {platform !== "win32" && (
-            <div className="detail-actions">
+          <div className="detail-actions">
+            {platform === "win32" ? (
+              <button
+                className="button"
+                title="A winget export, scoop export, or Chocolatey packages.config file"
+                onClick={() => void addPackageList()}
+              >
+                <FileUp size={14} /> Add an Export File…
+              </button>
+            ) : (
               <button className="button" onClick={() => void addBrewfile()}>
                 <FileUp size={14} /> Add a Brewfile…
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {loading && (
@@ -386,7 +530,9 @@ export function ImportView({ context }: { context: AppContext }) {
             <h3>Nothing to bring over</h3>
             <p>
               mise already has everything powermise found.
-              {platform !== "win32" ? " Have a Brewfile somewhere else? Add it above." : ""}
+              {platform === "win32"
+                ? " Have a winget, Scoop, or Chocolatey export from another PC? Add it above."
+                : " Have a Brewfile somewhere else? Add it above."}
             </p>
           </div>
         )}
@@ -394,24 +540,36 @@ export function ImportView({ context }: { context: AppContext }) {
         {groups(platform).map((group) => {
           const rows = items.filter((item) => item.group === group.id);
           if (!rows.length) return null;
-          const all = rows.every(isPicked);
+          const selectable = rows.filter((item) => item.becomes.kind !== "unsupported");
+          const all = selectable.every(isPicked);
           return (
             <Section key={group.id} title={`${group.title} (${rows.length})`} note={group.note}>
+              {selectable.length > 0 && (
               <div className="detail-actions" style={{ marginBottom: 8 }}>
                 <button
                   className="link-button"
                   onClick={() => setPicked((current) => {
                     const next = new Map(current);
-                    for (const row of rows) next.set(row.key, !all);
+                    for (const row of selectable) next.set(row.key, !all);
                     return next;
                   })}
                 >
                   {all ? "Select none" : "Select all"}
                 </button>
               </div>
+              )}
               <div className="list">
                 {rows.map((item) => (
                   <div className="list-row import-row" key={item.key}>
+                    {item.becomes.kind === "unsupported" ? (
+                      <div className="import-row-main" title={item.becomes.reason}>
+                        <span className="import-row-spacer" aria-hidden />
+                        <div className="row-main">
+                          <div className="row-title">{item.title}</div>
+                          <div className="row-subtitle">{item.detail}</div>
+                        </div>
+                      </div>
+                    ) : (
                     <button
                       className="import-row-main"
                       onClick={() => toggle(item.key, !isPicked(item))}
@@ -424,6 +582,7 @@ export function ImportView({ context }: { context: AppContext }) {
                         <div className="row-subtitle">{item.detail}</div>
                       </div>
                     </button>
+                    )}
                     <div className="row-trailing">
                       {item.becomes.kind === "versions" && item.becomes.defaultVersion && (
                         <label className="import-default">
@@ -438,7 +597,9 @@ export function ImportView({ context }: { context: AppContext }) {
                       <span className="badge mono" title={BECOMES_LABEL(item.becomes)}>
                         {BECOMES_LABEL(item.becomes)}
                       </span>
-                      {item.becomes.kind !== "versions" && (
+                      {item.becomes.kind === "unsupported" ? (
+                        <span className="badge orange">Keep in Chocolatey</span>
+                      ) : item.becomes.kind !== "versions" && (
                         <span className={`badge${item.installed ? " green" : ""}`}>
                           {item.installed ? "Already installed" : "Will install"}
                         </span>

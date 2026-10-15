@@ -1285,8 +1285,8 @@ fn tool_spec(tool: &str, version: &str) -> Result<String, MiseAdapterError> {
 }
 
 /// `manager:package` for what Import brings in: Homebrew formulas (also
-/// tap-qualified, `mongodb/brew/mongodb-community`), casks, and Mac App
-/// Store apps by numeric id.
+/// tap-qualified, `mongodb/brew/mongodb-community`), casks, Mac App Store
+/// apps by numeric id, winget ids, and Scoop apps.
 pub fn validate_import_package(spec: &str) -> Result<(), MiseAdapterError> {
     let valid = spec
         .split_once(':')
@@ -1300,6 +1300,23 @@ pub fn validate_import_package(spec: &str) -> Result<(), MiseAdapterError> {
                     })
             }
             "mas" => !package.is_empty() && package.bytes().all(|byte| byte.is_ascii_digit()),
+            // winget ids (`Git.Git`, a Store id `9PLM9XGG6VKS`).
+            "winget" => {
+                !package.is_empty()
+                    && !package.starts_with('-')
+                    && package.chars().all(|character| {
+                        character.is_ascii_alphanumeric() || "._+-".contains(character)
+                    })
+            }
+            // Scoop apps (`ripgrep`, `extras/vscode`).
+            "scoop" => {
+                !package.is_empty()
+                    && !package.starts_with('-')
+                    && package.split('/').count() <= 2
+                    && package.chars().all(|character| {
+                        character.is_ascii_alphanumeric() || "._+-/".contains(character)
+                    })
+            }
             _ => false,
         });
     if valid {
