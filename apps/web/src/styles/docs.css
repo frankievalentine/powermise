@@ -244,6 +244,14 @@ h1#_top + p {
   text-decoration-color: currentColor;
 }
 
+.sl-markdown-content a[target='_blank']::after {
+  content: '↗';
+  margin-left: 0.15em;
+  font-size: 0.8em;
+  text-decoration: none;
+  display: inline-block;
+}
+
 .sl-markdown-content ul li::marker {
   color: var(--sl-color-gray-3);
 }

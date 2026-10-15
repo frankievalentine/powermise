@@ -7,6 +7,18 @@ import { ClientRouter } from 'astro:transitions';
 <ClientRouter />
 
 <script>
+  // Links Starlight and the theme render themselves (the GitHub nav link,
+  // social icons, "Edit page") open in a new tab like the content links.
+  const markExternalLinks = () => {
+    for (const link of document.querySelectorAll<HTMLAnchorElement>('a[href^="http"]')) {
+      if (link.origin === window.location.origin) continue;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    }
+  };
+  document.addEventListener('astro:page-load', markExternalLinks);
+  markExternalLinks();
+
   let tocController: AbortController | undefined;
 
   const initializeTableOfContents = () => {
