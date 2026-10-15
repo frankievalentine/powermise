@@ -19,7 +19,7 @@ type Tab = "changes" | "file" | "commands";
 const GROUPS: { label: string; kinds: ToolProviderKind[] }[] = [
   { label: "Tools mise installs", kinds: ["mise-tool"] },
   { label: "Packages mise installs", kinds: ["bootstrap-brew", "bootstrap-apt"] },
-  { label: "Mac apps", kinds: ["bootstrap-brew-cask"] },
+  { label: "Mac apps", kinds: ["bootstrap-brew-cask", "macos-app"] },
   { label: "Windows packages", kinds: ["winget", "scoop"] },
   { label: "Already on this computer", kinds: ["system"] },
 ];

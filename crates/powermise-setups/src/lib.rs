@@ -16,7 +16,7 @@ use std::{
 };
 
 use powermise_compiler::{CompileOptions, Compiled, compile_with};
-use powermise_domain::Platform;
+use powermise_domain::{MacArch, Platform};
 use powermise_registry::{
     ResolvedSelection, load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog,
     load_selection, load_tool_catalog, resolve_selection, validate_catalog, validate_registry,
@@ -122,6 +122,11 @@ pub fn compile_options(target: Platform) -> CompileOptions {
         target == Platform::Darwin && host_platform() == Platform::Darwin && !apple_silicon();
     CompileOptions {
         homebrew_formulas: !intel_mac,
+        mac_arch: if intel_mac {
+            MacArch::X64
+        } else {
+            MacArch::Arm64
+        },
     }
 }
 

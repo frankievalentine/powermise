@@ -1,8 +1,9 @@
 import { CheckCircle2, Plus, XCircle } from "lucide-react";
 import { PLATFORMS, PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
-import { categoryLabel, isAvailable, providerFor, targetTitle } from "../catalog";
-import { Monogram, ProviderBadge, Section } from "../components/ui";
+import { categoryLabel, isAvailable, targetTitle } from "../catalog";
+import { InstallTable } from "../components/InstallTable";
+import { Monogram, Section } from "../components/ui";
 
 export function HarnessDetail({ context, id }: { context: AppContext; id: string }) {
   const { catalog, env, navigate } = context;
@@ -20,30 +21,10 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
     .map((entryId) => catalog.configById.get(entryId))
     .filter((entry) => entry !== undefined);
 
-  const toolRows = (ids: string[]) => (
-    <div className="list">
-      {ids.map((toolId) => {
-        const tool = catalog.toolById.get(toolId);
-        const provider = providerFor(tool, target);
-        return (
-          <div className="list-row" key={toolId}>
-            <div className="row-main">
-              <div className="row-title">{tool?.title ?? toolId}</div>
-              <div className="row-subtitle">{tool?.description}</div>
-            </div>
-            <div className="row-trailing">
-              {provider && (
-                <span className="mono">
-                  {provider.package} {provider.version}
-                </span>
-              )}
-              <ProviderBadge provider={provider} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+  const toolsFor = (ids: string[]) =>
+    ids.map((toolId) => catalog.toolById.get(toolId)).filter((tool) => tool !== undefined);
+  // Only the platforms this agent supports.
+  const platforms = PLATFORMS.filter((platform) => harness.supported_platforms.includes(platform));
 
   return (
     <div className="content">
@@ -87,9 +68,9 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
         {harness.required_tool_ids.length > 0 && (
           <Section
             title="What it installs"
-            note={`How each tool is installed on ${PLATFORM_LABEL[target]}, with its pinned version.`}
+            note="How mise installs each part on each system. Hover a badge for the package and its pinned version."
           >
-            {toolRows(harness.required_tool_ids)}
+            <InstallTable tools={toolsFor(harness.required_tool_ids)} hostTarget={target} platforms={platforms} />
           </Section>
         )}
 
@@ -102,7 +83,7 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
                 : "Optional: turn on “Include desktop apps” in a setup to install it."
             }
           >
-            {toolRows(harness.desktop_tool_ids)}
+            <InstallTable tools={toolsFor(harness.desktop_tool_ids)} hostTarget={target} platforms={platforms} />
           </Section>
         )}
 

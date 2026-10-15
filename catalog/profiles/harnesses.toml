@@ -5,15 +5,17 @@ catalog_revision = "2"
 [[harnesses]]
 id = "antigravity"
 title = "Antigravity"
-description = "Google's Antigravity agent ecosystem."
+description = "Google's agent-first code editor and agent manager."
 kind = "ecosystem"
 category = "ide"
 extends = "base"
 supported_platforms = [
     "darwin",
-    "linux",
+    "win32",
 ]
 required_tool_ids = []
+desktop_tool_ids = ["antigravity-app"]
+desktop_required = true
 integration_ids = []
 mcp_server_ids = []
 source_file = "antigravity.json"
@@ -180,15 +182,18 @@ source_file = "gemini.json"
 [[harnesses]]
 id = "github-copilot"
 title = "GitHub Copilot"
-description = "GitHub Copilot agent experience."
-kind = "editor-integrated"
-category = "ide"
+description = "GitHub Copilot's coding agent in your terminal, plus VS Code on macOS and Windows."
+kind = "terminal-agent"
+category = "terminal"
 extends = "base"
 supported_platforms = [
     "darwin",
+    "linux",
     "win32",
+    "wsl",
 ]
-required_tool_ids = ["vscode"]
+required_tool_ids = ["copilot-cli"]
+desktop_tool_ids = ["vscode"]
 integration_ids = []
 mcp_server_ids = []
 source_file = "github-copilot.json"
@@ -221,7 +226,6 @@ extends = "base"
 supported_platforms = [
     "darwin",
     "linux",
-    "win32",
     "wsl",
 ]
 required_tool_ids = ["hermes-agent"]
@@ -273,6 +277,21 @@ mcp_server_ids = [
     "opencode-sequential-thinking",
 ]
 source_file = "opencode.json"
+
+[[harnesses]]
+id = "orca"
+title = "Orca"
+description = "An agent development environment that runs Claude Code, Codex, and other agents in parallel, each in its own Git worktree, with terminals, diffs, and a browser."
+kind = "editor-integrated"
+category = "gui"
+extends = "base"
+supported_platforms = ["darwin", "win32"]
+required_tool_ids = []
+desktop_tool_ids = ["orca"]
+desktop_required = true
+integration_ids = []
+mcp_server_ids = []
+source_file = "orca.json"
 
 [[harnesses]]
 id = "paseo"

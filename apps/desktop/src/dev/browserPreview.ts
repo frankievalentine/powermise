@@ -82,6 +82,7 @@ const PRIORITY: ToolProviderKind[] = [
   "system",
   "bootstrap-brew",
   "bootstrap-brew-cask",
+  "macos-app",
   "bootstrap-apt",
   "winget",
   "scoop",
@@ -90,6 +91,7 @@ const MANAGER: Partial<Record<ToolProviderKind, string>> = {
   "bootstrap-apt": "apt",
   "bootstrap-brew": "brew",
   "bootstrap-brew-cask": "brew-cask",
+  "macos-app": "macos-app",
   winget: "winget",
   scoop: "scoop",
 };
@@ -128,7 +130,7 @@ function compile(draft: SelectionDraft, target: Platform) {
   const installs: Install[] = [];
   for (const id of [...tools].sort()) {
     const provider = [...(toolsById.get(id)?.providers ?? [])]
-      .filter((entry) => entry.supported_platforms.includes(target))
+      .filter((entry) => entry.supported_platforms.includes(target) && (!entry.arch || entry.arch === "arm64"))
       .sort((a, b) => PRIORITY.indexOf(a.kind) - PRIORITY.indexOf(b.kind))[0];
     if (!provider) continue;
     const manager = MANAGER[provider.kind];

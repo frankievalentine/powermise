@@ -37,6 +37,8 @@ export type ToolProviderKind =
   | "bootstrap-apt"
   | "bootstrap-brew"
   | "bootstrap-brew-cask"
+  /** A Mac app from the vendor's checksummed download. */
+  | "macos-app"
   | "winget"
   | "scoop";
 
@@ -44,6 +46,8 @@ export interface ToolProvider {
   kind: ToolProviderKind;
   package: string;
   version: string;
+  /** `macos-app` downloads are per Mac architecture. */
+  arch?: "arm64" | "x64";
   command: string | null;
   supported_platforms: Platform[];
 }

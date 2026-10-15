@@ -65,6 +65,10 @@ pub enum ToolProviderKind {
     BootstrapApt,
     BootstrapBrew,
     BootstrapBrewCask,
+    /// A Mac app from the vendor's download, verified by checksum
+    /// (`macos-app:` in `[bootstrap.packages]`), for apps without a usable
+    /// Homebrew cask. Needs `url`, `sha256`, `artifact`, and `arch`.
+    MacosApp,
     Winget,
     Scoop,
 }
@@ -81,6 +85,23 @@ pub struct ToolProvider {
     #[serde(default)]
     pub command: Option<String>,
     pub supported_platforms: Vec<Platform>,
+    /// `macos-app` only: the download, its SHA-256, and the app bundle in it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub artifact: Option<String>,
+    /// The Mac architecture a download is for; others skip this provider.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arch: Option<MacArch>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MacArch {
+    Arm64,
+    X64,
 }
 
 fn default_tool_version() -> String {

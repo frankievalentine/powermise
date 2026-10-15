@@ -48,6 +48,7 @@ const PROVIDER_PRIORITY: ToolProviderKind[] = [
   "system",
   "bootstrap-brew",
   "bootstrap-brew-cask",
+  "macos-app",
   "bootstrap-apt",
   "winget",
   "scoop",
@@ -56,7 +57,8 @@ const PROVIDER_PRIORITY: ToolProviderKind[] = [
 export function providerFor(tool: Tool | undefined, target: Platform): ToolProvider | undefined {
   if (!tool) return undefined;
   return [...tool.providers]
-    .filter((provider) => provider.supported_platforms.includes(target))
+    // Browsing assumes an Apple Silicon Mac for per-architecture downloads.
+    .filter((provider) => provider.supported_platforms.includes(target) && (!provider.arch || provider.arch === "arm64"))
     .sort((a, b) => PROVIDER_PRIORITY.indexOf(a.kind) - PROVIDER_PRIORITY.indexOf(b.kind))[0];
 }
 
@@ -66,6 +68,7 @@ export const PROVIDER_LABEL: Record<ToolProviderKind, string> = {
   "bootstrap-apt": "apt",
   "bootstrap-brew": "Homebrew · via mise",
   "bootstrap-brew-cask": "Mac app · Homebrew Cask",
+  "macos-app": "Mac app · vendor download",
   winget: "winget",
   scoop: "Scoop",
 };
@@ -77,6 +80,7 @@ export const PROVIDER_SHORT: Record<ToolProviderKind, string> = {
   "bootstrap-apt": "apt",
   "bootstrap-brew": "Homebrew",
   "bootstrap-brew-cask": "Mac app",
+  "macos-app": "Mac app",
   winget: "winget",
   scoop: "Scoop",
 };
@@ -90,6 +94,8 @@ export const PROVIDER_HINT: Record<ToolProviderKind, string> = {
     "A Homebrew package. mise downloads and installs it itself — you don’t need Homebrew installed.",
   "bootstrap-brew-cask":
     "A Mac app from Homebrew Cask, installed into Applications by mise — no Homebrew needed.",
+  "macos-app":
+    "A Mac app downloaded from its maker, checked against a published checksum, and installed into Applications by mise.",
   winget: "Installed with Windows’ winget package manager.",
   scoop: "Installed with Scoop.",
 };

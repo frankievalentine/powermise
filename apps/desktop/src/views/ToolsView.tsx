@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import { PLATFORMS, PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
-import { PROVIDER_HINT, PROVIDER_SHORT, providerFor } from "../catalog";
+import { InstallTable } from "../components/InstallTable";
 import { AgentsTabs } from "../components/SectionTabs";
 
 export function ToolsView({ context, query }: { context: AppContext; query: string }) {
@@ -31,48 +30,7 @@ export function ToolsView({ context, query }: { context: AppContext; query: stri
             </p>
           </div>
         </div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Tool</th>
-              {PLATFORMS.map((platform) => (
-                <th key={platform} className="provider-cell">
-                  {PLATFORM_LABEL[platform]}
-                  {platform === env.hostTarget && " •"}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {tools.map((tool) => (
-              <tr key={tool.id}>
-                <td>
-                  <div className="row-title">{tool.title}</div>
-                  <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
-                    {tool.unsupported_reason ?? tool.description}
-                  </div>
-                </td>
-                {PLATFORMS.map((platform) => {
-                  const provider = providerFor(tool, platform);
-                  return (
-                    <td key={platform} className="provider-cell">
-                      {provider ? (
-                        <span
-                          className={`badge${platform === env.hostTarget ? " accent" : ""}`}
-                          title={`${PROVIDER_HINT[provider.kind]}\n${provider.package} ${provider.version}`}
-                        >
-                          {PROVIDER_SHORT[provider.kind]}
-                        </span>
-                      ) : (
-                        <span className="dash">—</span>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <InstallTable tools={tools} hostTarget={env.hostTarget} />
       </div>
     </div>
   );

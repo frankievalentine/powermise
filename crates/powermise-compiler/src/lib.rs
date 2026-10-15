@@ -7,7 +7,7 @@
 //! removes it from the config.
 use std::collections::{BTreeMap, BTreeSet};
 
-use powermise_domain::{Platform, ToolCatalog, ToolProvider, ToolProviderKind};
+use powermise_domain::{MacArch, Platform, ToolCatalog, ToolProvider, ToolProviderKind};
 use powermise_registry::ResolvedSelection;
 use serde::Serialize;
 use thiserror::Error;
@@ -31,8 +31,31 @@ impl CompiledMiseConfig {
 /// The bootstrap section of a mise configuration.
 #[derive(Debug, Default, Eq, PartialEq, Serialize)]
 pub struct BootstrapConfig {
-    /// `"manager:package" = "version"`, as mise's `[bootstrap.packages]` expects.
-    pub packages: BTreeMap<String, String>,
+    /// `"manager:package" = "version"`, as mise's `[bootstrap.packages]`
+    /// expects — or a table, for `macos-app` downloads.
+    pub packages: BTreeMap<String, PackageSpec>,
+}
+
+/// One `[bootstrap.packages]` value.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum PackageSpec {
+    Version(String),
+    /// `macos-app`: <https://mise.jdx.dev/bootstrap/packages/macos-app.html>.
+    Download {
+        version: String,
+        url: String,
+        sha256: String,
+        artifact: String,
+    },
+}
+
+impl PackageSpec {
+    pub fn version(&self) -> &str {
+        match self {
+            Self::Version(version) | Self::Download { version, .. } => version,
+        }
+    }
 }
 
 impl BootstrapConfig {
@@ -73,12 +96,15 @@ pub struct CompileOptions {
     /// mise installs Homebrew formulas only on Apple Silicon Macs and on
     /// Linux; on an Intel Mac `brew:` entries are skipped. Casks still work.
     pub homebrew_formulas: bool,
+    /// The Mac's architecture, for `macos-app` downloads.
+    pub mac_arch: MacArch,
 }
 
 impl Default for CompileOptions {
     fn default() -> Self {
         Self {
             homebrew_formulas: true,
+            mac_arch: MacArch::Arm64,
         }
     }
 }
@@ -118,11 +144,12 @@ fn format_unsupported_reason(unsupported_reason: &Option<String>) -> String {
 /// then what the OS already has; then Homebrew, which mise installs itself
 /// and which needs no admin rights once its folder exists; apt last, since
 /// every apt install needs `sudo`.
-const PREFERENCE: [ToolProviderKind; 7] = [
+const PREFERENCE: [ToolProviderKind; 8] = [
     ToolProviderKind::MiseTool,
     ToolProviderKind::System,
     ToolProviderKind::BootstrapBrew,
     ToolProviderKind::BootstrapBrewCask,
+    ToolProviderKind::MacosApp,
     ToolProviderKind::BootstrapApt,
     ToolProviderKind::Winget,
     ToolProviderKind::Scoop,
@@ -144,7 +171,9 @@ pub fn chosen_provider_with(
         .filter(|kind| options.homebrew_formulas || *kind != ToolProviderKind::BootstrapBrew)
         .find_map(|kind| {
             providers.iter().find(|provider| {
-                provider.kind == kind && provider.supported_platforms.contains(&target)
+                provider.kind == kind
+                    && provider.supported_platforms.contains(&target)
+                    && provider.arch.is_none_or(|arch| arch == options.mac_arch)
             })
         })
 }
@@ -155,6 +184,7 @@ fn package_manager(kind: &ToolProviderKind) -> Option<&'static str> {
         ToolProviderKind::BootstrapApt => Some("apt"),
         ToolProviderKind::BootstrapBrew => Some("brew"),
         ToolProviderKind::BootstrapBrewCask => Some("brew-cask"),
+        ToolProviderKind::MacosApp => Some("macos-app"),
         ToolProviderKind::Winget => Some("winget"),
         ToolProviderKind::Scoop => Some("scoop"),
         ToolProviderKind::MiseTool | ToolProviderKind::System => None,
@@ -220,6 +250,29 @@ pub fn compile_mise(
     compile(selection, tool_catalog, target).map(|compiled| compiled.config)
 }
 
+/// Adds `key`, or checks that an earlier pick asked for the same version.
+fn insert<V: Clone>(
+    table: &mut BTreeMap<String, V>,
+    key: String,
+    value: V,
+    version: impl Fn(&V) -> &str,
+) -> Result<(), CompilerError> {
+    match table.get(&key) {
+        Some(existing) if version(existing) != version(&value) => {
+            Err(CompilerError::PackageConflict {
+                existing_version: version(existing).into(),
+                replacement_version: version(&value).into(),
+                key,
+            })
+        }
+        Some(_) => Ok(()),
+        None => {
+            table.insert(key, value);
+            Ok(())
+        }
+    }
+}
+
 fn add(
     compiled: &mut Compiled,
     kind: &'static str,
@@ -255,26 +308,40 @@ fn add(
         return Ok(());
     }
     let version = declared_version(&provider.kind, &provider.version);
-    let (table, key) = match package_manager(&provider.kind) {
-        None => (&mut compiled.config.tools, provider.package.clone()),
-        Some(manager) => (
-            &mut compiled.config.bootstrap.packages,
-            format!("{manager}:{}", provider.package),
-        ),
-    };
-    match table.get(&key) {
-        Some(existing) if existing != &version => {
-            return Err(CompilerError::PackageConflict {
-                key,
-                existing_version: existing.clone(),
-                replacement_version: version,
-            });
-        }
-        Some(_) => {}
+    let key = match package_manager(&provider.kind) {
         None => {
-            table.insert(key.clone(), version.clone());
+            insert(
+                &mut compiled.config.tools,
+                provider.package.clone(),
+                version.clone(),
+                |v| v.as_str(),
+            )?;
+            provider.package.clone()
         }
-    }
+        Some(manager) => {
+            let key = format!("{manager}:{}", provider.package);
+            let spec = match (&provider.url, &provider.sha256, &provider.artifact) {
+                (Some(url), Some(sha256), Some(artifact))
+                    if provider.kind == ToolProviderKind::MacosApp =>
+                {
+                    PackageSpec::Download {
+                        version: version.clone(),
+                        url: url.clone(),
+                        sha256: sha256.clone(),
+                        artifact: artifact.clone(),
+                    }
+                }
+                _ => PackageSpec::Version(version.clone()),
+            };
+            insert(
+                &mut compiled.config.bootstrap.packages,
+                key.clone(),
+                spec,
+                PackageSpec::version,
+            )?;
+            key
+        }
+    };
     compiled.installs.push(Install {
         id: id.into(),
         kind: provider.kind.clone(),
@@ -301,6 +368,10 @@ mod tests {
             version: version.into(),
             command: None,
             supported_platforms: platforms.to_vec(),
+            url: None,
+            sha256: None,
+            artifact: None,
+            arch: None,
         }
     }
 
@@ -336,7 +407,7 @@ mod tests {
 
     use Platform::{Darwin, Linux, Win32};
     use ToolProviderKind::{
-        BootstrapApt, BootstrapBrew, BootstrapBrewCask, MiseTool, Scoop, System, Winget,
+        BootstrapApt, BootstrapBrew, BootstrapBrewCask, MacosApp, MiseTool, Scoop, System, Winget,
     };
 
     #[test]
@@ -384,15 +455,24 @@ mod tests {
             tool("scoop", vec![provider(Scoop, "zed", "0.200.0", &[Win32])]),
         ]);
         let darwin = compile(&selection(&["brewed"]), &catalog, Darwin).unwrap();
-        assert_eq!(darwin.config.bootstrap.packages["brew:jq"], "latest");
+        assert_eq!(
+            darwin.config.bootstrap.packages["brew:jq"].version(),
+            "latest"
+        );
         let linux = compile(&selection(&["apted"]), &catalog, Linux).unwrap();
-        assert_eq!(linux.config.bootstrap.packages["apt:jq"], "1.7.1-3");
+        assert_eq!(
+            linux.config.bootstrap.packages["apt:jq"].version(),
+            "1.7.1-3"
+        );
         let windows = compile(&selection(&["winget", "scoop"]), &catalog, Win32).unwrap();
         assert_eq!(
-            windows.config.bootstrap.packages["winget:jqlang.jq"],
+            windows.config.bootstrap.packages["winget:jqlang.jq"].version(),
             "1.8.1"
         );
-        assert_eq!(windows.config.bootstrap.packages["scoop:zed"], "0.200.0");
+        assert_eq!(
+            windows.config.bootstrap.packages["scoop:zed"].version(),
+            "0.200.0"
+        );
     }
 
     #[test]
@@ -466,6 +546,7 @@ mod tests {
         ]);
         let intel = CompileOptions {
             homebrew_formulas: false,
+            mac_arch: MacArch::X64,
         };
         let compiled = compile_with(
             &selection(&["gemini", "node", "zed"]),
@@ -532,6 +613,36 @@ mod tests {
             compile(&selection(&["missing"]), &catalog, Darwin),
             Err(CompilerError::MissingEntry { kind: "tool", .. })
         ));
+    }
+
+    #[test]
+    fn macos_app_downloads_pick_the_macs_architecture() {
+        let download = |arch, sha: &str| ToolProvider {
+            url: Some(format!("https://example.com/orca-{sha}.dmg")),
+            sha256: Some(sha.repeat(64)),
+            artifact: Some("Orca.app".into()),
+            arch: Some(arch),
+            ..provider(MacosApp, "orca", "1.4.224", &[Darwin])
+        };
+        let catalog = tools(vec![tool(
+            "orca",
+            vec![download(MacArch::Arm64, "a"), download(MacArch::X64, "b")],
+        )]);
+        let intel = CompileOptions {
+            homebrew_formulas: false,
+            mac_arch: MacArch::X64,
+        };
+        let compiled = compile_with(&selection(&["orca"]), &catalog, Darwin, intel).unwrap();
+        let toml = compiled.config.to_toml().unwrap();
+        assert!(
+            toml.contains("[bootstrap.packages.\"macos-app:orca\"]"),
+            "{toml}"
+        );
+        assert!(
+            toml.contains("orca-b.dmg") && !toml.contains("orca-a.dmg"),
+            "{toml}"
+        );
+        assert!(toml.contains("artifact = \"Orca.app\""), "{toml}");
     }
 
     #[test]

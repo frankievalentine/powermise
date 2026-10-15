@@ -265,6 +265,7 @@ pub fn validate_harness_tool_references(
                     tool.id, provider.package
                 )));
             }
+            validate_download(&format!("tool `{}`", tool.id), provider)?;
         }
     }
     for harness in &catalog.harnesses {
@@ -335,6 +336,43 @@ fn validate_tool_provider(owner: &str, provider: &ToolProvider) -> Result<(), Re
         return Err(RegistryError::Validation(format!(
             "{owner} provider `{}` uses `latest`; \
              catalog providers must pin an explicit resolved version",
+            provider.package
+        )));
+    }
+    validate_download(owner, provider)
+}
+
+/// `macos-app` providers need a complete, checksummed download; other kinds
+/// take none of those fields.
+fn validate_download(owner: &str, provider: &ToolProvider) -> Result<(), RegistryError> {
+    let download = [&provider.url, &provider.sha256, &provider.artifact];
+    if provider.kind != ToolProviderKind::MacosApp {
+        return if download.iter().all(|field| field.is_none()) && provider.arch.is_none() {
+            Ok(())
+        } else {
+            Err(RegistryError::Validation(format!(
+                "{owner} provider `{}` sets download fields that only macos-app uses",
+                provider.package
+            )))
+        };
+    }
+    let sha_ok = provider
+        .sha256
+        .as_deref()
+        .is_some_and(|sha| sha.len() == 64 && sha.bytes().all(|byte| byte.is_ascii_hexdigit()));
+    let url_ok = provider
+        .url
+        .as_deref()
+        .is_some_and(|url| url.starts_with("https://"));
+    if !sha_ok
+        || !url_ok
+        || provider.artifact.as_deref().is_none_or(str::is_empty)
+        || provider.arch.is_none()
+        || provider.supported_platforms != [Platform::Darwin]
+    {
+        return Err(RegistryError::Validation(format!(
+            "{owner} macos-app provider `{}` needs an https url, a sha256, an artifact, \
+             an arch, and darwin as its only platform",
             provider.package
         )));
     }
@@ -975,6 +1013,10 @@ harnesses = ["conductor"]
                     version: "latest".into(),
                     command: None,
                     supported_platforms: vec![Platform::Darwin],
+                    url: None,
+                    sha256: None,
+                    artifact: None,
+                    arch: None,
                 },
             );
 

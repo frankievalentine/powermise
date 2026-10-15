@@ -165,6 +165,12 @@ package = "claude"
 version = "1.40609.0"
 supported_platforms = ["darwin"]
 
+[[tools.providers]]
+kind = "winget"
+package = "Anthropic.Claude"
+version = "2.19675.1"
+supported_platforms = ["win32"]
+
 [[tools]]
 id = "vscode"
 title = "Visual Studio Code"
@@ -275,6 +281,12 @@ package = "cursor"
 version = "3.18.9"
 supported_platforms = ["win32"]
 
+[[tools.providers]]
+kind = "winget"
+package = "Anysphere.Cursor"
+version = "3.19.7"
+supported_platforms = ["win32"]
+
 [[tools]]
 id = "gemini-cli"
 title = "Gemini CLI"
@@ -309,8 +321,12 @@ supported_platforms = ["darwin", "linux", "win32", "wsl"]
 id = "hermes-agent"
 title = "Hermes Agent"
 description = "Nous Research's autonomous agent CLI with browser automation and messaging gateway support."
-providers = []
-unsupported_reason = "The authoritative manifest supplies only vendor shell and PowerShell scripts; it has no mise-compatible identifier or package-manager mapping. A pinned verified-script provider is the intended path once the vendor publishes a stable install source."
+
+[[tools.providers]]
+kind = "bootstrap-brew"
+package = "hermes-agent"
+version = "0.22.0"
+supported_platforms = ["darwin", "linux", "wsl"]
 
 [[tools]]
 id = "openclaw"
@@ -405,6 +421,12 @@ package = "zed"
 version = "1.17.2"
 supported_platforms = ["win32"]
 
+[[tools.providers]]
+kind = "winget"
+package = "ZedIndustries.Zed"
+version = "1.24.2"
+supported_platforms = ["win32"]
+
 [[tools]]
 id = "fx"
 title = "fx"
@@ -416,3 +438,66 @@ package = "github:vercel-labs/fx"
 version = "0.0.7"
 command = "fx"
 supported_platforms = ["darwin", "linux", "wsl"]
+
+[[tools]]
+id = "antigravity-app"
+title = "Antigravity"
+description = "Google's agent-first code editor and agent manager."
+
+[[tools.providers]]
+kind = "bootstrap-brew-cask"
+package = "antigravity"
+version = "2.23.1"
+supported_platforms = ["darwin"]
+
+[[tools.providers]]
+kind = "winget"
+package = "Google.Antigravity"
+version = "2.23.1"
+supported_platforms = ["win32"]
+
+[[tools]]
+id = "copilot-cli"
+title = "GitHub Copilot CLI"
+description = "GitHub Copilot's coding agent in your terminal."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "copilot"
+version = "1.0.98"
+command = "copilot"
+supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools]]
+id = "orca"
+title = "Orca"
+description = "An agent development environment: run Claude Code, Codex, and other agents side by side, each in its own Git worktree."
+
+# Orca's tap (stablyai/orca) has no published cask metadata, so mise would
+# need Ruby just to read it; the release's own downloads, checked against
+# GitHub's published SHA-256 digests, install without it. Orca updates itself.
+[[tools.providers]]
+kind = "macos-app"
+package = "orca"
+version = "1.4.224"
+url = "https://github.com/stablyai/orca/releases/download/v1.4.224/orca-macos-arm64.dmg"
+sha256 = "7382f5e0d1a7f5c8253c17c975dc781710fec67fb8cfbaf9d11c03bfc60baae1"
+artifact = "Orca.app"
+arch = "arm64"
+supported_platforms = ["darwin"]
+
+[[tools.providers]]
+kind = "macos-app"
+package = "orca"
+version = "1.4.224"
+url = "https://github.com/stablyai/orca/releases/download/v1.4.224/orca-macos-x64.dmg"
+sha256 = "55635c5c7e730685ba736acc778265e02a5c49c47896a2fb7f0836de85dfb3f6"
+artifact = "Orca.app"
+arch = "x64"
+supported_platforms = ["darwin"]
+
+[[tools.providers]]
+kind = "winget"
+package = "StablyAI.Orca"
+version = "1.4.224"
+supported_platforms = ["win32"]
