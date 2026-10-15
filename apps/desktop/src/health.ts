@@ -10,10 +10,11 @@ export interface HealthSummary {
 }
 
 /** What the Health screen reports, summarized for the sidebar badge. */
-export function healthSummary(info: MiseInfo | null, doctor: Doctor | null): HealthSummary {
+export function healthSummary(info: MiseInfo | null, doctor: Doctor | null, shellConflicts = 0): HealthSummary {
   const errors = (doctor?.errors.length ?? 0) + (info && !info.supported ? 1 : 0);
   const warnings =
     (doctor?.warnings.length ?? 0) +
+    shellConflicts +
     (doctor && !doctor.activated ? 1 : 0) +
     (info && info.supported && !info.recommendedMet ? 1 : 0);
   const count = errors + warnings;

@@ -6,6 +6,7 @@ import registryEntries from "./registry.json";
 import {
   demoHasMise,
   demoMachine,
+  demoImport,
   describeMachineAction,
   NOT_A_MACHINE_COMMAND,
   performMachineAction,
@@ -178,6 +179,8 @@ function describe(action: MiseAction): string {
       return `mise bootstrap --yes --only packages,tools && mise dotfiles apply --yes ${applySetupTargets(action.name).join(" ")}`.trim();
     case "pruneTools":
       return "mise prune --tools --yes";
+    case "useGlobalMany":
+      return `mise use -g ${action.tools.map(([tool, version]) => `${tool}@${version}`).join(" ")}`;
     case "useGlobal":
       return `mise use -g ${action.tool}@${action.version}`;
     case "unuseGlobal":
@@ -235,6 +238,22 @@ function perform(action: MiseAction): string[] {
       for (const [tool, versions] of machine) machine.set(tool, versions.filter((entry) => entry.global));
       return unused.length ? unused.map((spec) => `mise ${spec}  ✓ pruned`) : ["mise nothing to prune"];
     }
+    case "importVersions": {
+      const entry = demoImport(action.source, action.tool);
+      // Linked versions count as installed, so using one downloads nothing.
+      const known = machine.get(action.tool) ?? [];
+      for (const item of entry?.versions ?? []) {
+        if (!known.some((existing) => existing.version === item.version)) known.push({ version: item.version, global: false });
+      }
+      machine.set(action.tool, known);
+      const lines = (entry?.versions ?? []).map((item) => `mise linked ${action.tool}@${item.version}`);
+      if (action.makeDefault && entry?.defaultVersion) {
+        lines.push(...perform({ kind: "useGlobal", tool: action.tool, version: entry.defaultVersion }));
+      }
+      return lines;
+    }
+    case "useGlobalMany":
+      return action.tools.flatMap(([tool, version]) => perform({ kind: "useGlobal", tool, version }));
     case "useGlobal": {
       const versions = (machine.get(action.tool) ?? []).map((entry) => ({ ...entry, global: false }));
       const existing = versions.find((entry) => entry.version === action.version);

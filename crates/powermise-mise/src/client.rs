@@ -19,9 +19,9 @@ use serde::de::DeserializeOwned;
 use crate::{
     MiseAdapterError,
     machine::{
-        DotfileCheckpoint, DotfilesHistory, ImportSource, MachineSection, Plugin, Setting,
-        TokenStatus, ToolAlias, parse_checkpoints, parse_machine_status, parse_plugins,
-        parse_settings, parse_token_status, parse_tool_aliases,
+        DotfileCheckpoint, DotfilesHistory, MachineSection, Plugin, Setting, TokenStatus,
+        ToolAlias, parse_checkpoints, parse_machine_status, parse_plugins, parse_settings,
+        parse_token_status, parse_tool_aliases,
     },
     models::{
         BootstrapPlan, BootstrapStatus, ConfigFile, Doctor, OutdatedReport, RegistryEntry,
@@ -719,6 +719,15 @@ impl MiseCommand {
         ]))
     }
 
+    /// `mise use -g <tool>@<version>…`: several tools in one command.
+    pub fn use_global_many(tools: &[(String, String)]) -> Result<Self, MiseAdapterError> {
+        let mut arguments = vec!["use".into(), "-g".into()];
+        for (tool, version) in tools {
+            arguments.push(tool_spec(tool, version)?);
+        }
+        Ok(Self::new(arguments))
+    }
+
     /// `mise unuse -g <tool>`: remove from the global config (and prune it).
     pub fn unuse_global(tool: &str) -> Result<Self, MiseAdapterError> {
         validate_argument(tool)?;
@@ -1136,12 +1145,8 @@ impl MiseCommand {
 
     /// `mise sync <tool> --<source>`: lets mise use versions another version
     /// manager already installed, without reinstalling them.
-    pub fn sync(source: ImportSource) -> Self {
-        Self::new(vec![
-            "sync".into(),
-            source.tool().into(),
-            format!("--{}", source.flag()),
-        ])
+    pub fn sync_with(tool: &str, flag: &str) -> Self {
+        Self::new(vec!["sync".into(), tool.into(), format!("--{flag}")])
     }
 
     /// `mise x -- <program> <arguments>`: an agent's own CLI, with mise's
@@ -1538,11 +1543,11 @@ mod tests {
             "cd /code/app && mise upgrade --local --bump"
         );
         assert_eq!(
-            MiseCommand::sync(crate::ImportSource::Nvm).display(),
+            MiseCommand::sync_with("node", "nvm").display(),
             "mise sync node --nvm"
         );
         assert_eq!(
-            MiseCommand::sync(crate::ImportSource::RubyBrew).display(),
+            MiseCommand::sync_with("ruby", "brew").display(),
             "mise sync ruby --brew"
         );
     }

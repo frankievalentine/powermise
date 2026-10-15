@@ -239,6 +239,8 @@ pub fn run() {
             machine::github_status,
             machine::prunable_versions,
             machine::detect_imports,
+            machine::shell_conflicts,
+            machine::global_packages,
             machine::mise_installers,
             machine::disk_usage,
             machine::trusted_folders,

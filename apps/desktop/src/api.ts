@@ -406,7 +406,8 @@ export type MiseAction =
   | { kind: "pruneTools" }
   | { kind: "setSetting"; key: string; value: string }
   | { kind: "unsetSetting"; key: string }
-  | { kind: "syncVersions"; source: ImportSource }
+  | { kind: "importVersions"; source: ImportSource; tool: string; makeDefault: boolean }
+  | { kind: "useGlobalMany"; tools: [string, string][] }
   | { kind: "installMise"; installer: MiseInstaller }
   | { kind: "untrust"; path: string }
   | { kind: "lock"; project: string }
@@ -472,12 +473,53 @@ export interface PrunableVersion {
   bytes: number;
 }
 
-export type ImportSource = "nvm" | "nodenv" | "node-brew" | "pyenv" | "uv" | "ruby-brew";
+export type ImportSource =
+  | "nvm"
+  | "nodenv"
+  | "node-brew"
+  | "pyenv"
+  | "uv"
+  | "ruby-brew"
+  | "fnm"
+  | "volta"
+  | "n"
+  | "nvm-windows"
+  | "rbenv"
+  | "rvm"
+  | "chruby"
+  | "goenv"
+  | "asdf";
 
+export interface ImportVersion {
+  version: string;
+  path: string;
+  /** mise already has this version. */
+  inMise: boolean;
+}
+
+/** One tool's installs from another version manager. */
 export interface DetectedImport {
   source: ImportSource;
   tool: string;
-  versions: string[];
+  versions: ImportVersion[];
+  /** The version that manager had as your default. */
+  defaultVersion: string | null;
+}
+
+/** A startup-file line that still turns on another version manager. */
+export interface ShellConflict {
+  file: string;
+  line: number;
+  text: string;
+  manager: string;
+}
+
+/** A command-line package installed globally outside mise. */
+export interface GlobalPackage {
+  backend: "npm" | "pipx" | "cargo";
+  name: string;
+  version: string | null;
+  foundIn: string;
 }
 
 /** `mise tool --json`. */
@@ -731,6 +773,8 @@ export const api = {
   githubStatus: () => call<GithubStatus>("github_status"),
   prunableVersions: () => call<PrunableVersion[]>("prunable_versions"),
   detectImports: () => call<DetectedImport[]>("detect_imports"),
+  shellConflicts: () => call<ShellConflict[]>("shell_conflicts"),
+  globalPackages: () => call<GlobalPackage[]>("global_packages"),
   miseInstallers: () => call<InstallerOption[]>("mise_installers"),
   openUrl: (url: string) => call<void>("open_url", { url }),
   diskUsage: () => call<DiskUsage>("disk_usage"),

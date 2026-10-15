@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "../api";
+import { pendingImports } from "../components/machine";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
 import { healthSummary } from "../health";
@@ -60,12 +61,12 @@ export function HomeView({ context }: { context: AppContext }) {
       done: projects.length > 0,
       action: { label: "Add a Folder…", run: () => void addProject() },
     },
-    ...(imports.data && imports.data.length > 0
+    ...(imports.data && pendingImports(context, imports.data).length > 0
       ? [
           {
             id: "imports",
             title: "Bring over versions you already have",
-            detail: `${imports.data.map((entry) => entry.source).join(", ")} installed versions mise can use without downloading again.`,
+            detail: `${[...new Set(pendingImports(context, imports.data).map((entry) => entry.source))].join(", ")} installed versions mise can use without downloading again.`,
             done: false,
             action: { label: "Bring Over", run: () => navigate({ kind: "health", section: "imports" }) },
           },

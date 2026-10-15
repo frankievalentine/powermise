@@ -24,8 +24,13 @@ when it's already true:
 1. **Install mise**, if it's missing — with Homebrew or mise's install script on
    macOS and Linux, winget or Scoop on Windows. The sheet shows the exact command.
 2. **Turn mise on in your terminal** — the line to add to your shell's startup file.
-3. **Bring over versions you already have** from nvm, nodenv, pyenv, uv, or
-   Homebrew, so mise uses them without downloading them again (`mise sync`).
+3. **Bring over versions you already have**, so mise uses them without
+   downloading them again: nvm, nodenv, pyenv, uv, and Homebrew with
+   `mise sync`; fnm, Volta, n, nvm for Windows, rbenv, RVM, chruby, goenv, and
+   asdf (every tool it manages) with `mise link`, one version at a time.
+   Versions mise already has are skipped. When that manager had a default —
+   `nvm alias default`, `pyenv global`, asdf's `~/.tool-versions`, and so on —
+   **Bring Over + Use** makes it your mise default too (`mise use -g`).
 4. **Sign in GitHub downloads** (optional) — see [Health](#health).
 
 ## My Tools
@@ -210,7 +215,16 @@ and keeps the rest under **More details**:
   to give it one you already have: your GitHub CLI login
   (`github.credential_command = "gh auth token"`) or Git's saved login
   (`github.use_git_credentials`).
+- **Other version managers still turned on** — a `.zshrc`, `.bashrc`,
+  `.profile`, or fish line that starts nvm, pyenv, rbenv, asdf, fnm, Volta, or
+  another manager, which fights mise over `PATH`. Health shows the file and line
+  to remove once your versions are brought over; it won't edit the file for you.
 - **Versions from other tools** — the same bring-over list as Welcome.
+- **Command-line packages** — tools installed globally with `npm -g`, pipx,
+  `uv tool`, or `cargo install`, which mise can manage instead (`npm:prettier`,
+  `pipx:black`, or the registry's own name when it has one), so they survive a
+  Node or Python switch. **Add to mise** runs one `mise use -g` for the ones you
+  pick; the old copies stay until you remove them.
 - **Shims** — when mise's shims are on your PATH, what they're for and
   **Rebuild Shims** (`mise reshim`).
 - **Plugins** — legacy asdf and vfox plugins, when any are installed (read-only).

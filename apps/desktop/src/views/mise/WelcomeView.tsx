@@ -4,7 +4,7 @@ import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { activationCommand } from "../../health";
 import { useAsync } from "../../hooks";
-import { ActivationSteps, ExternalLinkButton, GithubCard, ImportList } from "../../components/machine";
+import { ActivationSteps, ExternalLinkButton, GithubCard, ImportList, pendingImports } from "../../components/machine";
 import { CommandBlock } from "../../components/ui";
 
 export const WELCOMED_KEY = "powermise.welcomed";
@@ -139,11 +139,13 @@ export function WelcomeView({ context }: { context: AppContext }) {
         {hasMise && (
           <Step
             number={3}
-            done={imports.data?.length === 0}
+            done={!!imports.data && pendingImports(context, imports.data).length === 0}
             title="Bring over versions you already have"
             note={
-              imports.data?.length === 0
-                ? "No versions from nvm, nodenv, pyenv, uv, or Homebrew found."
+              imports.data && pendingImports(context, imports.data).length === 0
+                ? imports.data.length
+                  ? "mise has the versions your other version managers installed."
+                  : "No versions from another version manager found."
                 : "These were installed by another version manager. mise can use them as they are, without downloading them again."
             }
           >

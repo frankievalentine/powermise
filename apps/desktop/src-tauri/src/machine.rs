@@ -110,12 +110,49 @@ pub async fn prunable_versions() -> CommandResult<Vec<PrunableVersion>> {
     .await
 }
 
-/// Versions nvm, nodenv, pyenv, uv, or Homebrew installed that mise can use.
+/// mise's installs folder, to tell which versions it already has.
+pub(crate) fn mise_installs_dir() -> Option<PathBuf> {
+    std::env::var_os("MISE_INSTALLS_DIR")
+        .map(PathBuf::from)
+        .or_else(|| Some(client().ok()?.doctor().ok()?.dirs?.data.join("installs")))
+}
+
+/// Versions other version managers (and Homebrew) installed that mise can
+/// use, with which ones it already has and each manager's default.
 #[tauri::command]
 pub async fn detect_imports() -> CommandResult<Vec<DetectedImport>> {
     blocking(|| {
         let home = home_dir().ok_or("could not determine your home directory")?;
-        Ok(powermise_mise::detect_imports(&home))
+        Ok(powermise_mise::detect_imports(
+            &home,
+            mise_installs_dir().as_deref(),
+        ))
+    })
+    .await
+}
+
+/// Lines in your shell startup files that still turn on another version
+/// manager, which fights mise over `PATH`.
+#[tauri::command]
+pub async fn shell_conflicts() -> CommandResult<Vec<powermise_mise::ShellConflict>> {
+    blocking(|| {
+        let home = home_dir().ok_or("could not determine your home directory")?;
+        Ok(powermise_mise::shell_conflicts(&home))
+    })
+    .await
+}
+
+/// Command-line packages installed globally with npm, pipx, uv, or cargo.
+#[tauri::command]
+pub async fn global_packages() -> CommandResult<Vec<powermise_mise::GlobalPackage>> {
+    blocking(|| {
+        let home = home_dir().ok_or("could not determine your home directory")?;
+        let imports = powermise_mise::detect_imports(&home, None);
+        Ok(powermise_mise::global_packages(
+            &home,
+            &imports,
+            &powermise_mise::HOMEBREW_PREFIXES,
+        ))
     })
     .await
 }

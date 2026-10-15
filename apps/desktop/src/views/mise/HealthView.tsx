@@ -6,7 +6,17 @@ import { activationCommand, healthSummary } from "../../health";
 import { prettyPath } from "../../mise";
 import { useAsync } from "../../hooks";
 import { usePlatform } from "../../platform";
-import { ActivationSteps, CleanupSheet, GithubCard, ImportList, UpdateMise, formatBytes } from "../../components/machine";
+import {
+  ActivationSteps,
+  CleanupSheet,
+  GithubCard,
+  GlobalPackageList,
+  ImportList,
+  ShellConflictRows,
+  UpdateMise,
+  formatBytes,
+  pendingImports,
+} from "../../components/machine";
 import { CommandBlock, Section } from "../../components/ui";
 
 /** The line that hooks mise into a shell, by shell name. */
@@ -32,8 +42,10 @@ export function HealthView({ context, section }: { context: AppContext; section?
   const info = mise.info;
   const problems = [...(doctor.data?.errors ?? []), ...(doctor.data?.warnings ?? [])];
   const shell = activationCommand(doctor.data?.shell?.name, context.env.hostTarget, context.env.misePath);
-  const summary = healthSummary(info, doctor.data);
   const imports = useAsync(() => api.detectImports(), [mise.revision]);
+  const conflicts = useAsync(() => api.shellConflicts(), [mise.revision]);
+  const packages = useAsync(() => api.globalPackages(), [mise.revision]);
+  const summary = healthSummary(info, doctor.data, conflicts.data?.length ?? 0);
   const prunable = useAsync(() => api.prunableVersions(), [mise.revision]);
   const disk = useAsync(() => api.diskUsage(), [mise.revision]);
   const trust = useAsync(() => api.trustedFolders(), [mise.revision]);
@@ -104,6 +116,7 @@ export function HealthView({ context, section }: { context: AppContext; section?
                   </div>
                 </div>
               )}
+              {conflicts.data && <ShellConflictRows conflicts={conflicts.data} />}
               {problems.map((problem) => (
                 <div className="list-row" key={problem}>
                   <AlertTriangle size={16} color="var(--orange)" />
@@ -251,12 +264,21 @@ export function HealthView({ context, section }: { context: AppContext; section?
           </Section>
 
           <div id="health-imports" ref={section === "imports" ? scrollTo : undefined} />
-          {imports.data && imports.data.length > 0 && (
+          {imports.data && pendingImports(context, imports.data).length > 0 && (
             <Section
               title="Versions from other tools"
-              note="Installed by another version manager. mise can use them without downloading them again."
+              note="Installed by another version manager. mise can use them without downloading them again, and make that manager’s default yours."
             >
               <ImportList context={context} imports={imports.data} />
+            </Section>
+          )}
+
+          {packages.data && packages.data.length > 0 && (
+            <Section
+              title="Command-line packages"
+              note="Installed globally with npm, pipx, uv, or cargo. Let mise manage them, and they stay put when you switch Node or Python versions."
+            >
+              <GlobalPackageList context={context} packages={packages.data} />
             </Section>
           )}
 

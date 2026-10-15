@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { CheckCircle2, Download, ExternalLink, Github, Info, Loader2, Trash2 } from "lucide-react";
-import { api, type DetectedImport, type ImportSource } from "../api";
+import { AlertTriangle, CheckCircle2, Download, ExternalLink, Github, Info, Loader2, Trash2 } from "lucide-react";
+import { api, type DetectedImport, type GlobalPackage, type ImportSource, type ShellConflict } from "../api";
 import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
 import type { Activation } from "../health";
-import { CommandBlock } from "./ui";
+import { isGlobalPath, prettyPath } from "../mise";
+import { Checkbox, CommandBlock } from "./ui";
 import { Sheet } from "./Sheet";
 
 export function formatBytes(bytes: number): string {
@@ -260,11 +261,22 @@ const SOURCE_LABEL: Record<ImportSource, string> = {
   pyenv: "pyenv",
   uv: "uv",
   "ruby-brew": "Homebrew",
+  fnm: "fnm",
+  volta: "Volta",
+  n: "n",
+  "nvm-windows": "nvm for Windows",
+  rbenv: "rbenv",
+  rvm: "RVM",
+  chruby: "chruby",
+  goenv: "goenv",
+  asdf: "asdf",
 };
 
-const TOOL_LABEL: Record<string, string> = { node: "Node.js", python: "Python", ruby: "Ruby" };
+const TOOL_LABEL: Record<string, string> = { node: "Node.js", python: "Python", ruby: "Ruby", go: "Go" };
+const toolLabel = (tool: string) => TOOL_LABEL[tool] ?? tool;
 
-const SYNC_FLAG: Record<ImportSource, string> = {
+/** Sources mise imports itself with `mise sync`; the rest are linked. */
+const SYNCED: Partial<Record<ImportSource, string>> = {
   nvm: "node --nvm",
   nodenv: "node --nodenv",
   "node-brew": "node --brew",
@@ -273,38 +285,198 @@ const SYNC_FLAG: Record<ImportSource, string> = {
   "ruby-brew": "ruby --brew",
 };
 
-/** Versions other managers installed, each with a button to let mise use
- *  them (`mise sync`). Returns null when there's nothing to bring over. */
+/** The version of `tool` your global mise config uses, if any. */
+function globalVersion(context: AppContext, tool: string): string | undefined {
+  return context.mise.inventory?.[tool]?.find(
+    (version) => version.source && isGlobalPath(version.source.path, context.env.miseConfigDir),
+  )?.version;
+}
+
+/** What's left to do for an import: versions mise doesn't have, and whether
+ *  the manager's default isn't your mise default yet. */
+function importTodo(context: AppContext, entry: DetectedImport) {
+  const missing = entry.versions.filter((version) => !version.inMise);
+  const current = globalVersion(context, entry.tool);
+  const offerDefault = !!entry.defaultVersion && current !== entry.defaultVersion;
+  return { missing, current, offerDefault };
+}
+
+/** Imports with something left to do — for checklists and badges. */
+export function pendingImports(context: AppContext, imports: DetectedImport[]): DetectedImport[] {
+  return imports.filter((entry) => {
+    const todo = importTodo(context, entry);
+    return todo.missing.length > 0 || todo.offerDefault;
+  });
+}
+
+/** Versions other version managers installed, each with a button to let
+ *  mise use them (`mise sync`, or `mise link` per version) and, when that
+ *  manager had a default, to make it your mise default too. Returns null
+ *  when there's nothing left to bring over. */
 export function ImportList({ context, imports }: { context: AppContext; imports: DetectedImport[] }) {
-  if (!imports.length) return null;
+  const pending = pendingImports(context, imports);
+  if (!pending.length) return null;
   return (
     <div className="list">
-      {imports.map((entry) => (
-        <div className="list-row" key={entry.source}>
-          <Download size={16} color="var(--text-tertiary)" />
+      {pending.map((entry) => {
+        const { missing, current, offerDefault } = importTodo(context, entry);
+        const from = SOURCE_LABEL[entry.source];
+        const how = SYNCED[entry.source] ? `mise sync ${SYNCED[entry.source]}` : `mise link (${missing.length})`;
+        const bring = (makeDefault: boolean) =>
+          context.run({
+            action: { kind: "importVersions", source: entry.source, tool: entry.tool, makeDefault },
+            title: makeDefault
+              ? missing.length
+                ? `Bring over ${from}’s ${toolLabel(entry.tool)} and use ${entry.defaultVersion}?`
+                : `Use ${toolLabel(entry.tool)} ${entry.defaultVersion} by default?`
+              : `Use your ${from} ${toolLabel(entry.tool)} versions in mise?`,
+            description: [
+              missing.length
+                ? `mise links ${new Intl.ListFormat("en", { type: "conjunction" }).format(missing.map((version) => version.version))} where ${from} installed ${missing.length === 1 ? "it" : "them"}, so it can use ${missing.length === 1 ? "it" : "them"} without downloading again. Nothing is moved or removed.`
+                : "",
+              makeDefault
+                ? `Then ${entry.defaultVersion} becomes your default everywhere${current ? `, replacing ${current}` : ""} — the version ${from} had as your default.`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" "),
+            verb: missing.length ? "Bring Over" : "Use It",
+          });
+        return (
+          <div className="list-row" key={`${entry.source}-${entry.tool}`}>
+            <Download size={16} color="var(--text-tertiary)" />
+            <div className="row-main">
+              <div className="row-title">
+                {toolLabel(entry.tool)} from {from}
+              </div>
+              <div className="row-subtitle mono">
+                {entry.versions
+                  .map((version) => `${version.version}${version.version === entry.defaultVersion ? " (default)" : ""}${version.inMise ? " ✓" : ""}`)
+                  .join(", ")}
+              </div>
+            </div>
+            <div className="row-trailing">
+              {offerDefault && (
+                <button
+                  className="button"
+                  onClick={() => bring(true)}
+                  title={`Also make ${entry.defaultVersion} your mise default (mise use -g ${entry.tool}@${entry.defaultVersion})`}
+                >
+                  {missing.length ? `Bring Over + Use ${entry.defaultVersion}` : `Use ${entry.defaultVersion}`}
+                </button>
+              )}
+              {missing.length > 0 && (
+                <button className="button" onClick={() => bring(false)} title={how}>
+                  Bring Over
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Startup-file lines that still turn on another version manager. */
+export function ShellConflictRows({ conflicts }: { conflicts: ShellConflict[] }) {
+  return (
+    <>
+      {conflicts.map((conflict) => (
+        <div className="list-row setting-row" key={`${conflict.file}:${conflict.line}`}>
+          <AlertTriangle size={16} color="var(--orange)" />
           <div className="row-main">
             <div className="row-title">
-              {TOOL_LABEL[entry.tool] ?? entry.tool} from {SOURCE_LABEL[entry.source]}
+              {conflict.manager} is still turned on in {prettyPath(conflict.file)}
             </div>
-            <div className="row-subtitle mono">{entry.versions.join(", ")}</div>
+            <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
+              Line {conflict.line} changes your PATH too, so your terminal can pick {conflict.manager}’s version instead
+              of mise’s. Once you’ve brought your versions over, remove or comment out the line, then open a new
+              terminal window.
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <CommandBlock command={conflict.text} prompt={`${conflict.line}`} />
+            </div>
           </div>
-          <button
-            className="button"
-            onClick={() =>
-              context.run({
-                action: { kind: "syncVersions", source: entry.source },
-                title: `Use your ${SOURCE_LABEL[entry.source]} ${TOOL_LABEL[entry.tool] ?? entry.tool} versions in mise?`,
-                description: `mise links the ${entry.versions.length === 1 ? "version" : "versions"} ${SOURCE_LABEL[entry.source]} installed, so it can use them without downloading them again. Nothing is moved or removed.`,
-                verb: "Bring Over",
-              })
-            }
-            title={`mise sync ${SYNC_FLAG[entry.source]}`}
-          >
-            Bring Over
+          <button className="button" onClick={() => void api.reveal(conflict.file)} title="Show the file">
+            Show File
           </button>
         </div>
       ))}
-    </div>
+    </>
+  );
+}
+
+/** The mise tool a global package becomes: the registry's short name when
+ *  mise has one for it, otherwise `<backend>:<name>`. */
+function packageTool(context: AppContext, pkg: GlobalPackage): { tool: string; version: string } {
+  const plain = pkg.name.replace(/^@[^/]+\//, "");
+  const entry = context.mise.registryByName.get(pkg.name) ?? context.mise.registryByName.get(plain);
+  if (entry) {
+    return { tool: entry.short, version: "latest" };
+  }
+  return { tool: `${pkg.backend}:${pkg.name}`, version: pkg.version ?? "latest" };
+}
+
+/** Command-line packages installed with npm -g, pipx, uv, or cargo install,
+ *  which mise can keep instead — so they survive a Node or Python switch.
+ *  Returns null when there are none mise doesn't already have. */
+export function GlobalPackageList({ context, packages }: { context: AppContext; packages: GlobalPackage[] }) {
+  const inMise = (tool: string) => !!context.mise.inventory?.[tool];
+  const rows = packages
+    .map((pkg) => ({ pkg, ...packageTool(context, pkg) }))
+    .filter((row) => !inMise(row.tool));
+  const [picked, setPicked] = useState<Set<string> | null>(null);
+  if (!rows.length) return null;
+  const selected = picked ?? new Set(rows.map((row) => row.tool));
+  const toggle = (tool: string) => {
+    const next = new Set(selected);
+    if (next.has(tool)) next.delete(tool);
+    else next.add(tool);
+    setPicked(next);
+  };
+  const chosen = rows.filter((row) => selected.has(row.tool));
+  return (
+    <>
+      <div className="list">
+        {rows.map((row) => (
+          <button
+            key={row.tool}
+            className="list-row interactive"
+            onClick={() => toggle(row.tool)}
+            role="checkbox"
+            aria-checked={selected.has(row.tool)}
+          >
+            <Checkbox checked={selected.has(row.tool)} />
+            <div className="row-main">
+              <div className="row-title">
+                {row.pkg.name}
+                {row.pkg.version && <span className="row-subtitle"> {row.pkg.version}</span>}
+              </div>
+              <div className="row-subtitle">From {row.pkg.foundIn}</div>
+            </div>
+            <span className="badge mono">{row.tool}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <button
+          className="button"
+          disabled={!chosen.length}
+          onClick={() =>
+            context.run({
+              action: { kind: "useGlobalMany", tools: chosen.map((row) => [row.tool, row.version]) },
+              title: `Let mise manage ${chosen.length === 1 ? chosen[0].pkg.name : `${chosen.length} packages`}?`,
+              description:
+                "mise installs them as tools in your global config, so they stay put when you switch Node or Python versions and show up in My Tools. The old copies stay where they are until you remove them.",
+              verb: "Add to mise",
+            })
+          }
+        >
+          Add {chosen.length || ""} to mise
+        </button>
+      </div>
+    </>
   );
 }
 

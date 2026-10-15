@@ -3,10 +3,12 @@
 import { enableIdiomatic } from "./demoProjects";
 import type {
   DetectedImport,
+  GlobalPackage,
   GithubStatus,
   InstallerOption,
   MiseAction,
   Setting,
+  ShellConflict,
 } from "../api";
 
 const GLOBAL_CONFIG = "/Users/demo/.config/mise/config.toml";
@@ -112,9 +114,43 @@ function parseSettingValue(entry: Setting, text: string): unknown {
   return text;
 }
 
+const version = (number: string, path: string) => ({ version: number, path, inMise: false });
 const imports: DetectedImport[] = [
-  { source: "nvm", tool: "node", versions: ["18.20.4", "20.11.1"] },
-  { source: "pyenv", tool: "python", versions: ["3.11.9"] },
+  {
+    source: "nvm",
+    tool: "node",
+    versions: [version("18.20.4", "/Users/demo/.nvm/versions/node/v18.20.4"), version("20.11.1", "/Users/demo/.nvm/versions/node/v20.11.1")],
+    defaultVersion: "20.11.1",
+  },
+  {
+    source: "pyenv",
+    tool: "python",
+    versions: [version("3.11.9", "/Users/demo/.pyenv/versions/3.11.9")],
+    defaultVersion: "3.11.9",
+  },
+  {
+    source: "rbenv",
+    tool: "ruby",
+    versions: [version("3.3.5", "/Users/demo/.rbenv/versions/3.3.5")],
+    defaultVersion: "3.3.5",
+  },
+];
+
+/** The demo's `importVersions`: marks the versions as in mise. */
+export function demoImport(source: string, tool: string): DetectedImport | undefined {
+  const entry = imports.find((item) => item.source === source && item.tool === tool);
+  entry?.versions.forEach((item) => (item.inMise = true));
+  return entry;
+}
+
+const shellConflicts: ShellConflict[] = [
+  { file: "/Users/demo/.zshrc", line: 12, text: '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"', manager: "nvm" },
+];
+
+const globalPackages: GlobalPackage[] = [
+  { backend: "npm", name: "prettier", version: "3.3.3", foundIn: "npm, in nvm’s Node 20.11.1" },
+  { backend: "npm", name: "typescript", version: "5.6.2", foundIn: "npm, in nvm’s Node 20.11.1" },
+  { backend: "pipx", name: "black", version: "24.8.0", foundIn: "pipx" },
 ];
 
 const installers: InstallerOption[] = [
@@ -153,8 +189,14 @@ export function describeMachineAction(action: MiseAction): string | null {
       return `mise settings set ${action.key} ${/\s/.test(action.value) ? `'${action.value}'` : action.value}`;
     case "unsetSetting":
       return `mise settings unset ${action.key}`;
-    case "syncVersions":
-      return `mise sync ${SYNC[action.source]}`;
+    case "importVersions": {
+      const entry = imports.find((item) => item.source === action.source && item.tool === action.tool);
+      const steps = SYNC[action.source]
+        ? [`mise sync ${SYNC[action.source]}`]
+        : (entry?.versions ?? []).filter((item) => !item.inMise).map((item) => `mise link ${action.tool}@${item.version} ${item.path}`);
+      if (action.makeDefault && entry?.defaultVersion) steps.push(`mise use -g ${action.tool}@${entry.defaultVersion}`);
+      return steps.join(" && ");
+    }
     case "installMise":
       return installers.find((entry) => entry.id === action.installer)?.command ?? "brew install mise";
     case "untrust":
@@ -214,11 +256,6 @@ export function performMachineAction(action: MiseAction): string[] | null {
         entry.source = null;
       }
       return [];
-    }
-    case "syncVersions": {
-      const index = imports.findIndex((entry) => entry.source === action.source);
-      const [found] = index >= 0 ? imports.splice(index, 1) : [];
-      return (found?.versions ?? []).map((version) => `mise linked ${found.tool}@${version}`);
     }
     case "untrust": {
       const index = trusted.indexOf(action.path);
@@ -321,7 +358,11 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
     case "github_status":
       return githubStatus();
     case "detect_imports":
-      return imports.map((entry) => ({ ...entry }));
+      return imports.map((entry) => ({ ...entry, versions: entry.versions.map((item) => ({ ...item })) }));
+    case "shell_conflicts":
+      return shellConflicts;
+    case "global_packages":
+      return globalPackages;
     case "mise_installers":
       return installers;
     case "open_url":

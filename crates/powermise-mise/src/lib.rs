@@ -5,6 +5,7 @@ use std::{io, path::PathBuf};
 
 mod agents;
 mod client;
+mod imports;
 mod machine;
 mod models;
 mod project;
@@ -15,11 +16,14 @@ pub use agents::{AgentCli, AgentPlugin, gemini_extensions, parse_plugin_list};
 pub use client::{
     MiseClient, MiseCommand, OutputLine, RunOutcome, Stream, run_program, validate_package_spec,
 };
+pub use imports::{
+    DetectedImport, GlobalPackage, HOMEBREW_PREFIXES, ImportSource, ImportVersion, ShellConflict,
+    detect_imports, global_packages, shell_conflicts,
+};
 pub use machine::{
-    DetectedImport, DotfileCheckpoint, DotfilesHistory, ImportSource, MachineItem, MachineSection,
-    Plugin, Setting, TokenStatus, ToolAlias, detect_imports, directory_size, parse_checkpoints,
-    parse_machine_status, parse_plugins, parse_settings, parse_token_status, parse_tool_aliases,
-    trusted_configs,
+    DotfileCheckpoint, DotfilesHistory, MachineItem, MachineSection, Plugin, Setting, TokenStatus,
+    ToolAlias, directory_size, parse_checkpoints, parse_machine_status, parse_plugins,
+    parse_settings, parse_token_status, parse_tool_aliases, trusted_configs,
 };
 pub use models::{
     BootstrapPlan, BootstrapStatus, ConfigFile, ConfigSource, Doctor, MiseDirs, MiseVersion,
