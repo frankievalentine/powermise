@@ -565,6 +565,12 @@ button {
   color: var(--text);
 }
 
+/* The theme's muted text, matching Search all's label. */
+.search input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+
 .search:focus-within {
   border-color: var(--accent);
 }
@@ -1191,17 +1197,27 @@ button {
 }
 
 /* ⌘K search */
+/* Search all looks exactly like a page's search field (.search): same box,
+   its label in the placeholder colour, the shortcut at the right edge. It's
+   a button that opens the search palette. */
 .toolbar-search {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
-  height: 26px;
-  padding: 0 8px;
-  border: 0;
+  width: 240px;
+  height: 30px;
+  padding: 0 6px 0 9px;
+  border: 1px solid var(--separator);
   border-radius: var(--radius-sm);
   background: var(--fill);
   color: var(--text-tertiary);
-  font-size: 12px;
+  font-size: 13px;
+  text-align: left;
+  cursor: text;
+}
+
+.toolbar-search kbd {
+  margin-left: auto;
 }
 
 .toolbar-search:hover {

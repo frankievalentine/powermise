@@ -441,7 +441,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
                 aria-label="Search everything"
                 aria-keyshortcuts={platform === "darwin" ? "Meta+K" : "Control+K"}
               >
-                <Search size={13} /> Search all <kbd aria-hidden>{shortcutLabel(platform, "k")}</kbd>
+                <Search size={14} /> Search all <kbd aria-hidden>{shortcutLabel(platform, "k")}</kbd>
               </button>
               )}
               <button
