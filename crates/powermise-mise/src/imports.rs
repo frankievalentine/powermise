@@ -111,7 +111,13 @@ impl DetectedImport {
     }
 }
 
+/// A directory from an environment variable (`NVM_DIR`, `PIPX_HOME`, …).
+/// Tests see none of the machine's variables, so a CI runner's own nvm or
+/// pipx never leaks into them.
 fn env_dir(name: &str) -> Option<PathBuf> {
+    if cfg!(test) {
+        return None;
+    }
     std::env::var_os(name)
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)

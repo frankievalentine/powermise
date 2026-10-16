@@ -1244,10 +1244,15 @@ impl MiseCommand {
 /// project. Returned relative to the project, as mise resolves `--file`.
 fn project_file(project: &Path, file: &Path) -> Result<String, MiseAdapterError> {
     let relative = file.strip_prefix(project).unwrap_or(file);
-    let inside = relative.is_relative()
-        && !relative
-            .components()
-            .any(|component| matches!(component, std::path::Component::ParentDir));
+    // Only plain names: no root or drive (`/etc`, `\Windows`, `C:`) and no
+    // `..`. On Windows `\Users\x` isn't absolute, but it isn't in the
+    // project either.
+    let inside = relative.components().all(|component| {
+        matches!(
+            component,
+            std::path::Component::Normal(_) | std::path::Component::CurDir
+        )
+    });
     if inside
         && relative
             .extension()
@@ -1554,11 +1559,17 @@ mod tests {
             MiseCommand::cache_clear().display(),
             "mise cache clear --yes"
         );
+        // An absolute path on this platform.
+        let install = if cfg!(windows) {
+            r"C:\opt\node-20"
+        } else {
+            "/opt/node-20"
+        };
         assert_eq!(
-            MiseCommand::link("node", "20.11.1", Path::new("/opt/node-20"))
+            MiseCommand::link("node", "20.11.1", Path::new(install))
                 .unwrap()
-                .display(),
-            "mise link node@20.11.1 /opt/node-20"
+                .arguments(),
+            ["link", "node@20.11.1", install]
         );
         assert!(MiseCommand::link("node", "20", Path::new("relative")).is_err());
         assert!(MiseCommand::untrust(Path::new("-rf")).is_err());
