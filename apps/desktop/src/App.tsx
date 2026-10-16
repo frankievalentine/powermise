@@ -34,6 +34,7 @@ import {
 } from "./api";
 import { indexCatalog, type CatalogIndex } from "./catalog";
 import { healthSummary, systemIssues } from "./health";
+import { SidebarUpdate, checkForAppUpdate } from "./components/AppUpdate";
 import { RunSheet, type RunRequest } from "./components/RunSheet";
 import { CommandPalette } from "./components/CommandPalette";
 import { PlatformSwitcher, WindowChrome } from "./components/WindowChrome";
@@ -274,6 +275,13 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   const navigate = useCallback((next: Route) => {
     setQuery("");
     setHistory((stack) => (TOP_LEVEL.includes(next.kind) ? [next] : [...stack, next]));
+  }, []);
+
+  // A newer powermise? Checked once, shortly after opening.
+  useEffect(() => {
+    if (!inTauri) return;
+    const timer = setTimeout(() => void checkForAppUpdate(), 3000);
+    return () => clearTimeout(timer);
   }, []);
 
   // The marketing-site demo steers the app from outside (see main.tsx).
@@ -706,6 +714,7 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
           </div>
         )}
         <div className="row">{PLATFORM_LABEL[inTauri ? env.hostTarget : platform]}</div>
+        <SidebarUpdate />
       </div>
     </nav>
   );

@@ -518,6 +518,12 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
       return githubStatus();
     case "detect_imports":
       return imports.map((entry) => ({ ...entry, versions: entry.versions.map((item) => ({ ...item })) }));
+    case "app_version":
+      return "0.1.0";
+    case "check_app_update":
+      return null;
+    case "install_app_update":
+      return undefined;
     case "newer_tools":
       return newerTools.map((tool) => ({ ...tool }));
     case "newer_tools_preview":

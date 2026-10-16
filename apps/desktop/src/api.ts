@@ -633,6 +633,13 @@ export interface NewerToolsFile {
   contents: string;
 }
 
+/** A newer powermise (src-tauri/src/updater.rs). */
+export interface AppUpdate {
+  version: string;
+  current: string;
+  notes: string | null;
+}
+
 /** A command-line package installed globally outside mise. */
 export interface GlobalPackage {
   backend: "npm" | "pipx" | "cargo" | "gem";
@@ -904,6 +911,9 @@ export const api = {
   detectImports: () => call<DetectedImport[]>("detect_imports"),
   shellConflicts: () => call<ShellConflict[]>("shell_conflicts"),
   systemChecks: () => call<SystemCheck[]>("system_checks"),
+  appVersion: () => call<string>("app_version"),
+  checkAppUpdate: () => call<AppUpdate | null>("check_app_update"),
+  installAppUpdate: () => call<void>("install_app_update"),
   newerTools: () => call<NewerTool[]>("newer_tools"),
   newerToolsPreview: (ids: string[]) => call<NewerToolsFile>("newer_tools_preview", { ids }),
   writeNewerTools: (ids: string[]) => call<string>("write_newer_tools", { ids }),

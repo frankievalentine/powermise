@@ -26,6 +26,7 @@ powermise-compiler = { path = "../../../crates/powermise-compiler" }
 powermise-state = { path = "../../../crates/powermise-state" }
 powermise-mise = { path = "../../../crates/powermise-mise" }
 powermise-setups = { path = "../../../crates/powermise-setups" }
+tauri-plugin-updater = "2"
 
 [profile.release]
 opt-level = 3

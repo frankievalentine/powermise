@@ -52,6 +52,26 @@ A change that makes existing selection files unreadable is a major version.
    scripts use `/releases/latest/download/<file>`, so they follow the newest
    published release.
 
+## In-app updates
+
+powermise updates itself with Tauri's updater (`src-tauri/src/updater.rs`). It
+checks `latest.json` from the newest published release a few seconds after it
+opens (and from **Settings › About powermise › Check for Updates**), then offers
+**Restart to Update** in the sidebar.
+
+- Each release's build signs the update files with the updater key, and the last
+  job writes `latest.json`: the macOS `.app.tar.gz`, each Linux AppImage, and the
+  Windows setup `.exe`, each with its `.sig`. The `.deb`, `.rpm`, and `.msi` don't
+  update in place; reinstall those (the install script picks up the newest).
+- The key pair: the private key is `~/.tauri/powermise-updater.key` (its password
+  is in `powermise-updater.key.password`) on the maintainer's Mac, and the GitHub
+  secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+  The public key is `plugins.updater.pubkey` in `tauri.conf.json`. Back the private
+  key up somewhere safe: without it, installed copies can't verify a new release
+  and stop updating.
+- This is separate from Apple and Microsoft code signing, which releases don't
+  have yet.
+
 ## Release artifacts
 
 The desktop app, built with Tauri, under stable file names:

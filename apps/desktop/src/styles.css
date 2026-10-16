@@ -443,6 +443,26 @@ button {
   gap: 6px;
 }
 
+/* A newer powermise is out. */
+.sidebar-update {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 14%, transparent));
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+
+.sidebar-update:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
 .sidebar-footer .row.warn {
   color: var(--orange);
 }

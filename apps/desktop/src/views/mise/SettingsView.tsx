@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { AboutPowermise } from "../../components/AppUpdate";
 import { Loader2, RotateCcw } from "lucide-react";
 import { api, type Platform, type Setting } from "../../api";
 import type { AppContext } from "../../App";
@@ -101,6 +102,8 @@ export function SettingsView({ context, query }: { context: AppContext; query: s
             </p>
           </div>
         </div>
+
+        <AboutPowermise />
 
         {settings.error && <div className="callout error selectable">{settings.error}</div>}
         {settings.loading && !settings.data && (

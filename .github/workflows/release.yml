@@ -109,6 +109,10 @@ jobs:
 
       - name: Build
         working-directory: apps/desktop
+        # Signs the in-app update files (.sig) with the updater key.
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: bun run tauri build ${{ matrix.args }}
 
       - name: Name the installers
@@ -120,16 +124,21 @@ jobs:
           case "$RUNNER_OS" in
             macOS)
               cp "$(find "$bundle/dmg" -name '*.dmg' | head -n1)" release/powermise-macos-universal.dmg
+              # The in-app update: the app as a .tar.gz, and its signature.
+              cp "$(find "$bundle/macos" -name '*.app.tar.gz' | head -n1)" release/powermise-macos-universal.app.tar.gz
+              cp "$(find "$bundle/macos" -name '*.app.tar.gz.sig' | head -n1)" release/powermise-macos-universal.app.tar.gz.sig
               ;;
             Linux)
               arch=$(uname -m)
               deb_arch=$([ "$arch" = aarch64 ] && echo arm64 || echo amd64)
               cp "$(find "$bundle/appimage" -name '*.AppImage' | head -n1)" "release/powermise-linux-$arch.AppImage"
+              cp "$(find "$bundle/appimage" -name '*.AppImage.sig' | head -n1)" "release/powermise-linux-$arch.AppImage.sig"
               cp "$(find "$bundle/deb" -name '*.deb' | head -n1)" "release/powermise-linux-$deb_arch.deb"
               cp "$(find "$bundle/rpm" -name '*.rpm' | head -n1)" "release/powermise-linux-$arch.rpm"
               ;;
             Windows)
               cp "$(find "$bundle/nsis" -name '*-setup.exe' | head -n1)" release/powermise-windows-x64-setup.exe
+              cp "$(find "$bundle/nsis" -name '*-setup.exe.sig' | head -n1)" release/powermise-windows-x64-setup.exe.sig
               cp "$(find "$bundle/msi" -name '*.msi' | head -n1)" release/powermise-windows-x64.msi
               ;;
           esac
@@ -142,11 +151,11 @@ jobs:
         run: gh release upload "$TAG" release/* --clobber
 
   checksums:
-    name: Checksums
+    name: Checksums and update manifest
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Add SHA256SUMS to the release
+      - name: Add SHA256SUMS and latest.json to the release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -155,4 +164,28 @@ jobs:
           gh release download "$TAG" --pattern 'powermise-*'
           sha256sum powermise-* > SHA256SUMS
           cat SHA256SUMS
-          gh release upload "$TAG" SHA256SUMS --clobber
+          # The manifest the app's updater reads (plugins.updater in
+          # tauri.conf.json): each platform's update file and signature.
+          python3 - "$TAG" "$GH_REPO" <<'PY'
+          import json, sys, datetime, pathlib
+          tag, repo = sys.argv[1], sys.argv[2]
+          base = f"https://github.com/{repo}/releases/download/{tag}"
+          def entry(name):
+              return {"signature": pathlib.Path(f"{name}.sig").read_text().strip(), "url": f"{base}/{name}"}
+          mac = entry("powermise-macos-universal.app.tar.gz")
+          manifest = {
+              "version": tag.removeprefix("v"),
+              "notes": f"https://github.com/{repo}/releases/tag/{tag}",
+              "pub_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "platforms": {
+                  "darwin-aarch64": mac,
+                  "darwin-x86_64": mac,
+                  "linux-x86_64": entry("powermise-linux-x86_64.AppImage"),
+                  "linux-aarch64": entry("powermise-linux-aarch64.AppImage"),
+                  "windows-x86_64": entry("powermise-windows-x64-setup.exe"),
+              },
+          }
+          pathlib.Path("latest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+          print(json.dumps(manifest, indent=2))
+          PY
+          gh release upload "$TAG" SHA256SUMS latest.json --clobber

@@ -18,6 +18,7 @@ mod setups;
 mod skills;
 mod system;
 mod terminal;
+mod updater;
 
 use std::{
     env,
@@ -200,6 +201,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(mise_commands::MiseState::load())
         .invoke_handler(tauri::generate_handler![
             get_environment,
@@ -233,6 +235,9 @@ pub fn run() {
             setups::save_selection,
             setups::export_setup,
             system::system_checks,
+            updater::app_version,
+            updater::check_app_update,
+            updater::install_app_update,
             newer_tools::newer_tools,
             newer_tools::newer_tools_preview,
             newer_tools::write_newer_tools,
