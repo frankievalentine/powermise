@@ -7,7 +7,10 @@ shows the exact mise command it runs.
 
 powermise isn't made by or affiliated with the mise project.
 
-![powermise's Home screen](apps/web/src/assets/app-tour/home.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/powermise-dark.png">
+  <img alt="powermise's Discover screen: the mise registry by category, most popular first, with installed tools marked" src=".github/assets/powermise-light.png">
+</picture>
 
 **[Website and docs](https://powermise.pages.dev)** ·
 **[Live demo](https://powermise.pages.dev/#demo)** ·
