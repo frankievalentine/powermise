@@ -38,9 +38,15 @@ const { title, description, canonical, noindex = false } = Astro.props;
     <title>{title}</title>
     <script is:inline>
       document.documentElement.classList.add('js');
+      // A theme picked with the toggle (shared with the docs, which store ''
+      // for "follow the system"); otherwise the system's own setting.
       (() => {
-        const stored = localStorage.getItem('starlight-theme');
-        const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+        let stored = null;
+        try {
+          stored = localStorage.getItem('starlight-theme');
+        } catch {}
+        const system = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        const theme = stored === 'light' || stored === 'dark' ? stored : system;
         document.documentElement.setAttribute('data-theme', theme);
       })();
     </script>
@@ -94,7 +100,18 @@ const { title, description, canonical, noindex = false } = Astro.props;
         const currentTheme = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
         const theme = currentTheme === 'dark' ? 'light' : 'dark';
         applyTheme(theme);
-        localStorage.setItem('starlight-theme', theme);
+        try {
+          localStorage.setItem('starlight-theme', theme);
+        } catch {}
+      });
+
+      // Until someone picks a theme, follow the system as it changes.
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (event) => {
+        let stored = null;
+        try {
+          stored = localStorage.getItem('starlight-theme');
+        } catch {}
+        if (stored !== 'light' && stored !== 'dark') applyTheme(event.matches ? 'light' : 'dark');
       });
     </script>
   </body>

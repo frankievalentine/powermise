@@ -1,4 +1,5 @@
 ---
+import Arrow from './Arrow.astro';
 const capabilities = [
   { name: 'Home', body: 'A getting-started checklist and how everything stands, at a glance.', status: 'ready' },
   { name: 'My Tools', body: 'Every tool and version, where it’s configured, and which ones nothing uses anymore.', status: 'ready' },
@@ -33,5 +34,5 @@ const capabilities = [
       </li>
     ))}
   </ul>
-  <a class="text-link" href="https://github.com/frankievalentine/powermise/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener noreferrer">See the roadmap <span aria-hidden="true">↗</span></a>
+  <a class="text-link" href="https://github.com/frankievalentine/powermise/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener noreferrer">See the roadmap <Arrow direction="up-right" /></a>
 </section>

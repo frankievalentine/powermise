@@ -1,4 +1,5 @@
 ---
+import Arrow from './Arrow.astro';
 // The hero introduces the app; the live demo directly below is the proof.
 // The download button and install command follow the visitor's OS (see the
 // script below); without JavaScript they point at the install guide.
@@ -21,7 +22,7 @@ const releases = 'https://github.com/frankievalentine/powermise/releases';
       </a>
       <a class="button button-secondary" href="#demo"
         ><span class="hero-demo-wide">Try the live demo</span><span class="hero-demo-phone">Take the tour</span>
-        <span aria-hidden="true">↓</span></a
+        <Arrow direction="down" /></a
       >
     </div>
     <div class="hero-install">

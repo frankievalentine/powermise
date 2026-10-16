@@ -38,6 +38,15 @@
   isolation: isolate;
 }
 
+/* Phones: the nav is in the page flow, so the hero starts right under it
+   rather than centered in a tall block. */
+@media (max-width: 639px) {
+  .home-hero {
+    min-height: 0;
+    padding-top: 2.5rem;
+  }
+}
+
 .home-hero__field {
   position: absolute;
   inset: -10% 0 -20%;
@@ -113,11 +122,15 @@
   font-size: 0.78rem;
 }
 
-/* On phones the command wraps rather than widening the page. */
+/* On phones the command wraps between words rather than widening the page
+   (mid-word only if a word alone can't fit), small enough that the URL fits
+   on its own line. */
 @media (max-width: 32rem) {
   .home-hero .hero-install code {
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    font-size: 0.7rem;
+    text-align: left;
   }
 }
 

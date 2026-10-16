@@ -1,0 +1,26 @@
+---
+// An arrow drawn as SVG, so it looks the same everywhere: iOS draws some
+// arrow characters (↗) as emoji.
+interface Props {
+  direction?: 'right' | 'down' | 'up-right';
+}
+
+const { direction = 'right' } = Astro.props;
+const paths = {
+  right: 'M3 8h10M9 4l4 4-4 4',
+  down: 'M8 3v10M4 9l4 4 4-4',
+  'up-right': 'M4.5 11.5l7-7M5.5 4.5h6v6',
+};
+---
+
+<svg class="arrow" viewBox="0 0 16 16" width="0.85em" height="0.85em" aria-hidden="true" focusable="false">
+  <path d={paths[direction]} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+
+<style>
+  .arrow {
+    flex: none;
+    display: inline-block;
+    vertical-align: -0.08em;
+  }
+</style>

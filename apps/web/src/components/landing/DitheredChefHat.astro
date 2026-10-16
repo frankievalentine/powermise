@@ -1,6 +1,8 @@
 ---
 import { Image } from 'astro:assets';
-import chefHat from '../../assets/chefhat.png';
+// Shown when the animation can't run (reduced motion, no WebGL): the app's
+// own icon, the same dithered hat.
+import appIcon from '../../assets/app-icon.png';
 
 interface Props {
   compact?: boolean;
@@ -19,10 +21,10 @@ const { compact = false, showCaption = true } = Astro.props;
   <canvas class="dithered-chef-hat__canvas" data-dithered-chef-hat-canvas aria-hidden="true" tabindex="-1"></canvas>
   <div class="dithered-chef-hat__fallback" data-dithered-chef-hat-fallback>
     <Image
-      src={chefHat}
-      widths={compact ? [64, 128] : [240, 480]}
-      sizes={compact ? '32px' : '(max-width: 640px) 240px, 240px'}
-      alt={compact ? '' : "Chef's hat illustration"}
+      src={appIcon}
+      widths={compact ? [64, 128] : [160, 320]}
+      sizes={compact ? '32px' : '160px'}
+      alt={compact ? '' : 'The powermise app icon'}
       loading={compact ? 'eager' : 'lazy'}
       decoding="async"
     />
@@ -173,7 +175,7 @@ const { compact = false, showCaption = true } = Astro.props;
 
   .dithered-chef-hat__fallback img {
     display: block;
-    inline-size: min(15rem, 78%);
+    inline-size: min(10rem, 80%);
     block-size: auto;
   }
 

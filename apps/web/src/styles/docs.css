@@ -333,7 +333,7 @@ h1#_top + p {
 }
 
 .sl-markdown-content a[target='_blank']::after {
-  content: '↗';
+  content: '\2197\FE0E'; /* text style, not iOS's emoji */
   margin-left: 0.15em;
   font-size: 0.8em;
   text-decoration: none;
