@@ -1,7 +1,7 @@
 {
   "name": "@powermise/desktop",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The powermise desktop app (Tauri v2 and React), and the browser demo the website embeds.",
   "type": "module",
   "scripts": {

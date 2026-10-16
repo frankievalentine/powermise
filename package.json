@@ -1,6 +1,6 @@
 {
   "name": "powermise",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "An unofficial desktop companion for mise: see, install, and update every tool mise manages, from one window.",
   "private": true,
   "license": "MIT",
