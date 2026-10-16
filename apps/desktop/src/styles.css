@@ -370,9 +370,6 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  /* The text's box sits ~1px above the 16px icon's centre; this centres it. */
-  position: relative;
-  top: 1px;
 }
 
 .sidebar-item .count {
@@ -479,10 +476,15 @@ button {
   border-bottom: 1px solid var(--separator);
 }
 
+.toolbar-brand {
+  flex: none;
+  border-radius: 5px;
+}
+
 .toolbar-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   font-weight: 600;
   font-size: 14px;
@@ -1534,17 +1536,34 @@ button {
 .page.welcome.first-run {
   max-width: 720px;
   margin: 0 auto;
-  padding-top: 4px;
+  padding-top: 0;
+}
+
+/* Tighter rhythm, so the steps fit the default window without scrolling. */
+.page.welcome.first-run .page-header {
+  margin-bottom: 4px;
+}
+
+.page.welcome.first-run .welcome-step {
+  margin-top: 14px;
 }
 
 .welcome-icon {
   display: block;
-  margin-bottom: 18px;
-  border-radius: 16px;
+  margin-bottom: 12px;
+  border-radius: 13px;
 }
 
 .page.welcome.first-run .page-title {
   font-size: 30px;
+}
+
+/* A step's note with its one action beside it. */
+.welcome-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
 }
 
 .welcome-foot {
@@ -2412,11 +2431,31 @@ button {
   background: #28c840;
 }
 
-/* Windows and Linux: thin, always-visible scrollbars. macOS keeps overlay
-   scrollbars from the system. */
-:root:not([data-platform="darwin"]) * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--separator-strong) transparent;
+/* Minimal scrollbars everywhere: no track, a thin soft thumb that firms up on
+   hover — even when macOS is set to always show scroll bars. macOS's WebKit,
+   Windows' WebView2, and Linux's WebKitGTK all read ::-webkit-scrollbar (and
+   the standard scrollbar-width/-color would override it in WebView2, so
+   they're left unset). */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--text) 16%, transparent);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--text) 32%, transparent);
 }
 
 /* Windows puts the primary action first: [Apply] [Cancel]. macOS and GNOME
@@ -2488,6 +2527,9 @@ button {
 
 .activation-steps {
   display: grid;
+  /* minmax keeps the column to its container: the one-line setup command
+     scrolls inside its box instead of widening the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   margin-top: 10px;
 }

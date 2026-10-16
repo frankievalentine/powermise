@@ -274,6 +274,63 @@ pub fn run() {
             macos::macos_settings,
             macos::set_macos_default,
         ])
+        .menu(app_menu)
+        .on_menu_event(|app, event| {
+            if event.id() == updater::CHECK_MENU_ID {
+                updater::check_from_menu(app.clone());
+            }
+        })
+        .setup(|app| {
+            if let Some(window) = tauri::Manager::get_webview_window(app, "main") {
+                fit_to_screen(&window);
+            }
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running the powermise desktop app");
+}
+
+/// The window opens at its default size (1200×800) unless the screen's usable
+/// area is smaller; then it takes 92% of that area, centred, so nothing opens
+/// off-screen or with scrollbars it doesn't need.
+fn fit_to_screen(window: &tauri::WebviewWindow) {
+    let Ok(Some(monitor)) = window.current_monitor() else {
+        return;
+    };
+    let scale = monitor.scale_factor();
+    let area = monitor.work_area().size.to_logical::<f64>(scale);
+    let Ok(size) = window.outer_size() else {
+        return;
+    };
+    let size = size.to_logical::<f64>(scale);
+    let (max_width, max_height) = (area.width * 0.92, area.height * 0.92);
+    if size.width <= max_width && size.height <= max_height {
+        return;
+    }
+    let _ = window.set_size(tauri::LogicalSize::new(
+        size.width.min(max_width),
+        size.height.min(max_height),
+    ));
+    let _ = window.center();
+}
+
+/// The standard menu (macOS: the app menu with About powermise, Edit,
+/// Window, …), with Check for Updates… under About powermise. Windows and
+/// Linux have no menu bar here; Settings has the same check there.
+fn app_menu(app: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
+    let menu = tauri::menu::Menu::default(app)?;
+    if cfg!(target_os = "macos")
+        && let Some(tauri::menu::MenuItemKind::Submenu(app_submenu)) =
+            menu.items()?.into_iter().next()
+    {
+        let check = tauri::menu::MenuItem::with_id(
+            app,
+            updater::CHECK_MENU_ID,
+            "Check for Updates…",
+            true,
+            None::<&str>,
+        )?;
+        app_submenu.insert(&check, 1)?;
+    }
+    Ok(menu)
 }

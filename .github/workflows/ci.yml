@@ -84,3 +84,12 @@ jobs:
 
       - name: Web build
         run: bun run web:build
+
+      # No screen of the app may overflow sideways, on any platform's layout,
+      # at the window's minimum size (scripts/check-layout.ts). The web build
+      # just put the browser demo in apps/web/public/demo.
+      - name: Desktop layout check
+        run: |
+          python3 -m http.server --directory apps/web/public 8099 &
+          sleep 1
+          CHROME=$(command -v google-chrome || command -v chromium) bun scripts/check-layout.ts http://localhost:8099/demo/index.html

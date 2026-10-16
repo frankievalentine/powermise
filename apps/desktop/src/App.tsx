@@ -33,6 +33,7 @@ import {
   type ToolInventory,
 } from "./api";
 import { indexCatalog, type CatalogIndex } from "./catalog";
+import appIcon from "../src-tauri/icons/128x128@2x.png";
 import { healthSummary, systemIssues } from "./health";
 import { SidebarUpdate, checkForAppUpdate } from "./components/AppUpdate";
 import { RunSheet, type RunRequest } from "./components/RunSheet";
@@ -397,6 +398,10 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
                 </button>
               )}
               <div className="toolbar-title" data-tauri-drag-region>
+                {/* Home carries the brand: the app icon and its name. */}
+                {route.kind === "home" && (
+                  <img className="toolbar-brand" src={appIcon} alt="" width={20} height={20} data-tauri-drag-region />
+                )}
                 <span data-tauri-drag-region>{toolbarTitle(route, context)}</span>
               </div>
               <div className="toolbar-spacer" data-tauri-drag-region />
@@ -456,7 +461,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
 function toolbarTitle(route: Route, context: AppContext): string {
   switch (route.kind) {
     case "home":
-      return "Home";
+      return "powermise";
     case "installed":
       return "My Tools";
     case "discover":

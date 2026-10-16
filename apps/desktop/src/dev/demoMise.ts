@@ -146,7 +146,7 @@ function remoteVersions(tool: string): RemoteVersion[] {
 function doctor(): Doctor {
   return {
     version: `${miseVersion} macos-arm64`,
-    activated: true,
+    activated: !new URLSearchParams(window.location.search).has("notActivated"),
     shims_on_path: true,
     self_update_available: selfUpdateAvailable,
     config_files: [GLOBAL_CONFIG, `${HOME}/code/web-app/mise.toml`],

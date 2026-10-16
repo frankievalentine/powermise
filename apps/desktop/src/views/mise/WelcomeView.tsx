@@ -5,7 +5,7 @@ import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { activationCommand } from "../../health";
 import { useAsync } from "../../hooks";
-import { ActivationSteps, ExternalLinkButton, GithubCard, SystemCheckRows, pendingImports } from "../../components/machine";
+import { ActivationSteps, ExternalLinkButton, SystemCheckRows, pendingImports } from "../../components/machine";
 import { CommandBlock } from "../../components/ui";
 
 export const WELCOMED_KEY = "powermise.welcomed";
@@ -57,7 +57,7 @@ export function WelcomeView({ context }: { context: AppContext }) {
       <div className={`page welcome${firstRun ? " first-run" : ""}`}>
         <div className="page-header">
           <div>
-            {firstRun && <img className="welcome-icon" src={appIcon} alt="" width={72} height={72} />}
+            {firstRun && <img className="welcome-icon" src={appIcon} alt="" width={56} height={56} />}
             <h1 className="page-title">Welcome to powermise</h1>
             <p className="page-subtitle">
               An unofficial desktop companion for mise, the tool that installs and switches developer tools like
@@ -181,11 +181,7 @@ export function WelcomeView({ context }: { context: AppContext }) {
         )}
 
         {hasMise && (
-          <Step
-            number={mise.systemChecks?.length ? 5 : 4}
-            title="Sign in GitHub downloads (optional)" note="Avoids rate limits on busy days.">
-            <GithubCard context={context} />
-          </Step>
+          <GithubStep number={mise.systemChecks?.length ? 5 : 4} context={context} />
         )}
 
         <div className="welcome-foot">
@@ -200,6 +196,55 @@ export function WelcomeView({ context }: { context: AppContext }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** GitHub downloads, in one line: done when mise has a token, otherwise the
+ *  GitHub CLI login if there is one, or Health's full options. */
+function GithubStep({ number, context }: { number: number; context: AppContext }) {
+  const { mise, run, navigate } = context;
+  const status = useAsync(() => api.githubStatus(), [mise.revision]);
+  const signedIn = !!status.data?.token.token;
+  const gh = !!status.data?.ghSignedIn;
+  return (
+    <Step
+      number={number}
+      done={signedIn}
+      title="Sign in GitHub downloads (optional)"
+      note={
+        <span className="welcome-inline">
+          <span>
+            {signedIn
+              ? "mise downloads from GitHub signed in."
+              : gh
+                ? "Avoids GitHub’s download limits. Your GitHub CLI login can do it."
+                : "Avoids GitHub’s download limits on busy days."}
+          </span>
+          {!signedIn &&
+            status.data &&
+            (gh ? (
+              <button
+                className="button"
+                onClick={() =>
+                  run({
+                    action: { kind: "setSetting", key: "github.credential_command", value: "gh auth token" },
+                    title: "Use your GitHub CLI login?",
+                    description:
+                      "mise will run “gh auth token” when it downloads from GitHub. The token stays in the GitHub CLI; nothing is copied into your mise config.",
+                    verb: "Use gh",
+                  })
+                }
+              >
+                Use gh
+              </button>
+            ) : (
+              <button className="link-button" onClick={() => navigate({ kind: "health", section: "github" })}>
+                Set Up in Health
+              </button>
+            ))}
+        </span>
+      }
+    />
   );
 }
 
