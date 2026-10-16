@@ -432,6 +432,14 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
                 <span data-tauri-drag-region>{toolbarTitle(route, context)}</span>
               </div>
               <div className="toolbar-spacer" data-tauri-drag-region />
+              <button
+                className={`icon-button${route.kind === "activity" ? " active" : ""}`}
+                onClick={() => navigate({ kind: "activity" })}
+                aria-label="History"
+                title="History — every command powermise ran"
+              >
+                <History size={16} />
+              </button>
               {/* One search at a time: a page with its own filter shows just
                   that; elsewhere, Search all (⌘K opens it from any page). */}
               {!SEARCHABLE.includes(route.kind) && (
@@ -444,14 +452,6 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
                 <Search size={14} /> Search all <kbd aria-hidden>{shortcutLabel(platform, "k")}</kbd>
               </button>
               )}
-              <button
-                className={`icon-button${route.kind === "activity" ? " active" : ""}`}
-                onClick={() => navigate({ kind: "activity" })}
-                aria-label="History"
-                title="History — every command powermise ran"
-              >
-                <History size={16} />
-              </button>
               {SEARCHABLE.includes(route.kind) && (
                 <label className="search">
                   <Search size={14} />
