@@ -38,7 +38,7 @@
     ],
     "longDescription": "powermise is an unofficial desktop companion for mise-en-place: browse and install tools, keep them up to date, manage projects, and check your setup's health — every action shows the mise command it runs.",
     "publisher": "powermise",
-    "homepage": "https://powermise.dev",
+    "homepage": "https://powermise.pages.dev",
     "copyright": "Not affiliated with mise or jdx.",
     "macOS": {
       "signingIdentity": "-",

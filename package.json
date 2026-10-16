@@ -13,6 +13,7 @@
     "web:dev": "bun run --cwd apps/web dev --host",
     "web:check": "bun run --cwd apps/web check",
     "web:build": "bun run --cwd apps/web build",
+    "web:deploy": "bun run web:build && bun run --cwd apps/web deploy",
     "clean": "cargo clean && rm -rf apps/web/dist apps/web/.astro",
     "test:setup-fragment": "scripts/verify-setup-fragment.sh",
     "desktop:dev": "bun run --cwd apps/desktop app:dev",

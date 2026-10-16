@@ -37,7 +37,7 @@ const externalLinksInNewTab = () => ({
 });
 
 export default defineConfig({
-  site: 'https://powermise.dev',
+  site: 'https://powermise.pages.dev',
   markdown: {
     // External links in the docs open in a new tab, without giving the
     // destination access to this page.

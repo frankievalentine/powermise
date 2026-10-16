@@ -1,0 +1,10 @@
+// Cloudflare Pages project for the marketing site and docs
+// (https://powermise.pages.dev). Pushes are built and deployed by the Pages
+// Git integration; `bun run web:deploy` from the repo root publishes a local
+// build with wrangler instead. See docs/RELEASE.md.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "powermise",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-10-01"
+}

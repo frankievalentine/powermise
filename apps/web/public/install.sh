@@ -2,7 +2,7 @@
 # Installs powermise, the unofficial desktop companion for mise, on macOS or
 # Linux from its GitHub releases:
 #
-#   curl -fsSL https://powermise.dev/install.sh | sh
+#   curl -fsSL https://powermise.pages.dev/install.sh | sh
 #
 # macOS: powermise.app goes in /Applications (or ~/Applications).
 # Linux: the .deb (apt) or .rpm (dnf, zypper, yum) through your package
@@ -161,7 +161,7 @@ case "$(uname -s)" in
   Darwin) install_macos ;;
   Linux) install_linux ;;
   MINGW* | MSYS* | CYGWIN*)
-    fail "on Windows, run this in PowerShell instead: irm https://powermise.dev/install.ps1 | iex"
+    fail "on Windows, run this in PowerShell instead: irm https://powermise.pages.dev/install.ps1 | iex"
     ;;
   *) fail "there's no powermise build for $(uname -s) yet." ;;
 esac

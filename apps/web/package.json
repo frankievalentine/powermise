@@ -7,7 +7,8 @@
     "dev": "bun run demo && astro dev",
     "check": "astro check",
     "build": "bun run demo && astro check && astro build",
-    "demo": "bun run --cwd ../desktop build:demo"
+    "demo": "bun run --cwd ../desktop build:demo",
+    "deploy": "wrangler pages deploy"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@types/three": "^0.183.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.151.0"
   }
 }

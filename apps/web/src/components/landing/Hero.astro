@@ -22,7 +22,7 @@ const releases = 'https://github.com/frankievalentine/powermise/releases';
       <a class="button button-secondary" href="#demo">Try the live demo <span aria-hidden="true">↓</span></a>
     </div>
     <div class="hero-install">
-      <code data-install-command>curl -fsSL https://powermise.dev/install.sh | sh</code>
+      <code data-install-command>curl -fsSL https://powermise.pages.dev/install.sh | sh</code>
       <button type="button" class="hero-install__copy" data-install-copy aria-label="Copy the install command">Copy</button>
     </div>
     <p class="hero-proof">
@@ -51,7 +51,7 @@ const releases = 'https://github.com/frankievalentine/powermise/releases';
     label.textContent = downloads[os].label;
   }
   const command = document.querySelector('[data-install-command]');
-  if (os === 'windows' && command) command.textContent = 'irm https://powermise.dev/install.ps1 | iex';
+  if (os === 'windows' && command) command.textContent = 'irm https://powermise.pages.dev/install.ps1 | iex';
   const copy = document.querySelector<HTMLButtonElement>('[data-install-copy]');
   copy?.addEventListener('click', async () => {
     try {

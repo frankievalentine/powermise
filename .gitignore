@@ -19,3 +19,6 @@ apps/desktop/src-tauri/gen/
 
 # Internal notes; kept locally, not published.
 docs/archive/
+
+# wrangler pages dev / deploy state
+.wrangler/

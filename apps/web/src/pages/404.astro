@@ -1,0 +1,39 @@
+---
+// Shown for any address that doesn't exist (Cloudflare Pages serves
+// /404.html). It uses the docs' layout, so search and the sidebar are there
+// to find what was meant.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+---
+
+<StarlightPage
+  frontmatter={{
+    title: 'Page not found',
+    description: 'That page doesn’t exist on the powermise site.',
+    editUrl: false,
+    pagefind: false,
+  }}
+>
+  <div>
+    <p class="not-found__code">404</p>
+    <p>
+      There’s nothing at this address. It may have moved, or the link has a typo. Try the search above, or start from
+      one of these:
+    </p>
+    <ul>
+      <li><a href="/">Home</a> — what powermise is, with a live demo</li>
+      <li><a href="/getting-started/">Getting started</a> — install powermise and mise</li>
+      <li><a href="/app-tour/">App tour</a> — every screen, and the mise command behind each action</li>
+      <li><a href="/ai-setups/">AI Setups</a> — set up AI coding agents with mise</li>
+    </ul>
+  </div>
+</StarlightPage>
+
+<style>
+  .not-found__code {
+    margin: 0;
+    color: var(--sl-color-accent);
+    font-family: var(--sl-font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+  }
+</style>

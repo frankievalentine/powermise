@@ -1,7 +1,7 @@
 # Installs powermise, the unofficial desktop companion for mise, on Windows
 # from its GitHub releases:
 #
-#   irm https://powermise.dev/install.ps1 | iex
+#   irm https://powermise.pages.dev/install.ps1 | iex
 #
 # Runs the installer quietly for your account only, so it doesn't ask for
 # administrator rights. Settings, both optional:

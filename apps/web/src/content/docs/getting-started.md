@@ -13,12 +13,12 @@ checks it against the release's checksums, and installs it:
 
 ```sh
 # macOS and Linux
-curl -fsSL https://powermise.dev/install.sh | sh
+curl -fsSL https://powermise.pages.dev/install.sh | sh
 ```
 
 ```powershell
 # Windows (PowerShell)
-irm https://powermise.dev/install.ps1 | iex
+irm https://powermise.pages.dev/install.ps1 | iex
 ```
 
 On macOS it puts **powermise.app** in Applications. On Linux it installs the

@@ -67,9 +67,38 @@ Builds aren't code-signed yet: macOS gets an ad-hoc signature so it opens on
 Apple Silicon, and the first launch of a downloaded installer takes one extra
 step (see the site's Getting started page). The install scripts
 (`apps/web/public/install.sh` and `install.ps1`, served at
-`powermise.dev/install.sh` and `/install.ps1`) verify every download against
+`powermise.pages.dev/install.sh` and `/install.ps1`) verify every download against
 `SHA256SUMS`.
 
 The CI matrix (`ci.yml`) builds and tests the library crates on all three
 platforms on each commit and checks a compiled setup against real mise on macOS
 and Linux. No hosted sync service is used.
+
+## Website
+
+The marketing site and docs (`apps/web`, an Astro and Starlight static site)
+are a Cloudflare Pages project, `powermise`, at
+[powermise.pages.dev](https://powermise.pages.dev). The site embeds the
+browser demo of the app, so building it also builds `apps/desktop`'s demo.
+
+Pages builds and deploys every push through its Git integration. In the Pages
+wizard (**Workers & Pages › Create › Pages › Connect to Git**), use:
+
+| Setting | Value |
+| --- | --- |
+| Production branch | `main` |
+| Framework preset | None |
+| Root directory | *(leave empty: the repository root)* |
+| Build command | `bun install --frozen-lockfile && bun run web:build` |
+| Build output directory | `apps/web/dist` |
+| Environment variables | `BUN_VERSION` = `1.4.2`, `SKIP_DEPENDENCY_INSTALL` = `true` |
+
+Other branches get preview deployments at `<branch>.powermise.pages.dev`.
+
+To publish a local build instead, run `bun run web:deploy` from the repository
+root. It builds the site and uploads it with wrangler (`apps/web/wrangler.jsonc`);
+the first run asks you to log in to Cloudflare.
+
+`apps/web/public/_headers` serves the install scripts as plain text with a short
+cache, and `src/pages/404.astro` is the page for any address that doesn't exist.
+
