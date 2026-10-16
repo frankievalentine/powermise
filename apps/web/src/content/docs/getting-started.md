@@ -37,17 +37,32 @@ Or download an installer from the [latest release](https://github.com/frankieval
 
 ### Opening it the first time
 
-Releases aren't code-signed yet, so your system asks before opening an app it
-can't verify. The install script avoids this on macOS; a downloaded installer
-needs one extra step:
+powermise isn't code-signed yet: Apple and Microsoft can't vouch for who made it,
+so your system asks before opening it the first time. That's one extra step, once.
+The install script skips it on macOS, and on Linux there's nothing to approve.
 
-- **macOS** — open powermise once, then go to **System Settings › Privacy &
-  Security** and click **Open Anyway**. Or, in Terminal:
-  `xattr -dr com.apple.quarantine /Applications/powermise.app`
-- **Windows** — if SmartScreen says it protected your PC, click **More info**,
-  then **Run anyway**.
-- **Linux** — AppImages need FUSE 2 (`libfuse2`, or `libfuse2t64` on Ubuntu
-  24.04). Make the file executable first: `chmod +x powermise-linux-*.AppImage`.
+**macOS.** Opening a downloaded copy shows *“powermise” Not Opened* (or *Apple
+could not verify…*). Click **Done**, then either:
+
+- open **System Settings › Privacy & Security**, scroll to **Security**, click
+  **Open Anyway** next to *“powermise” was blocked*, and confirm with your
+  password; or
+- run this in Terminal, then open powermise as usual:
+
+  ```sh
+  xattr -dr com.apple.quarantine /Applications/powermise.app
+  ```
+
+**Windows.** If **Windows protected your PC** appears, click **More info**, then
+**Run anyway**. The install script doesn't trigger this.
+
+**Linux.** The `.deb` and `.rpm` install like any local package — nothing to
+approve (the install script uses them). An AppImage needs two things first:
+
+- make it executable — `chmod +x powermise-linux-*.AppImage`, or tick **Allow
+  executing file as program** in its Properties;
+- FUSE 2 — `sudo apt install libfuse2` (`libfuse2t64` on Ubuntu 24.04 and
+  later), `sudo dnf install fuse-libs`, or `sudo pacman -S fuse2`.
 
 ## 2. mise
 

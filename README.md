@@ -31,9 +31,18 @@ irm https://powermise.pages.dev/install.ps1 | iex
 Or download an installer from the
 [latest release](https://github.com/frankievalentine/powermise/releases/latest):
 a universal `.dmg` for macOS, a setup `.exe` or `.msi` for Windows, and an
-AppImage, `.deb`, or `.rpm` for Linux (x64 and ARM). Releases aren't code-signed
-yet, so the first launch of a downloaded installer takes one extra step — see
-[Getting started](https://powermise.pages.dev/getting-started/).
+AppImage, `.deb`, or `.rpm` for Linux (x64 and ARM).
+
+**Releases aren't code-signed yet**, so the first launch of a downloaded
+installer takes one extra step (the install script skips it on macOS):
+
+- **macOS** — click **Open Anyway** in **System Settings › Privacy & Security**,
+  or run `xattr -dr com.apple.quarantine /Applications/powermise.app`.
+- **Windows** — if SmartScreen appears, click **More info**, then **Run anyway**.
+- **Linux** — `.deb` and `.rpm` install normally; an AppImage needs `chmod +x`
+  and FUSE 2.
+
+More in [Getting started](https://powermise.pages.dev/getting-started/#opening-it-the-first-time).
 
 If you don't have mise yet, powermise installs it the first time it opens.
 

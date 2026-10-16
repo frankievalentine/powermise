@@ -46,12 +46,15 @@ jobs:
             exit 1
           fi
 
+      # Install steps and first-launch help for unsigned builds
+      # (.github/release-notes.md), ahead of GitHub's generated notes.
       - name: Create the draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$TAG" >/dev/null 2>&1 ||
-            gh release create "$TAG" --draft --verify-tag --generate-notes --title "powermise ${TAG#v}"
+            gh release create "$TAG" --draft --verify-tag --generate-notes \
+              --notes-file .github/release-notes.md --title "powermise ${TAG#v}"
 
   build:
     name: Build (${{ matrix.name }})

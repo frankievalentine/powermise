@@ -138,6 +138,32 @@
   color: var(--pm-ink);
 }
 
+/* The unsigned-download note under the install command. */
+.home-hero .hero-note {
+  max-width: 34rem;
+  margin: 0.85rem auto 0;
+  color: var(--pm-ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.home-hero .hero-note code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--pm-ink) 7%, transparent);
+  color: var(--pm-ink);
+  font-family: var(--pm-font-mono);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.home-hero .hero-note a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
 .home-hero .hero-proof a {
   margin-left: 0.35rem;
   color: inherit;
