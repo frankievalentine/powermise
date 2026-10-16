@@ -411,6 +411,101 @@
   }
 }
 
+/* The hero's demo button says what a phone gets: the tour, not the live app. */
+.hero-demo-phone {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .hero-demo-wide {
+    display: none;
+  }
+
+  .hero-demo-phone {
+    display: inline;
+  }
+}
+
+/* Phones: the app tour's screenshots to swipe through, instead of the live
+   app (AppDemo.astro doesn't load it there). */
+.demo-gallery {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .demo-stage {
+    display: none;
+  }
+
+  .demo-gallery {
+    display: block;
+    margin: 0 -1.25rem;
+  }
+
+  .demo-gallery__list {
+    display: flex;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 0.25rem 1.25rem 0.75rem;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 1.25rem;
+    scrollbar-width: none;
+  }
+
+  .demo-gallery__list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .demo-gallery__item {
+    flex: 0 0 82%;
+    scroll-snap-align: start;
+  }
+
+  .demo-gallery__item img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow:
+      0 0 0 1px var(--pm-line-strong),
+      0 18px 40px -22px rgba(0, 0, 0, 0.45);
+  }
+
+  .demo-gallery__label {
+    margin: 0.9rem 0 0;
+    color: var(--pm-ink-faint);
+    font: 500 0.8rem/1.2 var(--pm-font-reading);
+  }
+
+  .demo-gallery__label span {
+    font-family: var(--pm-font-mono);
+    font-size: 0.7rem;
+  }
+
+  .demo-gallery__item h3 {
+    margin: 0.3rem 0 0;
+    font-family: var(--pm-font-display);
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+  }
+
+  .demo-gallery__item p:last-child {
+    margin: 0.3rem 0 0;
+    color: var(--pm-ink-soft);
+    font-size: 0.92rem;
+  }
+
+  .demo-gallery__hint {
+    margin: 0.75rem 1.25rem 0;
+    color: var(--pm-ink-faint);
+    font-size: 0.82rem;
+    text-align: center;
+  }
+}
+
 /* ---------- Commands ---------- */
 
 .commands {

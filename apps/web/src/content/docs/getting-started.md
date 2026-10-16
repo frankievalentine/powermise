@@ -93,7 +93,9 @@ The [app tour](/app-tour/) walks through each screen.
 ## Try it without installing
 
 The [live demo](/#demo) on the homepage runs the real app in your browser with
-pretend data. Nothing it does touches your computer.
+pretend data. Nothing it does touches your computer. On a phone the homepage
+shows screenshots of each step instead; open it on a larger screen to use the
+app.
 
 ## Build from source
 

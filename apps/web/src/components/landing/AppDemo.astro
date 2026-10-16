@@ -1,66 +1,92 @@
 ---
+import { Image } from 'astro:assets';
+import homeShot from '../../assets/app-tour/home.png';
+import myToolsShot from '../../assets/app-tour/my-tools.png';
+import discoverShot from '../../assets/app-tour/discover.png';
+import toolShot from '../../assets/app-tour/tool-page.png';
+import importShot from '../../assets/app-tour/import.png';
+import projectsShot from '../../assets/app-tour/projects.png';
+import updatesShot from '../../assets/app-tour/updates.png';
+import healthShot from '../../assets/app-tour/health.png';
+import harnessesShot from '../../assets/app-tour/ai-agents.png';
+import mcpShot from '../../assets/app-tour/mcp-servers.png';
+
 // The real desktop UI (apps/desktop, built with `bun run --cwd apps/desktop
 // build:demo`) running on its browser stub inside an iframe. Scrolling pins
 // the window and walks through a tour; each step steers the app with
 // postMessage. Visitors can click in and use it at any time.
+//
+// On phones the app would be a quarter of its size, too small to read or
+// tap, so they get the app tour's screenshots to swipe through instead, and
+// the live app (its iframe) never loads.
 const steps = [
   {
     route: { kind: 'home' },
     label: 'Home',
+    shot: homeShot,
     title: 'Start here.',
     body: 'A checklist that ticks itself off as you go, and how your tools, projects, and setup stand — at a glance.',
   },
   {
     route: { kind: 'installed' },
     label: 'My Tools',
+    shot: myToolsShot,
     title: 'Everything mise manages, at a glance.',
     body: 'The version you use, where it’s set, and what has an update — without running a single command.',
   },
   {
     route: { kind: 'discover' },
     label: 'Discover',
+    shot: discoverShot,
     title: '1,000+ tools, most popular first.',
     body: 'The whole mise registry, ranked by what developers actually install and sorted into categories — plus everyday utilities like wget and htop.',
   },
   {
     route: [{ kind: 'discover' }, { kind: 'tool', name: 'deno' }],
     label: 'Add a tool',
+    shot: toolShot,
     title: 'Pick a version. Click Install.',
     body: 'powermise shows the exact command first, then streams mise’s output as it runs. Try it — the demo really installs (pretend) deno.',
   },
   {
     route: [{ kind: 'machine' }, { kind: 'import' }],
     label: 'Import',
+    shot: importShot,
     title: 'Bring over what you already have.',
     body: 'Versions from nvm and pyenv, Homebrew and your Brewfile, winget and Scoop, global npm packages — pick what to keep, try a dry run, and import.',
   },
   {
     route: { kind: 'project', path: '/Users/demo/code/web-app' },
     label: 'Projects',
+    shot: projectsShot,
     title: 'Your projects’ tools, tasks, and env.',
     body: 'Run a task from a form built from its arguments, see every variable mise sets — secrets hidden — and review what a folder does before you trust it.',
   },
   {
     route: { kind: 'updates' },
     label: 'Updates',
+    shot: updatesShot,
     title: 'Up to date, even past your pins.',
     body: 'See everything newer than what you have, and upgrade one tool or all of them. mise updates your config to match.',
   },
   {
     route: { kind: 'health' },
     label: 'Health',
+    shot: healthShot,
     title: 'Know your setup is healthy.',
     body: 'mise doctor in plain language: your version, shell activation, and anything that needs attention — with the fix.',
   },
   {
     route: { kind: 'harnesses' },
     label: 'Harnesses',
+    shot: harnessesShot,
     title: 'And when you want AI agents…',
     body: 'Pick Claude Code, Codex, ChatGPT, Amp, and more. powermise installs everything they need through mise.',
   },
   {
     route: { kind: 'mcp' },
     label: 'MCP Servers',
+    shot: mcpShot,
     title: 'MCP servers, agent by agent.',
     body: 'Turn a server on for the agents you use — official ones from GitHub, Linear, Notion, Stripe, and more, or your own — and see what each agent’s settings list right now.',
   },
@@ -74,11 +100,10 @@ const steps = [
       <div class="demo-viewport" data-demo-viewport>
         <iframe
           data-demo-frame
-          src="/demo/index.html"
+          data-src="/demo/index.html"
           title="powermise app demo"
           width="1180"
           height="740"
-          loading="eager"
         ></iframe>
         <button class="demo-activate" type="button" data-demo-activate>
           <span>This is the real app.</span> Click to try it
@@ -109,6 +134,28 @@ const steps = [
         ))}
       </ol>
     </div>
+  </div>
+
+  <div class="demo-gallery">
+    <ol class="demo-gallery__list">
+      {steps.map((step, index) => (
+        <li class="demo-gallery__item">
+          <Image
+            src={step.shot}
+            alt={`powermise: ${step.label}`}
+            widths={[400, 800]}
+            sizes="(max-width: 639px) 82vw, 400px"
+            loading={index === 0 ? 'eager' : 'lazy'}
+          />
+          <p class="demo-gallery__label">
+            <span>{String(index + 1).padStart(2, '0')}</span> {step.label}
+          </p>
+          <h3>{step.title}</h3>
+          <p>{step.body}</p>
+        </li>
+      ))}
+    </ol>
+    <p class="demo-gallery__hint">Open this page on a larger screen to try the live app.</p>
   </div>
 </section>
 
@@ -155,6 +202,15 @@ const steps = [
       viewport.style.setProperty('--demo-scale', String(entry.contentRect.width / APP_WIDTH));
     }).observe(viewport);
   }
+
+  // The live app loads only where it's shown (not on phones, which get the
+  // screenshots), and loads if the window grows into that size.
+  const liveApp = window.matchMedia('(min-width: 640px)');
+  const loadApp = () => {
+    if (frame && liveApp.matches && !frame.src && frame.dataset.src) frame.src = frame.dataset.src;
+  };
+  loadApp();
+  liveApp.addEventListener('change', loadApp);
 
   const post = (message: object) => frame?.contentWindow?.postMessage(message, window.location.origin);
   const syncTheme = () =>
