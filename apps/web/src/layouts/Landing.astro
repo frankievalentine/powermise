@@ -1,0 +1,101 @@
+---
+// The marketing site's page shell: head, theme, nav, footer, and the
+// scroll-reveal and theme-toggle scripts. Used by the homepage and the 404 page.
+import '@fontsource-variable/plus-jakarta-sans';
+
+import Footer from '../components/landing/Footer.astro';
+import Nav from '../components/landing/Nav.astro';
+import '../styles/landing.css';
+import '../styles/home.css';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  noindex?: boolean;
+}
+
+const { title, description, canonical, noindex = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:site_name" content="powermise" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <title>{title}</title>
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      (() => {
+        const stored = localStorage.getItem('starlight-theme');
+        const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <Nav />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+
+    <script>
+      const revealElements = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
+      const leafRevealElements = revealElements.filter((element) => !element.querySelector('[data-reveal]'));
+      const parentRevealElements = revealElements.filter((element) => element.querySelector('[data-reveal]'));
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const revealElement = (element: HTMLElement) => element.classList.add('is-revealed');
+
+      parentRevealElements.forEach((element) => element.removeAttribute('data-reveal'));
+
+      if (reducedMotion || !('IntersectionObserver' in window)) {
+        leafRevealElements.forEach(revealElement);
+      } else {
+        const revealObserver = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              revealElement(entry.target as HTMLElement);
+              revealObserver.unobserve(entry.target);
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
+        );
+        leafRevealElements.forEach((element) => revealObserver.observe(element));
+      }
+    </script>
+    <script>
+      const html = document.documentElement;
+      const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+
+      const applyTheme = (theme: 'light' | 'dark') => {
+        html.setAttribute('data-theme', theme);
+        const nextTheme = theme === 'dark' ? 'light' : 'dark';
+        themeButton?.setAttribute('aria-label', `Use ${nextTheme} theme`);
+      };
+
+      applyTheme((html.getAttribute('data-theme') as 'light' | 'dark') ?? 'dark');
+
+      themeButton?.addEventListener('click', () => {
+        const currentTheme = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        const theme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(theme);
+        localStorage.setItem('starlight-theme', theme);
+      });
+    </script>
+  </body>
+</html>

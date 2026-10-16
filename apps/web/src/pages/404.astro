@@ -1,39 +1,43 @@
 ---
-// Shown for any address that doesn't exist (Cloudflare Pages serves
-// /404.html). It uses the docs' layout, so search and the sidebar are there
-// to find what was meant.
-import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+// The page for any address that doesn't exist (Cloudflare Pages serves
+// /404.html with a 404 status). It uses the marketing site's shell.
+import DitheredChefHat from '../components/landing/DitheredChefHat.astro';
+import Landing from '../layouts/Landing.astro';
 ---
 
-<StarlightPage
-  frontmatter={{
-    title: 'Page not found',
-    description: 'That page doesn’t exist on the powermise site.',
-    editUrl: false,
-    pagefind: false,
-  }}
+<Landing
+  title="Page not found — powermise"
+  description="That page doesn’t exist on the powermise site."
+  noindex
 >
-  <div>
+  <section class="closing not-found" aria-labelledby="not-found-heading">
+    <div class="closing__hat" aria-hidden="true">
+      <DitheredChefHat showCaption={false} />
+    </div>
     <p class="not-found__code">404</p>
-    <p>
-      There’s nothing at this address. It may have moved, or the link has a typo. Try the search above, or start from
-      one of these:
+    <h1 class="closing__title" id="not-found-heading">That page isn’t on the menu.</h1>
+    <p class="closing__body">
+      There’s nothing at this address. It may have moved, or the link has a typo. Try the docs’ search, or start
+      from the homepage.
     </p>
-    <ul>
-      <li><a href="/">Home</a> — what powermise is, with a live demo</li>
-      <li><a href="/getting-started/">Getting started</a> — install powermise and mise</li>
-      <li><a href="/app-tour/">App tour</a> — every screen, and the mise command behind each action</li>
-      <li><a href="/ai-setups/">AI Setups</a> — set up AI coding agents with mise</li>
-    </ul>
-  </div>
-</StarlightPage>
+    <div class="closing__actions">
+      <a class="button button-primary" href="/">Go to the homepage</a>
+      <a class="button button-secondary" href="/getting-started/">Read the docs</a>
+    </div>
+  </section>
+</Landing>
 
 <style>
+  .not-found {
+    min-height: 70vh;
+    padding-top: 7rem;
+  }
+
   .not-found__code {
-    margin: 0;
-    color: var(--sl-color-accent);
-    font-family: var(--sl-font-mono);
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
+    margin: 1rem 0 0;
+    color: var(--pm-accent);
+    font-family: var(--pm-font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
   }
 </style>

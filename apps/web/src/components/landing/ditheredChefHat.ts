@@ -1,5 +1,5 @@
 import type * as THREEType from 'three';
-import chefHatUrl from '../../chefhat.png?url';
+import chefHatUrl from '../../assets/chefhat.png?url';
 
 const MAX_PIXEL_RATIO = 2;
 const CAMERA_DISTANCE = 4.4;
