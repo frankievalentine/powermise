@@ -302,7 +302,7 @@ pub fn preview_config(path: &Path, contents: &str) -> ConfigPreview {
             .iter()
             .map(|(name, value)| {
                 let run = match value {
-                    toml::Value::Table(task) => task.get("run").map(&describe).unwrap_or_default(),
+                    toml::Value::Table(task) => task.get("run").map(describe).unwrap_or_default(),
                     other => describe(other),
                 };
                 (name.clone(), run)

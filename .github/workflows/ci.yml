@@ -34,18 +34,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install mise (unix)
-        if: runner.os != 'Windows'
-        run: |
-          curl https://mise.run | sh
-          echo "$HOME/.local/share/mise/bin" >> "$GITHUB_PATH"
-
-      - name: Install mise (windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          irm https://mise.run | iex
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:LOCALAPPDATA\mise\bin"
+      # mise's own action works the same on Linux, macOS, and Windows
+      # (mise.run serves a POSIX script, which PowerShell can't run).
+      - name: Install mise
+        uses: jdx/mise-action@v5
+        with:
+          install: false
 
       - name: Verify mise
         run: mise --version
