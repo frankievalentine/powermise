@@ -131,7 +131,7 @@ export function HarnessDetail({ context, id }: { context: AppContext; id: string
         {configs.length > 0 && (
           <Section
             title="Plugins"
-            note={`A setup with ${harness.title} installs these with its own plugin command. Browse more in Agents › Plugins.`}
+            note={`A setup with ${harness.title} installs these with its own plugin command. Browse more in Harnesses › Plugins.`}
           >
             <div className="list">
               {configs.map((entry) => (

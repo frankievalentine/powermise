@@ -28,8 +28,8 @@ tools. mise lives in the terminal. powermise puts it in a window:
   other version managers, Homebrew and your Brewfile, winget and Scoop, and
   global npm, pipx, cargo, and gem packages, with a dry run before anything
   changes.
-- **AI Agents** — install a curated AI coding environment (Claude, Codex,
-  Gemini, and more) in one step, and export it to your other computers. See
+- **Harnesses** — install a curated AI coding environment (Claude Code, Codex,
+  ChatGPT, Amp, and more) in one step, and export it to your other computers. See
   [AI Setups](/ai-setups/).
 - **This Computer**, **Settings**, and **History** — machine-wide setup, mise's
   settings in plain words, and every command powermise ran.

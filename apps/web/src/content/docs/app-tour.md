@@ -418,9 +418,10 @@ Reads: `mise settings ls --all --json-extended`
 
 ## AI Setups
 
-The second section of the sidebar: a catalog of AI coding harnesses and a setup
-editor that installs everything they need. See [AI Setups](/ai-setups/).
+The **Harnesses** section of the sidebar. Harnesses are the apps and CLIs that
+run AI coding agents (Claude Code, Codex, Cursor…). Browse them, then build a
+setup that installs everything they need. See [AI Setups](/ai-setups/).
 
-![Browse Agents, the catalog of AI coding agents](../../assets/app-tour/ai-agents.png)
+![Browse Harnesses, the catalog of AI coding harnesses](../../assets/app-tour/ai-agents.png)
 
 ![A saved AI setup, showing its agents and what's installed on this computer](../../assets/app-tour/ai-setup.png)

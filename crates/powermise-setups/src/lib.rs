@@ -29,9 +29,8 @@ use std::{
 use powermise_compiler::{CompileOptions, Compiled, compile_mcp, compile_with};
 use powermise_domain::{MacArch, Platform};
 use powermise_registry::{
-    ResolvedSelection, load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog,
-    load_selection, load_tool_catalog, resolve_selection, validate_catalog, validate_registry,
-    validate_selection,
+    ResolvedSelection, load_catalog, load_integration_catalog, load_mcp_catalog, load_selection,
+    load_tool_catalog, resolve_selection, validate_catalog, validate_registry, validate_selection,
 };
 use powermise_state::{
     GeneratedFileChange, SetupFragment, StateError, fragment_path, inspect_generated_file,
@@ -42,7 +41,6 @@ use thiserror::Error;
 pub struct CatalogPaths {
     pub harnesses: PathBuf,
     pub tools: PathBuf,
-    pub apps: PathBuf,
     pub integrations: PathBuf,
     pub mcp: PathBuf,
 }
@@ -177,10 +175,9 @@ pub fn compile_setup(
     let catalog = load_catalog(&paths.harnesses)?;
     validate_catalog(&catalog)?;
     let tools = load_tool_catalog(&paths.tools)?;
-    let apps = load_app_catalog(&paths.apps)?;
     let integrations = load_integration_catalog(&paths.integrations)?;
     let mcp = load_mcp_catalog(&paths.mcp)?;
-    validate_registry(&catalog, &tools, &integrations, &mcp, &apps)?;
+    validate_registry(&catalog, &tools, &integrations, &mcp)?;
     let selection = load_selection(selection_path)?;
     validate_selection(&selection, &catalog, target)?;
     let resolved = resolve_selection(&selection, &catalog, &tools, &integrations, &mcp, target)?;
@@ -205,7 +202,6 @@ pub fn compile_setup(
     let catalog_sources = [
         read(&paths.harnesses)?,
         read(&paths.tools)?,
-        read(&paths.apps)?,
         read(&paths.integrations)?,
         read(&paths.mcp)?,
     ];

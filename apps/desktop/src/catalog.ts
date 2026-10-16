@@ -27,9 +27,7 @@ export interface CatalogIndex {
 
 export function indexCatalog(bundle: CatalogBundle): CatalogIndex {
   const all = bundle.harnesses.harnesses;
-  // Apps that are also tools (vscode, zed, cursor) are listed once, as tools.
-  const toolIds = new Set(bundle.tools.tools.map((tool) => tool.id));
-  const tools = [...bundle.tools.tools, ...bundle.apps.apps.filter((app) => !toolIds.has(app.id))];
+  const tools = bundle.tools.tools;
   const integrations = bundle.integrations.integrations;
   const mcpServers = bundle.mcp.mcp_servers;
   return {
@@ -78,7 +76,7 @@ export const PROVIDER_LABEL: Record<ToolProviderKind, string> = {
   scoop: "Scoop",
 };
 
-/** Short labels for tight spaces, like the Agent Tools table. */
+/** Short labels for tight spaces, like the install tables. */
 export const PROVIDER_SHORT: Record<ToolProviderKind, string> = {
   "mise-tool": "mise",
   system: "Built in",
@@ -131,7 +129,7 @@ export function titleFor(index: CatalogIndex, id: string): string {
 
 export const MCP_CLIENT_TITLE: Record<McpClientId, string> = {
   "claude-code": "Claude Code",
-  "claude-desktop": "Claude desktop app",
+  "claude-desktop": "Claude Desktop",
   codex: "Codex",
   "gemini-cli": "Gemini CLI",
   opencode: "OpenCode",
@@ -139,7 +137,7 @@ export const MCP_CLIENT_TITLE: Record<McpClientId, string> = {
   vscode: "VS Code",
   "copilot-cli": "Copilot CLI",
   cline: "Cline",
-  antigravity: "Antigravity",
+  amp: "Amp",
   zed: "Zed",
 };
 

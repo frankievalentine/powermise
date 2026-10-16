@@ -3,7 +3,7 @@ import { PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
 import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED, desktopMcpClient, mcpRunsAs } from "../catalog";
 import { ExternalLinkButton, canOpen } from "../components/machine";
-import { AgentsTabs } from "../components/SectionTabs";
+import { HarnessesTabs } from "../components/SectionTabs";
 import { Monogram, Section } from "../components/ui";
 
 /** The MCP servers a setup can add, and the agents powermise adds them to. */
@@ -24,10 +24,10 @@ export function McpServersView({ context, query }: { context: AppContext; query:
   return (
     <div className="content">
       <div className="page">
-        <AgentsTabs context={context} current="mcp" />
+        <HarnessesTabs context={context} current="mcp" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Agents</h1>
+            <h1 className="page-title">Harnesses</h1>
             <p className="page-subtitle">
               MCP servers give an agent extra abilities, like reading current library docs or using a browser. Pick
               them in a setup: mise installs each one and adds it to every agent in the setup.

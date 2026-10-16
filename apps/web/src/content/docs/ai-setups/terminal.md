@@ -33,8 +33,8 @@ ripgrep = "15.2.0"
 "brew-cask:claude" = "latest"
 ```
 
-(That's on a Mac with **Include desktop apps** on: the Claude app comes from
-Homebrew Cask. On Linux, packages like git come from apt instead.)
+(That's on a Mac, with the Claude Desktop harness picked: the Claude app comes
+from Homebrew Cask. On Linux, packages like git come from apt instead.)
 
 mise always reads files in `conf.d`, so there's no environment to switch on:
 the setup's tools work in every terminal where mise is activated. Homebrew
@@ -153,7 +153,7 @@ mise x -- gemini extensions install https://github.com/gemini-cli-extensions/cod
 Applying a setup runs these after `mise bootstrap` for plugins that aren't
 installed yet. Most Codex plugins sign in to a service while installing, so
 powermise opens those in your terminal instead. Removing a setup leaves its
-plugins installed, like its tools; remove them in **Agents › Plugins**.
+plugins installed, like its tools; remove them in **Harnesses › Plugins**.
 
 ## MCP servers
 
@@ -174,11 +174,12 @@ app's own folder move:
 
 | Agent | macOS | Windows | Linux and WSL |
 | --- | --- | --- | --- |
-| Claude desktop app | `~/Library/Application Support/Claude/claude_desktop_config.json` | `~/AppData/Roaming/Claude/claude_desktop_config.json` | — (no Linux app) |
+| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` | `~/AppData/Roaming/Claude/claude_desktop_config.json` | — (no Linux app) |
 | VS Code | `~/Library/Application Support/Code/User/mcp.json` | `~/AppData/Roaming/Code/User/mcp.json` | `~/.config/Code/User/mcp.json` |
 | Cline | `cline_mcp_settings.json` under VS Code's folder above | same | same |
 
-Zed's settings file can hold comments, which mise won't merge into, so add
+Amp keeps its servers under the `amp.mcpServers` key of
+`~/.config/amp/settings.json`. Zed's settings file can hold comments, which mise won't merge into, so add
 servers there in Zed's Agent Panel settings.
 
 Applying the setup runs `mise dotfiles apply` for just those files after

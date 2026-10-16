@@ -27,8 +27,9 @@ The app writes this for you when you save a setup. Selections live in
 1. Every setup starts with the **base** harness: Git, curl, jq, ripgrep, and fd.
 2. Each harness adds the tools it requires.
 3. With **Include desktop apps** on, harnesses add their desktop companions —
-   the Claude or ChatGPT app, for example — where the platform has a provider.
-   A few desktop-first harnesses always include theirs.
+   VS Code for GitHub Copilot, for example — where the platform has a provider.
+   Desktop-first harnesses (Claude Desktop, ChatGPT, Cursor…) always include
+   theirs.
 4. Each tool gets exactly one provider for the platform (see
    [Platforms](/ai-setups/targets/)), and the result compiles to one mise
    config file.

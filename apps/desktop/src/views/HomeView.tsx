@@ -86,7 +86,7 @@ export function HomeView({ context }: { context: AppContext }) {
       detail: "Claude, Codex, Gemini, and others, with everything they need.",
       done: selections.length > 0,
       optional: true,
-      action: { label: "Browse Agents", run: () => navigate({ kind: "harnesses" }) },
+      action: { label: "Browse Harnesses", run: () => navigate({ kind: "harnesses" }) },
     },
   ];
   const remaining = steps.filter((step) => !step.done && !step.optional).length;
@@ -187,7 +187,7 @@ export function HomeView({ context }: { context: AppContext }) {
             />
             <Glance
               icon={<Cpu size={18} />}
-              title="AI Agents"
+              title="Harnesses"
               value={selections.length ? `${selections.length} ${selections.length === 1 ? "setup" : "setups"}` : "Not set up"}
               note={`${selections.filter((selection) => selection.applied).length} applied`}
               onClick={() =>

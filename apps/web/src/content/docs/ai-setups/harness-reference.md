@@ -36,16 +36,17 @@ harness's recommended MCP servers.
 
 | Harness | Works on | Installs on macOS, beyond the basics | Desktop apps (opt-in) | MCP servers |
 | --- | --- | --- | --- | --- |
-| `antigravity` | darwin, linux, win32, wsl | `antigravity-cli`, `npm:@upstash/context7-mcp` | `brew-cask:antigravity` | `context7` |
-| `claude` | darwin, linux, win32, wsl | `claude-code`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp` | `brew-cask:claude` | `context7`, `sequential-thinking` |
+| `amp` | darwin, linux, wsl | `node`, `npm:@ampcode/cli`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp` | — | `context7`, `sequential-thinking` |
+| `chatgpt` | darwin, win32 | `brew-cask:chatgpt` | — | — |
+| `claude` | darwin, linux, win32, wsl | `claude-code`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp` | — | `context7`, `sequential-thinking` |
+| `claude-desktop` | darwin, win32 | `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp`, `brew-cask:claude` | — | `context7`, `sequential-thinking` |
 | `cline` | darwin, win32 | `node`, `npm:@upstash/context7-mcp`, `npm:cline`, `brew-cask:visual-studio-code` | — | `context7` |
-| `codex` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@openai/codex`, `npm:@upstash/context7-mcp` | `brew-cask:chatgpt` | `context7`, `sequential-thinking` |
+| `codex` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@openai/codex`, `npm:@upstash/context7-mcp` | — | `context7`, `sequential-thinking` |
 | `conductor` | darwin | `brew-cask:conductor` | — | — |
 | `cursor` | darwin, win32 | `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp`, `brew-cask:cursor` | — | `context7`, `sequential-thinking` |
 | `fx` | darwin, linux, wsl | `github:vercel-labs/fx` | — | — |
 | `gemini` | darwin, linux, win32, wsl | `node`, `npm:@google/gemini-cli`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@upstash/context7-mcp` | — | `context7`, `sequential-thinking` |
 | `github-copilot` | darwin, linux, win32, wsl | `copilot`, `npm:@upstash/context7-mcp` | `brew-cask:visual-studio-code` | `context7` |
-| `goose` | darwin, linux, win32, wsl | `github:aaif-goose/goose` | — | — |
 | `hermes` | darwin, linux, wsl | `brew:hermes-agent` | — | — |
 | `openclaw` | darwin, linux, win32, wsl | `node`, `npm:openclaw` | — | — |
 | `opencode` | darwin, linux, win32, wsl | `node`, `npm:@modelcontextprotocol/server-sequential-thinking`, `npm:@opencode/cli`, `npm:@upstash/context7-mcp` | — | `context7`, `sequential-thinking` |
@@ -60,11 +61,10 @@ harness's recommended MCP servers.
 
 - **Gemini CLI is enterprise-only now.** Google retired it for personal
   accounts on June 18, 2026; it still works with a Gemini Code Assist Standard
-  or Enterprise license, or a paid API key. Personal accounts use Antigravity
-  CLI (`agy`), which the `antigravity` harness installs.
+  or Enterprise license, or a paid API key.
 - **ChatGPT on Windows comes from the Microsoft Store** (`9PLM9XGG6VKS`, through
   winget). Store apps can't be pinned to a version, so it's declared `latest`.
-
+- **Amp has no native Windows build.** It runs on Windows through WSL.
 - **`hermes` has no Windows build.** It installs from Homebrew on macOS and
   Linux.
 - **Desktop apps install on macOS and Windows only.** They come from Homebrew

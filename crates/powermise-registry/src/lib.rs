@@ -1,7 +1,7 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
 use powermise_domain::{
-    AppCatalog, Catalog, IntegrationCatalog, McpClient, McpServerCatalog, PLUGIN_AGENTS, Platform,
+    Catalog, IntegrationCatalog, McpClient, McpServerCatalog, PLUGIN_AGENTS, Platform,
     SELECTION_SCHEMA_VERSION, Selection, ToolCatalog, ToolProvider, ToolProviderKind,
 };
 use thiserror::Error;
@@ -72,17 +72,6 @@ pub fn load_selection(path: &Path) -> Result<Selection, RegistryError> {
 }
 
 pub fn load_tool_catalog(path: &Path) -> Result<ToolCatalog, RegistryError> {
-    let input = fs::read_to_string(path).map_err(|source| RegistryError::Read {
-        path: path.display().to_string(),
-        source,
-    })?;
-    toml::from_str(&input).map_err(|source| RegistryError::Parse {
-        path: path.display().to_string(),
-        source,
-    })
-}
-
-pub fn load_app_catalog(path: &Path) -> Result<AppCatalog, RegistryError> {
     let input = fs::read_to_string(path).map_err(|source| RegistryError::Read {
         path: path.display().to_string(),
         source,
@@ -328,25 +317,6 @@ fn validate_catalog_metadata(
     Ok(())
 }
 
-fn validate_tool_provider(owner: &str, provider: &ToolProvider) -> Result<(), RegistryError> {
-    if provider.package.trim().is_empty()
-        || provider.version.trim().is_empty()
-        || provider.supported_platforms.is_empty()
-    {
-        return Err(RegistryError::Validation(format!(
-            "{owner} has an incomplete provider"
-        )));
-    }
-    if provider.version.eq_ignore_ascii_case("latest") {
-        return Err(RegistryError::Validation(format!(
-            "{owner} provider `{}` uses `latest`; \
-             catalog providers must pin an explicit resolved version",
-            provider.package
-        )));
-    }
-    validate_download(owner, provider)
-}
-
 /// A Microsoft Store product ID (`9PLM9XGG6VKS`). Mirrors
 /// `powermise_compiler::is_store_id` (the registry doesn't depend on the
 /// compiler).
@@ -391,60 +361,6 @@ fn validate_download(owner: &str, provider: &ToolProvider) -> Result<(), Registr
              an arch, and darwin as its only platform",
             provider.package
         )));
-    }
-    Ok(())
-}
-
-fn validate_provided_or_rejected(
-    owner: &str,
-    has_providers: bool,
-    unsupported_reason: Option<&String>,
-) -> Result<(), RegistryError> {
-    match (has_providers, unsupported_reason) {
-        (false, Some(reason)) if !reason.trim().is_empty() => Ok(()),
-        (false, _) => Err(RegistryError::Validation(format!(
-            "{owner} has no providers and no unsupported reason"
-        ))),
-        (true, Some(_)) => Err(RegistryError::Validation(format!(
-            "{owner} has both providers and an unsupported reason"
-        ))),
-        (true, None) => Ok(()),
-    }
-}
-
-pub fn validate_app_catalog(catalog: &Catalog, apps: &AppCatalog) -> Result<(), RegistryError> {
-    validate_catalog_metadata(
-        "app",
-        apps.schema_version,
-        &apps.catalog,
-        &apps.catalog_revision,
-        catalog,
-    )?;
-    let mut ids = BTreeSet::new();
-    for app in &apps.apps {
-        if app.id.trim().is_empty()
-            || app.title.trim().is_empty()
-            || app.description.trim().is_empty()
-        {
-            return Err(RegistryError::Validation(format!(
-                "app `{}` has incomplete metadata",
-                app.id
-            )));
-        }
-        if !ids.insert(&app.id) {
-            return Err(RegistryError::Validation(format!(
-                "duplicate app ID `{}`",
-                app.id
-            )));
-        }
-        validate_provided_or_rejected(
-            &format!("app `{}`", app.id),
-            !app.providers.is_empty(),
-            app.unsupported_reason.as_ref(),
-        )?;
-        for provider in &app.providers {
-            validate_tool_provider(&format!("app `{}`", app.id), provider)?;
-        }
     }
     Ok(())
 }
@@ -599,11 +515,9 @@ pub fn validate_registry(
     tools: &ToolCatalog,
     integrations: &IntegrationCatalog,
     mcp: &McpServerCatalog,
-    apps: &AppCatalog,
 ) -> Result<(), RegistryError> {
     validate_catalog(catalog)?;
     validate_harness_tool_references(catalog, tools)?;
-    validate_app_catalog(catalog, apps)?;
     validate_integration_catalog(catalog, integrations)?;
     validate_mcp_catalog(catalog, mcp)?;
     validate_harness_integration_references(catalog, integrations)?;
@@ -805,10 +719,6 @@ mod tests {
         toml::from_str(include_str!("../../../catalog/profiles/tools.toml")).unwrap()
     }
 
-    fn apps() -> AppCatalog {
-        toml::from_str(include_str!("../../../catalog/profiles/apps.toml")).unwrap()
-    }
-
     #[test]
     fn version_1_selections_load_as_version_2_and_unknown_versions_fail() {
         let directory = std::env::temp_dir().join(format!(
@@ -962,8 +872,7 @@ harnesses = ["conductor"]
             .providers
             .retain(|provider| provider.supported_platforms.contains(&Platform::Darwin));
 
-        let error =
-            validate_registry(&catalog, &tools, &integrations(), &mcp(), &apps()).unwrap_err();
+        let error = validate_registry(&catalog, &tools, &integrations(), &mcp()).unwrap_err();
         assert!(error.to_string().contains("desktop-first harness `zed`"));
     }
 
@@ -971,7 +880,9 @@ harnesses = ["conductor"]
     fn desktop_apps_resolve_only_when_opted_in_and_available() {
         let catalog = catalog();
         let tools = tools();
+        // GitHub Copilot's VS Code is an opt-in desktop app with no Linux provider.
         let mut selection = selection();
+        selection.harnesses = vec!["github-copilot".into()];
 
         let resolved = resolve_selection(
             &selection,
@@ -983,7 +894,7 @@ harnesses = ["conductor"]
         )
         .unwrap();
         assert!(resolved.desktop_app_ids.is_empty());
-        assert!(!resolved.tool_ids.contains(&"claude-app".to_owned()));
+        assert!(!resolved.tool_ids.contains(&"vscode".to_owned()));
 
         selection.preferences.include_desktop_apps = true;
 
@@ -996,8 +907,8 @@ harnesses = ["conductor"]
             Platform::Darwin,
         )
         .unwrap();
-        assert_eq!(darwin.desktop_app_ids, ["chatgpt-app", "claude-app"]);
-        assert!(darwin.tool_ids.contains(&"claude-app".to_owned()));
+        assert_eq!(darwin.desktop_app_ids, ["vscode"]);
+        assert!(darwin.tool_ids.contains(&"vscode".to_owned()));
         assert!(darwin.unavailable_desktop_ids.is_empty());
 
         let linux = resolve_selection(
@@ -1010,9 +921,9 @@ harnesses = ["conductor"]
         )
         .unwrap();
         assert!(linux.desktop_app_ids.is_empty());
-        assert_eq!(linux.unavailable_desktop_ids, ["claude-app", "chatgpt-app"]);
+        assert_eq!(linux.unavailable_desktop_ids, ["vscode"]);
         assert!(
-            !linux.tool_ids.contains(&"claude-app".to_owned()),
+            !linux.tool_ids.contains(&"vscode".to_owned()),
             "unavailable desktop apps must never enter the tool set"
         );
     }
@@ -1042,8 +953,8 @@ harnesses = ["conductor"]
                 },
             );
 
-        let error = validate_registry(&catalog, &pinned_catalog, &integrations(), &mcp(), &apps())
-            .unwrap_err();
+        let error =
+            validate_registry(&catalog, &pinned_catalog, &integrations(), &mcp()).unwrap_err();
         assert!(
             error
                 .to_string()
@@ -1062,7 +973,7 @@ harnesses = ["conductor"]
             .find(|provider| provider.kind == ToolProviderKind::BootstrapApt)
             .unwrap()
             .version = "latest".into();
-        validate_registry(&catalog, &apt_catalog, &integrations(), &mcp(), &apps()).unwrap();
+        validate_registry(&catalog, &apt_catalog, &integrations(), &mcp()).unwrap();
     }
 
     #[test]
@@ -1081,9 +992,8 @@ harnesses = ["conductor"]
             toml::from_str(include_str!("../../../catalog/profiles/tools.toml")).unwrap();
         let integrations = integrations();
         let mcp = mcp();
-        let apps = apps();
 
-        validate_registry(&catalog, &tools, &integrations, &mcp, &apps).unwrap();
+        validate_registry(&catalog, &tools, &integrations, &mcp).unwrap();
     }
 
     #[test]

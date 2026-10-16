@@ -262,9 +262,9 @@ One section of the app. A setup is a selection file
 - [x] Selection schema v2: drop `machine_roles`, `preferences.auto_prune`, and
       `preferences.update_system_packages`. Version 1 files load and are upgraded
       on the next save.
-- [ ] An "Extra apps" picker for setups. `catalog/profiles/apps.toml` (Slack,
-      Figma, 1Password, …) was only reachable through machine roles, so it has
-      no way in today.
+- [x] Drop the unused apps catalog (`apps.toml`: Slack, Figma, 1Password, …)
+      and the Agent Tools tab that listed it; a harness's page shows what it
+      installs.
 - [x] Install-source order: mise → comes with the system → Homebrew → cask → apt →
       winget → Scoop. mise installs Homebrew formulas and casks itself (no
       Homebrew needed). git and curl come with macOS; codex, gemini-cli, and

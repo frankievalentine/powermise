@@ -6,7 +6,6 @@
 import { parse } from "smol-toml";
 import harnessesToml from "../../../../catalog/profiles/harnesses.toml?raw";
 import toolsToml from "../../../../catalog/profiles/tools.toml?raw";
-import appsToml from "../../../../catalog/profiles/apps.toml?raw";
 import integrationsToml from "../../../../catalog/profiles/integrations.toml?raw";
 import mcpToml from "../../../../catalog/profiles/mcp.toml?raw";
 import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED } from "../catalog";
@@ -54,7 +53,6 @@ const catalog: CatalogBundle = {
     }),
   },
   tools: parse(toolsToml) as unknown as CatalogBundle["tools"],
-  apps: parse(appsToml) as unknown as CatalogBundle["apps"],
   integrations: parse(integrationsToml) as unknown as CatalogBundle["integrations"],
   mcp: parse(mcpToml) as unknown as CatalogBundle["mcp"],
 };
@@ -113,7 +111,7 @@ const MANAGER: Partial<Record<ToolProviderKind, string>> = {
 
 function compile(draft: SelectionDraft, target: Platform) {
   const byId = new Map(catalog.harnesses.harnesses.map((harness) => [harness.id, harness]));
-  const toolsById = new Map([...catalog.tools.tools, ...catalog.apps.apps].map((tool) => [tool.id, tool]));
+  const toolsById = new Map(catalog.tools.tools.map((tool) => [tool.id, tool]));
   const ids = ["base", ...draft.harnesses.filter((id) => id !== "base")];
   const tools = new Set<string>();
   const desktop = new Set<string>();
@@ -229,7 +227,7 @@ const MCP_PATHS: Partial<Record<McpClientId, (platform: Platform) => string | nu
   "copilot-cli": () => "~/.copilot/mcp-config.json",
   cline: (platform) =>
     `${platform === "darwin" ? "~/Library/Application Support/Code/User" : platform === "win32" ? "~/AppData/Roaming/Code/User" : "~/.config/Code/User"}/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`,
-  antigravity: () => "~/.gemini/config/mcp_config.json",
+  amp: () => "~/.config/amp/settings.json",
 };
 
 function fragment(name: string, installs: Install[], mcpTargets: McpTarget[] = []): string {
@@ -366,8 +364,7 @@ const SKILLS_AGENTS = [
   ["cursor", "Cursor", false],
   ["opencode", "OpenCode", false],
   ["github-copilot", "GitHub Copilot", false],
-  ["goose", "Goose", false],
-  ["antigravity", "Antigravity", false],
+  ["amp", "Amp", false],
   ["hermes-agent", "Hermes Agent", false],
 ] as const;
 setSkillsHook((action) => {

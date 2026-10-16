@@ -131,24 +131,6 @@ pub struct Tool {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct AppCatalog {
-    pub schema_version: u32,
-    pub catalog: String,
-    pub catalog_revision: String,
-    pub apps: Vec<App>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct App {
-    pub id: String,
-    pub title: String,
-    pub description: String,
-    pub providers: Vec<ToolProvider>,
-    #[serde(default)]
-    pub unsupported_reason: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
 pub struct IntegrationCatalog {
     pub schema_version: u32,
     pub catalog: String,
@@ -224,7 +206,7 @@ pub enum McpClient {
     Vscode,
     CopilotCli,
     Cline,
-    Antigravity,
+    Amp,
     Zed,
 }
 
@@ -240,7 +222,7 @@ impl McpClient {
             Self::Vscode => "vscode",
             Self::CopilotCli => "copilot-cli",
             Self::Cline => "cline",
-            Self::Antigravity => "antigravity",
+            Self::Amp => "amp",
             Self::Zed => "zed",
         }
     }
@@ -248,7 +230,7 @@ impl McpClient {
     pub fn title(self) -> &'static str {
         match self {
             Self::ClaudeCode => "Claude Code",
-            Self::ClaudeDesktop => "Claude desktop app",
+            Self::ClaudeDesktop => "Claude Desktop",
             Self::Codex => "Codex",
             Self::GeminiCli => "Gemini CLI",
             Self::Opencode => "OpenCode",
@@ -256,7 +238,7 @@ impl McpClient {
             Self::Vscode => "VS Code",
             Self::CopilotCli => "Copilot CLI",
             Self::Cline => "Cline",
-            Self::Antigravity => "Antigravity",
+            Self::Amp => "Amp",
             Self::Zed => "Zed",
         }
     }
@@ -290,9 +272,7 @@ impl McpClient {
             Self::Cline => format!(
                 "{vscode}/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
             ),
-            // Antigravity CLI and the Antigravity 2 app share this file
-            // (the older `~/.gemini/antigravity/` one is migrated from).
-            Self::Antigravity => "~/.gemini/config/mcp_config.json".into(),
+            Self::Amp => "~/.config/amp/settings.json".into(),
             Self::Zed => {
                 return Err(
                     "Zed's settings file can hold comments, which mise won't merge into; add servers in Zed's Agent Panel settings",
@@ -307,6 +287,7 @@ impl McpClient {
             Self::Codex => "mcp_servers",
             Self::Opencode => "mcp",
             Self::Vscode => "servers",
+            Self::Amp => "amp.mcpServers",
             Self::Zed => "context_servers",
             _ => "mcpServers",
         }

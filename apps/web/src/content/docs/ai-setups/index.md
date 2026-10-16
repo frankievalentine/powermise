@@ -11,11 +11,12 @@ depends on, and optional desktop apps. AI Setups need mise 2026.10 or newer;
 
 ## In the app
 
-Under **AI Agents** in the sidebar:
+Under **Harnesses** in the sidebar — the apps and CLIs that run AI coding
+agents (Claude Code, Codex, Cursor…):
 
-- **Browse Agents** — the catalog of agents (harnesses), with what each installs
-  on each platform, and tabs for the **Agent Tools**, **MCP Servers**,
-  **Plugins**, and **Skills** they can bring along.
+- **Browse Harnesses** — the catalog, with what each harness installs on each
+  platform, and tabs for the **MCP Servers**, **Plugins**, and **Skills** they
+  can bring along.
 - **Your setups** — listed below it. Create one with **+**, pick
   harnesses, and the side panel shows exactly what will be installed.
   **Export…** on a setup's page saves it as a file; **Import a Setup File…** in

@@ -4,7 +4,7 @@ import { api, type AgentCli, type AgentPlugin } from "../api";
 import type { AppContext } from "../App";
 import { AGENT_CLI_TITLE } from "../catalog";
 import { useAsync } from "../hooks";
-import { AgentsTabs } from "../components/SectionTabs";
+import { HarnessesTabs } from "../components/SectionTabs";
 import { Monogram, Section } from "../components/ui";
 
 const AGENTS: AgentCli[] = ["claude", "codex", "gemini"];
@@ -60,10 +60,10 @@ export function PluginsView({ context, query }: { context: AppContext; query: st
   return (
     <div className="content">
       <div className="page">
-        <AgentsTabs context={context} current="integrations" />
+        <HarnessesTabs context={context} current="integrations" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Agents</h1>
+            <h1 className="page-title">Harnesses</h1>
             <p className="page-subtitle">
               Plugins and extensions add commands, skills, and connections to an agent. powermise installs them with the
               agent’s own command, so they work exactly as if you’d added them yourself.
@@ -94,7 +94,7 @@ export function PluginsView({ context, query }: { context: AppContext; query: st
           <div className="callout warn">
             <AlertTriangle size={14} />
             <span>
-              {report.data.error}. Add {title} with a setup in AI Agents, then come back here.
+              {report.data.error}. Add {title} with a setup in Harnesses, then come back here.
             </span>
           </div>
         )}

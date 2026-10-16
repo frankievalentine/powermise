@@ -138,7 +138,7 @@ const ALL_CLIENTS: [McpClient; 11] = [
     McpClient::Vscode,
     McpClient::CopilotCli,
     McpClient::Cline,
-    McpClient::Antigravity,
+    McpClient::Amp,
     McpClient::Zed,
 ];
 

@@ -10,7 +10,7 @@ use std::{
 use crate::{CatalogPaths, PowermiseLayout, SetupsError};
 
 /// The catalog files compiled into this build, by file name.
-const EMBEDDED_CATALOG: [(&str, &str); 5] = [
+const EMBEDDED_CATALOG: [(&str, &str); 4] = [
     (
         "harnesses.toml",
         include_str!("../../../catalog/profiles/harnesses.toml"),
@@ -18,10 +18,6 @@ const EMBEDDED_CATALOG: [(&str, &str); 5] = [
     (
         "tools.toml",
         include_str!("../../../catalog/profiles/tools.toml"),
-    ),
-    (
-        "apps.toml",
-        include_str!("../../../catalog/profiles/apps.toml"),
     ),
     (
         "integrations.toml",
@@ -42,7 +38,6 @@ impl CatalogPaths {
         Self {
             harnesses: directory.join("harnesses.toml"),
             tools: directory.join("tools.toml"),
-            apps: directory.join("apps.toml"),
             integrations: directory.join("integrations.toml"),
             mcp: directory.join("mcp.toml"),
         }

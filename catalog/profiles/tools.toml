@@ -156,8 +156,8 @@ supported_platforms = ["darwin"]
 
 [[tools]]
 id = "claude-app"
-title = "Claude App"
-description = "Anthropic's official Claude AI desktop app."
+title = "Claude Desktop"
+description = "Anthropic's Claude desktop app."
 
 [[tools.providers]]
 kind = "bootstrap-brew-cask"
@@ -223,6 +223,18 @@ package = "npm:cline"
 version = "3.0.71"
 command = "cline"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
+
+[[tools]]
+id = "amp"
+title = "Amp"
+description = "Amp's terminal coding agent."
+
+[[tools.providers]]
+kind = "mise-tool"
+package = "npm:@ampcode/cli"
+version = "0.0.1792108872-gab0eb7"
+command = "amp"
+supported_platforms = ["darwin", "linux", "wsl"]
 
 [[tools]]
 id = "codex"
@@ -298,27 +310,13 @@ supported_platforms = ["win32"]
 [[tools]]
 id = "gemini-cli"
 title = "Gemini CLI"
-description = "Google's Gemini CLI. Retired for personal Google accounts on June 18, 2026 (Antigravity CLI replaces it); it still works with a Gemini Code Assist Standard or Enterprise license, or a paid API key."
+description = "Google's Gemini CLI. Retired for personal Google accounts on June 18, 2026; it still works with a Gemini Code Assist Standard or Enterprise license, or a paid API key."
 
 [[tools.providers]]
 kind = "mise-tool"
 package = "npm:@google/gemini-cli"
 version = "0.64.0"
 command = "gemini"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]
-
-["darwin"]
-
-[[tools]]
-id = "goose"
-title = "Goose"
-description = "An open-source, extensible AI agent for code, workflows, and automation."
-
-[[tools.providers]]
-kind = "mise-tool"
-package = "github:aaif-goose/goose"
-version = "1.54.0"
-command = "goose"
 supported_platforms = ["darwin", "linux", "win32", "wsl"]
 
 [[tools]]
@@ -444,23 +442,6 @@ command = "fx"
 supported_platforms = ["darwin", "linux", "wsl"]
 
 [[tools]]
-id = "antigravity-app"
-title = "Antigravity"
-description = "Google's agent-first code editor and agent manager."
-
-[[tools.providers]]
-kind = "bootstrap-brew-cask"
-package = "antigravity"
-version = "2.23.1"
-supported_platforms = ["darwin"]
-
-[[tools.providers]]
-kind = "winget"
-package = "Google.Antigravity"
-version = "2.23.1"
-supported_platforms = ["win32"]
-
-[[tools]]
 id = "copilot-cli"
 title = "GitHub Copilot CLI"
 description = "GitHub Copilot's coding agent in your terminal."
@@ -506,14 +487,3 @@ package = "StablyAI.Orca"
 version = "1.4.224"
 supported_platforms = ["win32"]
 
-[[tools]]
-id = "antigravity-cli"
-title = "Antigravity CLI"
-description = "Google's terminal agent for Antigravity (the `agy` command), which replaced Gemini CLI."
-
-[[tools.providers]]
-kind = "mise-tool"
-package = "antigravity-cli"
-version = "1.3.5"
-command = "agy"
-supported_platforms = ["darwin", "linux", "win32", "wsl"]

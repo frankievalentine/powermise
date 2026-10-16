@@ -21,7 +21,7 @@ const PAGES: { title: string; route: Route; keywords: string }[] = [
   { title: "My Tools", route: { kind: "installed" }, keywords: "installed tools" },
   { title: "Updates", route: { kind: "updates" }, keywords: "upgrade outdated new versions" },
   { title: "Discover", route: { kind: "discover" }, keywords: "install find browse registry" },
-  { title: "Browse Agents", route: { kind: "harnesses" }, keywords: "ai harnesses claude codex gemini" },
+  { title: "Browse Harnesses", route: { kind: "harnesses" }, keywords: "ai harnesses claude codex gemini" },
   { title: "This Computer", route: { kind: "machine" }, keywords: "machine bootstrap packages dotfiles" },
   { title: "Import", route: { kind: "import" }, keywords: "bring over brewfile homebrew nvm pyenv asdf migrate" },
   { title: "macOS Settings", route: { kind: "macos-settings" }, keywords: "dock finder defaults mac" },

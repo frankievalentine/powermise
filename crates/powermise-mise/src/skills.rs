@@ -72,16 +72,10 @@ pub const SKILLS_AGENTS: &[SkillsAgent] = &[
         detect: |home| home.join(".copilot"),
     },
     SkillsAgent {
-        id: "goose",
-        title: "Goose",
-        skills_dir: |home| config(home).join("goose/skills"),
-        detect: |home| config(home).join("goose"),
-    },
-    SkillsAgent {
-        id: "antigravity",
-        title: "Antigravity",
-        skills_dir: |home| home.join(".gemini/antigravity/skills"),
-        detect: |home| home.join(".gemini/antigravity"),
+        id: "amp",
+        title: "Amp",
+        skills_dir: |home| config(home).join("agents/skills"),
+        detect: |home| config(home).join("amp"),
     },
     SkillsAgent {
         id: "hermes-agent",

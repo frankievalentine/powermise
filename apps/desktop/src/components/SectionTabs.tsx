@@ -17,22 +17,21 @@ export function MyToolsTabs({ context, current }: { context: AppContext; current
   );
 }
 
-/** Browse Agents: the agents, and what they can bring along. */
-export function AgentsTabs({
+/** Browse Harnesses: the harnesses, and what they can bring along. */
+export function HarnessesTabs({
   context,
   current,
 }: {
   context: AppContext;
-  current: "harnesses" | "tools" | "mcp" | "integrations" | "skills";
+  current: "harnesses" | "mcp" | "integrations" | "skills";
 }) {
   return (
     <PageTabs
-      label="Browse agents"
+      label="Browse harnesses"
       current={current}
       onSelect={(kind) => context.navigate({ kind })}
       tabs={[
-        { value: "harnesses", label: "Agents" },
-        { value: "tools", label: "Agent Tools" },
+        { value: "harnesses", label: "Harnesses" },
         { value: "mcp", label: "MCP Servers" },
         { value: "integrations", label: "Plugins" },
         { value: "skills", label: "Skills" },

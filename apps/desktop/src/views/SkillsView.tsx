@@ -5,7 +5,7 @@ import type { AppContext } from "../App";
 import { useAsync } from "../hooks";
 import { CURATED_SKILLS } from "../data/skillsCurated";
 import { ExternalLinkButton } from "../components/machine";
-import { AgentsTabs } from "../components/SectionTabs";
+import { HarnessesTabs } from "../components/SectionTabs";
 import { Monogram, Section, Switch } from "../components/ui";
 
 const AGENTS_KEY = "powermise.skillsAgents";
@@ -89,10 +89,10 @@ export function SkillsView({ context, query }: { context: AppContext; query: str
   return (
     <div className="content">
       <div className="page">
-        <AgentsTabs context={context} current="skills" />
+        <HarnessesTabs context={context} current="skills" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Agents</h1>
+            <h1 className="page-title">Harnesses</h1>
             <p className="page-subtitle">
               Skills are folders of instructions an agent loads when they’re relevant — how to fill a PDF, or how your
               team writes React. powermise installs them with the skills CLI from skills.sh, which mise runs for you.

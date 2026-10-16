@@ -9,13 +9,12 @@ use std::{env, fs, path::PathBuf};
 
 use powermise_compiler::Install;
 use powermise_domain::{
-    AppCatalog, Catalog, IntegrationCatalog, McpServerCatalog, Platform, Preferences,
-    SELECTION_SCHEMA_VERSION, Selection, ToolCatalog, ToolProviderKind,
+    Catalog, IntegrationCatalog, McpServerCatalog, Platform, Preferences, SELECTION_SCHEMA_VERSION,
+    Selection, ToolCatalog, ToolProviderKind,
 };
 use powermise_mise::{BootstrapPlan, MiseCommand};
 use powermise_registry::{
-    load_app_catalog, load_catalog, load_integration_catalog, load_mcp_catalog, load_selection,
-    load_tool_catalog,
+    load_catalog, load_integration_catalog, load_mcp_catalog, load_selection, load_tool_catalog,
 };
 use powermise_setups::{
     CatalogPaths, RemovedServer, SelectionStore, compile_setup, expand_home, inspect_fragment,
@@ -205,7 +204,6 @@ pub struct CatalogBundle {
     revision: String,
     harnesses: Catalog,
     tools: ToolCatalog,
-    apps: AppCatalog,
     integrations: IntegrationCatalog,
     mcp: McpServerCatalog,
 }
@@ -218,7 +216,6 @@ pub fn get_catalog() -> CommandResult<CatalogBundle> {
         revision: harnesses.catalog_revision.clone(),
         harnesses,
         tools: load_tool_catalog(&paths.tools).map_err(message)?,
-        apps: load_app_catalog(&paths.apps).map_err(message)?,
         integrations: load_integration_catalog(&paths.integrations).map_err(message)?,
         mcp: load_mcp_catalog(&paths.mcp).map_err(message)?,
     })

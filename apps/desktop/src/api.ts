@@ -48,7 +48,7 @@ export type McpClientId =
   | "vscode"
   | "copilot-cli"
   | "cline"
-  | "antigravity"
+  | "amp"
   | "zed";
 
 /** An MCP server: a program mise installs and runs, or a remote `url`. */
@@ -163,7 +163,6 @@ export interface CatalogBundle {
   revision: string;
   harnesses: { harnesses: Harness[] };
   tools: { tools: Tool[] };
-  apps: { apps: Tool[] };
   integrations: { integrations: Integration[] };
   mcp: { mcp_servers: McpServer[] };
 }

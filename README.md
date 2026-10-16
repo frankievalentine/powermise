@@ -61,7 +61,7 @@ If you don't have mise yet, powermise installs it the first time it opens.
   PowerShell, and Nushell.
 - **This Computer** — `mise bootstrap`: system packages, dotfiles and their
   history, macOS settings, and newer versions of the tools macOS ships.
-- **AI Setups** — install AI coding agents (Claude, Codex, Gemini, and more),
+- **Harnesses** — install AI coding agents (Claude Code, Codex, ChatGPT, Amp, and more),
   their MCP servers, plugins, and skills, through mise.
 
 The [app tour](https://powermise.pages.dev/app-tour/) walks through every screen.

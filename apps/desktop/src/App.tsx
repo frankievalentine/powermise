@@ -42,7 +42,6 @@ import { PlatformSwitcher, WindowChrome } from "./components/WindowChrome";
 import { hasPrimaryModifier, shortcutLabel, usePlatform } from "./platform";
 import { HarnessesView } from "./views/HarnessesView";
 import { HarnessDetail } from "./views/HarnessDetail";
-import { ToolsView } from "./views/ToolsView";
 import { PluginsView } from "./views/PluginsView";
 import { SkillsView } from "./views/SkillsView";
 import { ImportView } from "./views/mise/ImportView";
@@ -79,7 +78,6 @@ export type Route =
   // AI Setups
   | { kind: "harnesses" }
   | { kind: "harness"; id: string }
-  | { kind: "tools" }
   | { kind: "mcp" }
   | { kind: "integrations" }
   | { kind: "skills" }
@@ -139,7 +137,6 @@ const TOP_LEVEL: Route["kind"][] = [
   "welcome",
   "project",
   "harnesses",
-  "tools",
   "mcp",
   "integrations",
   "skills",
@@ -152,25 +149,23 @@ const SEARCH_PLACEHOLDER: Partial<Record<Route["kind"], string>> = {
   discover: "Search 1,000+ tools",
   settings: "Search settings",
   "macos-settings": "Search macOS settings",
-  harnesses: "Search agents",
-  tools: "Search agent tools",
+  harnesses: "Search harnesses",
   mcp: "Search MCP servers",
   integrations: "Search plugins",
   skills: "Search skills",
 };
 
-const SEARCHABLE: Route["kind"][] = ["installed", "discover", "settings", "macos-settings", "harnesses", "tools", "mcp", "integrations", "skills"];
+const SEARCHABLE: Route["kind"][] = ["installed", "discover", "settings", "macos-settings", "harnesses", "mcp", "integrations", "skills"];
 
 /** Pages that share a row of tabs: switching between them swaps only the
  *  content, without the page transition, so the tabs stay put. */
 const TAB_GROUPS: Partial<Record<Route["kind"], string>> = {
   installed: "my-tools",
   updates: "my-tools",
-  harnesses: "agents",
-  tools: "agents",
-  mcp: "agents",
-  integrations: "agents",
-  skills: "agents",
+  harnesses: "harnesses",
+  mcp: "harnesses",
+  integrations: "harnesses",
+  skills: "harnesses",
 };
 
 const routeKey = (route: Route) =>
@@ -518,14 +513,13 @@ function toolbarTitle(route: Route, context: AppContext): string {
     case "project":
       return route.path.split(/[\\/]/).filter(Boolean).pop() ?? route.path;
     case "harnesses":
-      return "Agents";
+      return "Harnesses";
     case "harness":
       return context.catalog.harnessById.get(route.id)?.title ?? route.id;
-    case "tools":
     case "mcp":
     case "integrations":
     case "skills":
-      return "Agents";
+      return "Harnesses";
     case "setup":
       return route.name;
     case "editor":
@@ -582,8 +576,6 @@ function RouteView({ route, context, query }: { route: Route; context: AppContex
       return <HarnessesView context={context} query={query} />;
     case "harness":
       return <HarnessDetail context={context} id={route.id} />;
-    case "tools":
-      return <ToolsView context={context} query={query} />;
     case "mcp":
       return <McpServersView context={context} query={query} />;
     case "integrations":
@@ -686,12 +678,12 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
 
         <div className="sidebar-section">
           <div className="sidebar-heading">
-            AI Agents
+            Harnesses
             <button onClick={() => navigate({ kind: "editor" })} aria-label="New setup" title="New Setup">
               <Plus size={14} />
             </button>
           </div>
-          {item(["harnesses", "harness", "tools", "mcp", "integrations", "skills"], "Browse Agents", Cpu)}
+          {item(["harnesses", "harness", "mcp", "integrations", "skills"], "Browse Harnesses", Cpu)}
           {selections.map((selection) => {
             const active =
               (route.kind === "setup" && route.name === selection.name) ||
