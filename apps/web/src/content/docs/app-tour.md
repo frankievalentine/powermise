@@ -9,8 +9,8 @@ time. When it finishes, every screen refreshes from mise.
 
 ## Welcome
 
-The first time powermise opens, it walks through five steps, each checked off
-when it's already true:
+The first time powermise opens, Welcome fills the window and walks through five
+steps, each checked off when it's already true:
 
 1. **Install mise**, if it's missing — mise's install script (`curl
    https://mise.run | sh`) first on macOS and Linux, since that build updates

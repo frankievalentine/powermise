@@ -1496,6 +1496,37 @@ button {
   flex: 1 1 320px;
 }
 
+/* First launch: Welcome fills the window (no sidebar or toolbar). */
+.window.onboarding {
+  grid-template-columns: 1fr;
+}
+
+.onboarding-bar {
+  flex: none;
+  height: var(--toolbar-height);
+}
+
+/* Windows draws its own title bar above, and Linux uses the system frame. */
+:root:not([data-platform="darwin"]) .onboarding-bar {
+  height: 12px;
+}
+
+.page.welcome.first-run {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-top: 4px;
+}
+
+.welcome-icon {
+  display: block;
+  margin-bottom: 18px;
+  border-radius: 16px;
+}
+
+.page.welcome.first-run .page-title {
+  font-size: 30px;
+}
+
 .welcome-foot {
   display: flex;
   gap: 8px;

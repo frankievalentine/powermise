@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import appIcon from "../../../src-tauri/icons/128x128@2x.png";
 import { api } from "../../api";
 import type { AppContext } from "../../App";
 import { activationCommand } from "../../health";
@@ -44,16 +45,19 @@ export function WelcomeView({ context }: { context: AppContext }) {
   const shell = activationCommand(mise.doctor?.shell?.name, context.env.hostTarget, env.misePath);
   const version = mise.info?.version?.split(" ")[0];
 
+  // The first launch shows Welcome full-window (see App.tsx).
+  const firstRun = !hasBeenWelcomed();
   const finish = () => {
     markWelcomed();
-    navigate({ kind: "installed" });
+    navigate({ kind: "home" });
   };
 
   return (
     <div className="content">
-      <div className="page welcome">
+      <div className={`page welcome${firstRun ? " first-run" : ""}`}>
         <div className="page-header">
           <div>
+            {firstRun && <img className="welcome-icon" src={appIcon} alt="" width={72} height={72} />}
             <h1 className="page-title">Welcome to powermise</h1>
             <p className="page-subtitle">
               An unofficial desktop companion for mise, the tool that installs and switches developer tools like

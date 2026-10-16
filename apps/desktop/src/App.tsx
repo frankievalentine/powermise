@@ -368,13 +368,20 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
   }
   if (!context) return null;
 
+  // The first launch: Welcome fills the window, without the sidebar and
+  // toolbar, until it's done or skipped.
+  const onboarding = route.kind === "welcome" && !hasBeenWelcomed() && !document.body.classList.contains("embedded");
+
   return (
     <MotionConfig reducedMotion="user">
       <div className="app-frame">
         <WindowChrome />
-        <div className="window">
-          <Sidebar route={route} root={history[0]} context={context} />
+        <div className={`window${onboarding ? " onboarding" : ""}`}>
+          {!onboarding && <Sidebar route={route} root={history[0]} context={context} />}
           <main className="main">
+            {onboarding ? (
+              <div className="onboarding-bar" data-tauri-drag-region />
+            ) : (
             <header className="toolbar" data-tauri-drag-region>
               {history.length > 1 && (
                 <button className="icon-button" onClick={goBack} aria-label="Back">
@@ -416,6 +423,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
                 </label>
               )}
             </header>
+            )}
             {/* Swap pages immediately and ease the new one in; waiting on an
                 exit fade makes navigation feel slower than it is. */}
             <motion.div
