@@ -1,6 +1,6 @@
 [package]
 name = "powermise-desktop"
-version = "0.1.0"
+version = "0.1.1"
 description = "The powermise desktop app: an unofficial companion for mise."
 edition = "2024"
 license = "MIT"
