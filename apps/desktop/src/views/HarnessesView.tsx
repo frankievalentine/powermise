@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import { Info } from "lucide-react";
 import { PLATFORM_LABEL } from "../api";
 import type { AppContext } from "../App";
-import { categoryLabel, isAvailable, titleFor } from "../catalog";
+import { categoryLabel, isAvailable } from "../catalog";
 import { Monogram, PlatformChips, Segmented } from "../components/ui";
 import { HarnessesTabs } from "../components/SectionTabs";
 
@@ -37,8 +36,6 @@ export function HarnessesView({ context, query }: { context: AppContext; query: 
       });
   }, [catalog.harnesses, filter, query, env.hostTarget]);
 
-  const baseTools = catalog.base?.required_tool_ids.map((id) => titleFor(catalog, id)) ?? [];
-
   return (
     <div className="content">
       <div className="page">
@@ -54,15 +51,6 @@ export function HarnessesView({ context, query }: { context: AppContext; query: 
           <Segmented label="Filter harnesses" value={filter} options={FILTERS} onChange={setFilter} />
         </div>
 
-        {baseTools.length > 0 && (
-          <div className="banner">
-            <Info size={16} />
-            <span>
-              Every setup also includes the basics: {baseTools.join(", ")}.
-            </span>
-          </div>
-        )}
-
         {harnesses.length === 0 ? (
           <div className="empty">
             <h3>No matches</h3>
@@ -72,8 +60,16 @@ export function HarnessesView({ context, query }: { context: AppContext; query: 
           <div className="grid">
             {harnesses.map((harness) => {
               const available = isAvailable(harness, env.hostTarget);
-              const tools = harness.required_tool_ids.length + harness.desktop_tool_ids.length;
+              const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+              const tools = harness.required_tool_ids.length;
+              const apps = harness.desktop_tool_ids.length;
               const mcp = harness.mcp_server_ids.length;
+              // What picking it adds; desktop apps are opt-in unless the app is the harness.
+              const adds = [
+                tools > 0 && plural(tools, "tool"),
+                apps > 0 && (harness.desktop_required ? plural(apps, "app") : plural(apps, "optional app")),
+                mcp > 0 && `${mcp} MCP`,
+              ].filter(Boolean);
               return (
                 <button
                   key={harness.id}
@@ -95,8 +91,7 @@ export function HarnessesView({ context, query }: { context: AppContext; query: 
                   <div className="card-foot">
                     <PlatformChips supported={harness.supported_platforms} />
                     <span>
-                      {tools === 0 ? "Basics only" : `${tools} ${tools === 1 ? "tool" : "tools"}`}
-                      {mcp > 0 && ` · ${mcp} MCP`}
+                      {adds.length ? adds.join(" · ") : "Nothing extra to install"}
                     </span>
                   </div>
                 </button>
