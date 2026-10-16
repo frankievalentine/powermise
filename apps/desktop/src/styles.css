@@ -572,6 +572,9 @@ button {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  /* Room for the scrollbar whether or not the page scrolls, so pages (and
+     their tabs) don't shift sideways between short and long ones. */
+  scrollbar-gutter: stable;
   /* Scroll-edge fade instead of a hard divider under the toolbar. */
   mask-image: linear-gradient(to bottom, transparent 0, #000 10px);
 }

@@ -146,10 +146,37 @@ const TOP_LEVEL: Route["kind"][] = [
   "setup",
 ];
 
+/** What each page's search box filters. */
+const SEARCH_PLACEHOLDER: Partial<Record<Route["kind"], string>> = {
+  installed: "Search your tools",
+  discover: "Search 1,000+ tools",
+  settings: "Search settings",
+  "macos-settings": "Search macOS settings",
+  harnesses: "Search agents",
+  tools: "Search agent tools",
+  mcp: "Search MCP servers",
+  integrations: "Search plugins",
+  skills: "Search skills",
+};
+
 const SEARCHABLE: Route["kind"][] = ["installed", "discover", "settings", "macos-settings", "harnesses", "tools", "mcp", "integrations", "skills"];
 
+/** Pages that share a row of tabs: switching between them swaps only the
+ *  content, without the page transition, so the tabs stay put. */
+const TAB_GROUPS: Partial<Record<Route["kind"], string>> = {
+  installed: "my-tools",
+  updates: "my-tools",
+  harnesses: "agents",
+  tools: "agents",
+  mcp: "agents",
+  integrations: "agents",
+  skills: "agents",
+};
+
 const routeKey = (route: Route) =>
-  route.kind === "harness"
+  TAB_GROUPS[route.kind]
+    ? `tabs:${TAB_GROUPS[route.kind]}`
+    : route.kind === "harness"
     ? `harness:${route.id}`
     : route.kind === "tool" || route.kind === "setup"
       ? `${route.kind}:${route.name}`
@@ -405,6 +432,9 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
                 <span data-tauri-drag-region>{toolbarTitle(route, context)}</span>
               </div>
               <div className="toolbar-spacer" data-tauri-drag-region />
+              {/* One search at a time: a page with its own filter shows just
+                  that; elsewhere, Search all (⌘K opens it from any page). */}
+              {!SEARCHABLE.includes(route.kind) && (
               <button
                 className="toolbar-search"
                 onClick={() => setPaletteOpen(true)}
@@ -413,6 +443,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
               >
                 <Search size={13} /> Search all <kbd aria-hidden>{shortcutLabel(platform, "k")}</kbd>
               </button>
+              )}
               <button
                 className={`icon-button${route.kind === "activity" ? " active" : ""}`}
                 onClick={() => navigate({ kind: "activity" })}
@@ -428,7 +459,7 @@ export default function App({ initialRoute }: { initialRoute?: Route }) {
                     ref={searchRef}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder={route.kind === "discover" ? "Search 1,000+ tools" : "Search"}
+                    placeholder={SEARCH_PLACEHOLDER[route.kind] ?? "Search"}
                     aria-label="Search"
                     aria-keyshortcuts={platform === "darwin" ? "Meta+F" : "Control+F"}
                   />

@@ -85,6 +85,10 @@ export function AboutPowermise() {
           <div className="row-main">
             <div className="row-title">powermise {version ?? ""}</div>
             <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
+              An unofficial, independent companion for mise — not made by, affiliated with, or endorsed by the mise
+              project. Report problems that only happen in powermise on its GitHub repository.
+            </div>
+            <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
               {error
                 ? `Couldn’t check for updates: ${error}`
                 : update

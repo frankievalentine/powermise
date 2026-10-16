@@ -467,13 +467,6 @@ export function HealthView({ context, section }: { context: AppContext; section?
             <CommandBlock command="mise doctor" />
           </Section>
 
-          <Section title="About powermise">
-            <p className="section-note" style={{ margin: 0, maxWidth: 620 }}>
-              powermise is an unofficial, independent companion for mise. It isn’t made by, affiliated with,
-              or endorsed by the mise project. If something only goes wrong in powermise, report it on the
-              powermise GitHub repository rather than to mise.
-            </p>
-          </Section>
         </details>
       </div>
       <CleanupSheet open={cleanupOpen} onDismiss={() => setCleanupOpen(false)} context={context} />

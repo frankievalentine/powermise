@@ -323,6 +323,23 @@ fn app_menu(app: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wr
         && let Some(tauri::menu::MenuItemKind::Submenu(app_submenu)) =
             menu.items()?.into_iter().next()
     {
+        // About powermise, with the version and that it isn't the mise project's.
+        let about = tauri::menu::PredefinedMenuItem::about(
+            app,
+            Some("About powermise"),
+            Some(tauri::menu::AboutMetadata {
+                name: Some("powermise".into()),
+                version: Some(app.package_info().version.to_string()),
+                credits: Some(
+                    "An unofficial, independent companion for mise. It isn’t made by, \
+                     affiliated with, or endorsed by the mise project.\n\nhttps://powermise.pages.dev"
+                        .into(),
+                ),
+                ..Default::default()
+            }),
+        )?;
+        app_submenu.remove_at(0)?;
+        app_submenu.insert(&about, 0)?;
         let check = tauri::menu::MenuItem::with_id(
             app,
             updater::CHECK_MENU_ID,
