@@ -42,6 +42,23 @@ can't install a specific version, so Homebrew packages are always `latest`.
 mise installs Homebrew packages and casks itself — Homebrew doesn't need to be
 installed.
 
+mise doesn't put the commands from Homebrew formulas on your `PATH`, so a
+setup that declares `brew:` formulas also adds each formula's own folder:
+
+```toml
+[bootstrap.packages]
+"brew:hermes-agent" = "latest"
+
+[env]
+_.path = ["/opt/homebrew/opt/hermes-agent/bin"]
+```
+
+That's `/opt/homebrew` on an Apple Silicon Mac and `/home/linuxbrew/.linuxbrew`
+on Linux and WSL. (mise doesn't install Homebrew formulas on Intel Macs or
+Windows.) It isn't all of `/opt/homebrew/bin`, which would also put Homebrew's
+copies of the formulas' dependencies — its `python3` or `node` — ahead of your
+mise tools. Casks are apps, so they need nothing on `PATH`.
+
 The setup itself — which harnesses you picked — is saved separately, in
 `~/.config/powermise/selections/<name>.toml`.
 
