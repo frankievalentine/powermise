@@ -17,7 +17,7 @@ via `scripts/capture-mise-fixtures.sh`) and tested against every listed version.
 
 When a feature needs a newer mise, gate it on the version and capture a new
 fixture set; raise the minimum only when gating stops being practical, and
-record it here first.
+record it here and in [ROADMAP.md](ROADMAP.md) first.
 
 powermise never runs mise with `MISE_YES` (it makes mise trust configs on its
 own); `MiseClient` removes it from every invocation.
