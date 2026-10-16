@@ -675,12 +675,13 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
           "Health",
           HeartPulse,
           health.severity ? (
+            // A dot, not a count: the Health page lists each issue.
             <span
-              className={`sidebar-badge health ${health.severity}`}
+              className={`health-dot ${health.severity}`}
+              role="img"
+              aria-label={`${health.count} ${health.count === 1 ? "thing needs" : "things need"} attention`}
               title={`${health.count} ${health.count === 1 ? "thing needs" : "things need"} attention`}
-            >
-              {health.count}
-            </span>
+            />
           ) : null,
         )}
         {item(["settings"], "Settings", SlidersHorizontal)}

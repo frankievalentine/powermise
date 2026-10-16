@@ -314,8 +314,8 @@ and keeps the rest under **More details**:
 
 ![Health, leading with what needs attention and its fix](../../assets/app-tour/health.png)
 
-The **Health** badge in the sidebar counts what needs attention: amber for
-warnings, red when something is broken.
+A dot next to **Health** in the sidebar means something needs attention:
+amber for warnings, red when something is broken.
 
 Reads: `mise doctor --json`, `mise version --json`, `mise token github`
 
