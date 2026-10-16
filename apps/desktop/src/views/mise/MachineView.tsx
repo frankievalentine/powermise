@@ -17,6 +17,7 @@ import { api, type MachineStatus, type Platform } from "../../api";
 import type { AppContext } from "../../App";
 import { useAsync } from "../../hooks";
 import { ExternalLinkButton } from "../../components/machine";
+import { NewerTools } from "../../components/NewerTools";
 import { Section } from "../../components/ui";
 
 const LINUX: Platform[] = ["linux", "wsl"];
@@ -241,6 +242,7 @@ export function MachineView({ context }: { context: AppContext }) {
           </section>
         )}
 
+        <NewerTools context={context} />
         {data && <DotfilesHistory data={data} context={context} />}
       </div>
     </div>

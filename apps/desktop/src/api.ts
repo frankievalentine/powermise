@@ -456,6 +456,7 @@ export type MiseAction =
   | { kind: "formatConfig"; project: string }
   | { kind: "relaunchApp"; app: string }
   | { kind: "systemFix"; id: string }
+  | { kind: "useNewerTools"; ids: string[]; ruby: boolean }
   | { kind: "usePackage"; spec: string }
   | { kind: "cachePrune" }
   | { kind: "cacheClear" }
@@ -611,6 +612,25 @@ export interface SystemCheck {
   ok: boolean;
   detail: string;
   fix: { label: string; command: string; terminal: boolean } | null;
+}
+
+/** A tool macOS ships an old version of, and the newer one mise can put
+ *  ahead of it (src-tauri/src/newer_tools.rs). */
+export interface NewerTool {
+  id: string;
+  title: string;
+  note: string;
+  /** `homebrew`: installed by mise, its folder first on PATH. `mise`: a mise tool (Ruby). */
+  kind: "homebrew" | "mise";
+  systemVersion: string | null;
+  newerVersion: string | null;
+  /** Homebrew tools only; the window checks mise tools itself. */
+  usingNewer: boolean;
+}
+
+export interface NewerToolsFile {
+  path: string;
+  contents: string;
 }
 
 /** A command-line package installed globally outside mise. */
@@ -884,6 +904,9 @@ export const api = {
   detectImports: () => call<DetectedImport[]>("detect_imports"),
   shellConflicts: () => call<ShellConflict[]>("shell_conflicts"),
   systemChecks: () => call<SystemCheck[]>("system_checks"),
+  newerTools: () => call<NewerTool[]>("newer_tools"),
+  newerToolsPreview: (ids: string[]) => call<NewerToolsFile>("newer_tools_preview", { ids }),
+  writeNewerTools: (ids: string[]) => call<string>("write_newer_tools", { ids }),
   systemFixInTerminal: (id: string) => call<void>("system_fix_in_terminal", { id }),
   globalPackages: () => call<GlobalPackage[]>("global_packages"),
   installedPrograms: () => call<InstalledProgram[]>("installed_programs"),

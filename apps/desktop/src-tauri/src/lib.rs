@@ -11,6 +11,7 @@
 mod machine;
 mod macos;
 mod mise_commands;
+mod newer_tools;
 mod plugins;
 mod projects;
 mod setups;
@@ -232,6 +233,9 @@ pub fn run() {
             setups::save_selection,
             setups::export_setup,
             system::system_checks,
+            newer_tools::newer_tools,
+            newer_tools::newer_tools_preview,
+            newer_tools::write_newer_tools,
             system::system_fix_in_terminal,
             setups::read_setup_file,
             setups::preview_selection,

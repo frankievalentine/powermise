@@ -268,6 +268,13 @@ pub enum MiseAction {
     SelfUpdate,
     /// Updates mise with the package manager that installed it.
     UpdateMiseWithManager,
+    /// Newer versions of tools macOS ships (src/newer_tools.rs): install the
+    /// Homebrew packages just added to `conf.d/powermise-system.toml`, and
+    /// make the latest Ruby your global one.
+    UseNewerTools {
+        ids: Vec<String>,
+        ruby: bool,
+    },
     /// The fix for a missing developer basic (src/system.rs), by check id.
     SystemFix {
         id: String,
@@ -605,6 +612,7 @@ impl MiseAction {
             | Self::RelaunchApp { .. }
             | Self::UpdateMiseWithManager
             | Self::SystemFix { .. }
+            | Self::UseNewerTools { .. }
             | Self::ApplySetup { .. } => {
                 return Err("this action doesn't run mise".into());
             }
@@ -756,6 +764,31 @@ impl MiseAction {
             }
             return Ok(Job::Steps(steps));
         }
+        if let Self::UseNewerTools { ids, ruby } = self {
+            let client = client()?;
+            let packages: Vec<String> = crate::newer_tools::formulas_for(ids)?
+                .into_iter()
+                .map(|formula| format!("brew:{formula}"))
+                .collect();
+            let mut steps = Vec::new();
+            if !packages.is_empty() {
+                steps.push(Job::Mise(
+                    client.clone(),
+                    MiseCommand::packages_apply(&packages, false).map_err(message)?,
+                ));
+            }
+            if *ruby {
+                steps.push(Job::Mise(
+                    client,
+                    MiseCommand::use_global("ruby", "latest").map_err(message)?,
+                ));
+            }
+            return match steps.len() {
+                0 => Err("nothing to update".into()),
+                1 => Ok(steps.remove(0)),
+                _ => Ok(Job::Steps(steps)),
+            };
+        }
         if let Self::SystemFix { id } = self {
             let plan = crate::system::fix_plan(id)?;
             if plan.terminal {
@@ -815,7 +848,9 @@ pub fn describe_action(action: MiseAction) -> CommandResult<String> {
     }
     if matches!(
         action,
-        MiseAction::RelaunchApp { .. } | MiseAction::SystemFix { .. }
+        MiseAction::RelaunchApp { .. }
+            | MiseAction::SystemFix { .. }
+            | MiseAction::UseNewerTools { .. }
     ) {
         return Ok(action.job()?.display());
     }

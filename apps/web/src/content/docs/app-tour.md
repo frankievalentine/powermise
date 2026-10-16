@@ -363,6 +363,32 @@ they relaunch; **Relaunch** runs `killall Dock` (or the app named). Choosing
 
 Reads: `mise bootstrap status --json`, `mise dotfiles status --json`
 
+### Newer system tools
+
+macOS ships old versions of some tools and never updates them: git (Apple's
+build), bash 3.2 from 2007, make 3.81, curl, and Ruby 2.6. On an Apple Silicon
+Mac, **Newer system tools** shows the version you have next to the current one.
+**Use Newer** (or **Use All Newer**) shows the file powermise writes before it
+writes it, `~/.config/mise/conf.d/powermise-system.toml`:
+
+```toml
+[bootstrap.packages]
+"brew:curl" = "latest"
+"brew:git" = "latest"
+
+[env]
+_.path = ["/opt/homebrew/opt/curl/bin", "/opt/homebrew/bin"]
+```
+
+mise installs the Homebrew packages itself (`mise bootstrap packages apply`) —
+Homebrew doesn't have to be installed — and `_.path` puts their folders ahead
+of macOS's in every terminal where mise is turned on. mise doesn't add
+Homebrew's folder to your PATH on its own, and curl is keg-only (Homebrew never
+links it there), so the file does both, with no edits to `.zshrc`. Ruby comes
+over as a mise tool instead (`mise use -g ruby@latest`). macOS's own copies
+stay where they are; delete the file to go back to them. Apps opened from the
+Dock or Finder don't read your shell, so they keep seeing macOS's versions.
+
 ## Settings
 
 One page. The settings most people need come first, in plain words and grouped by

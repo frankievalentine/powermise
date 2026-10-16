@@ -230,6 +230,10 @@ function perform(action: MiseAction): string[] {
   const project = performProjectAction(action);
   if (project) return project;
   const machineAction = performMachineAction(action);
+  // Ruby comes over as a mise tool, which this file keeps.
+  if (machineAction && action.kind === "useNewerTools" && action.ruby) {
+    return [...machineAction, ...perform({ kind: "useGlobal", tool: "ruby", version: "3.4.7" })];
+  }
   if (machineAction) return machineAction;
   switch (action.kind) {
     case "bootstrapPackagesAndTools":

@@ -9,12 +9,17 @@ mod catalog;
 mod imported;
 mod mcp_files;
 mod selection;
+mod system_tools;
 
 pub use imported::{
     ImportedConfig, imported_path, inspect_imported, read_imported, write_imported,
 };
 pub use mcp_files::{RemovedServer, expand_home, files_dir, remove_mcp_files, write_mcp_files};
 pub use selection::SelectionStore;
+pub use system_tools::{
+    SystemToolsConfig, inspect_system_tools, read_system_tools, system_tools_path,
+    write_system_tools,
+};
 
 use std::{
     env, fs, io,

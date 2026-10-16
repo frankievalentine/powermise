@@ -13,6 +13,7 @@ import type {
   Setting,
   ShellConflict,
   SystemCheck,
+  NewerTool,
 } from "../api";
 
 const GLOBAL_CONFIG = "/Users/demo/.config/mise/config.toml";
@@ -227,6 +228,39 @@ function systemChecks(): SystemCheck[] {
 }
 const POWERSHELL_FIX = 'powershell -NoProfile -Command "Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force"';
 
+/** Tools macOS ships old versions of, on the demo Mac. */
+const newerTools: NewerTool[] = [
+  { id: "git", title: "git", note: "Apple’s build, from the Command Line Tools", kind: "homebrew", systemVersion: "2.39.5", newerVersion: "2.51.0", usingNewer: false },
+  { id: "bash", title: "bash", note: "From 2007; your login shell doesn’t change", kind: "homebrew", systemVersion: "3.2.57", newerVersion: "5.3.3", usingNewer: true },
+  { id: "make", title: "make", note: "Some build scripts need a newer one", kind: "homebrew", systemVersion: "3.81", newerVersion: "4.4.1", usingNewer: false },
+  { id: "curl", title: "curl", note: "Homebrew keeps it off your PATH; mise puts it there", kind: "homebrew", systemVersion: "8.7.1", newerVersion: "8.16.0", usingNewer: false },
+  { id: "ruby", title: "ruby", note: "A mise tool, like Node and Python", kind: "mise", systemVersion: "2.6.10", newerVersion: "3.4.7", usingNewer: false },
+];
+const systemFile = { packages: new Set<string>(["brew:bash"]), paths: ["/opt/homebrew/bin"] };
+function systemFileWith(ids: string[]) {
+  const packages = new Set([...systemFile.packages, ...ids.map((id) => `brew:${id}`)]);
+  const paths = [...systemFile.paths];
+  if (ids.includes("curl") && !paths.includes("/opt/homebrew/opt/curl/bin")) paths.unshift("/opt/homebrew/opt/curl/bin");
+  return { packages, paths };
+}
+function systemFileContents(file: { packages: Set<string>; paths: string[] }) {
+  return [
+    "# Written by powermise: newer versions of tools macOS ships (git, bash,",
+    "# make, curl). mise installs the Homebrew packages below, and puts their",
+    "# folders ahead of macOS's on your PATH in every shell where mise is turned",
+    "# on. Delete this file to go back to macOS's versions (the packages stay",
+    "# installed).",
+    "",
+    "[bootstrap.packages]",
+    ...[...file.packages].sort().map((spec) => `"${spec}" = "latest"`),
+    "",
+    "[env]",
+    `_.path = [${file.paths.map((path) => `"${path}"`).join(", ")}]`,
+    "",
+  ].join("\n");
+}
+const SYSTEM_FILE = "/Users/demo/.config/mise/conf.d/powermise-system.toml";
+
 /** Whether the demo machine already has a package (Homebrew or App Store). */
 export function demoInstalledPackage(spec: string): boolean {
   const name = spec.slice(spec.indexOf(":") + 1);
@@ -341,6 +375,11 @@ export function describeMachineAction(action: MiseAction): string | null {
       return `mise bootstrap packages use -g --yes ${action.spec}`;
     case "systemFix":
       return POWERSHELL_FIX;
+    case "useNewerTools":
+      return [
+        ...(action.ids.length ? [`mise bootstrap packages apply --yes ${action.ids.map((id) => `brew:${id}`).join(" ")}`] : []),
+        ...(action.ruby ? ["mise use -g ruby@latest"] : []),
+      ].join(" && ");
     case "relaunchApp":
       return `killall ${action.app.includes(" ") ? `'${action.app}'` : action.app}`;
     case "setToolAlias":
@@ -400,6 +439,9 @@ export function performMachineAction(action: MiseAction): string[] | null {
     case "systemFix":
       powershellAllowed = true;
       return [];
+    case "useNewerTools":
+      for (const tool of newerTools) if (action.ids.includes(tool.id)) tool.usingNewer = true;
+      return action.ids.map((id) => `==> Pouring ${id}`);
     case "usePackage":
       packageStates[action.spec] = "installed";
       return [`mise ${MISE_CONFIG_PRETTY}: added ${action.spec}`, `==> Pouring ${action.spec.split(":")[1]}`, "mise bootstrap: system packages ✓"];
@@ -476,6 +518,16 @@ export function demoMachine(command: string, args: Record<string, unknown> = {})
       return githubStatus();
     case "detect_imports":
       return imports.map((entry) => ({ ...entry, versions: entry.versions.map((item) => ({ ...item })) }));
+    case "newer_tools":
+      return newerTools.map((tool) => ({ ...tool }));
+    case "newer_tools_preview":
+      return { path: SYSTEM_FILE, contents: systemFileContents(systemFileWith(args.ids as string[])) };
+    case "write_newer_tools": {
+      const next = systemFileWith(args.ids as string[]);
+      systemFile.packages = next.packages;
+      systemFile.paths = next.paths;
+      return SYSTEM_FILE;
+    }
     case "system_checks":
       return systemChecks();
     case "system_fix_in_terminal":

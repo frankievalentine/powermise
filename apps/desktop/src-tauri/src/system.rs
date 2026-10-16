@@ -126,16 +126,21 @@ fn checks() -> Vec<Check> {
     }
 }
 
-/// Apple's Command Line Tools: git, clang, and make. Until they're
-/// installed, `/usr/bin/git` only opens Apple's installer.
-fn command_line_tools() -> Check {
-    let developer = Command::new("/usr/bin/xcode-select")
+/// Whether Apple's Command Line Tools (or Xcode) are installed. Until they
+/// are, `/usr/bin/git` and `/usr/bin/make` only open Apple's installer.
+pub fn command_line_tools_installed() -> bool {
+    Command::new("/usr/bin/xcode-select")
         .arg("-p")
         .output()
         .ok()
         .filter(|output| output.status.success())
-        .map(|output| PathBuf::from(String::from_utf8_lossy(&output.stdout).trim()));
-    let ok = developer.is_some_and(|path| path.join("usr/bin/git").exists());
+        .map(|output| PathBuf::from(String::from_utf8_lossy(&output.stdout).trim()))
+        .is_some_and(|path| path.join("usr/bin/git").exists())
+}
+
+/// Apple's Command Line Tools: git, clang, and make.
+fn command_line_tools() -> Check {
+    let ok = command_line_tools_installed();
     check(
         "command-line-tools",
         "Apple’s Command Line Tools",
