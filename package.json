@@ -1,24 +1,32 @@
 {
   "name": "powermise",
   "version": "0.1.0",
+  "description": "An unofficial desktop companion for mise: see, install, and update every tool mise manages, from one window.",
   "private": true,
+  "license": "MIT",
+  "homepage": "https://powermise.pages.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frankievalentine/powermise.git"
+  },
   "type": "module",
   "packageManager": "bun@1.4.2",
   "scripts": {
-    "check": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets --locked && bun run web:check && bun run desktop:check",
+    "check": "cargo fmt --all -- --check && cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check && cargo clippy --workspace --all-targets --locked && bun run web:check && bun run desktop:check",
+    "test": "cargo test --workspace --locked && cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked",
+    "test:setup-fragment": "scripts/verify-setup-fragment.sh",
+    "fmt": "cargo fmt --all && cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml",
     "build": "cargo build --workspace --locked && bun run web:build",
-    "build:release": "cargo build --workspace --locked --release",
-    "test": "cargo test --workspace --locked",
-    "fmt": "cargo fmt --all",
+    "desktop:dev": "bun run --cwd apps/desktop app:dev",
+    "desktop:ui": "bun run --cwd apps/desktop dev",
+    "desktop:build": "bun run --cwd apps/desktop app:build",
+    "desktop:check": "bun run --cwd apps/desktop check && cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets --locked",
     "web:dev": "bun run --cwd apps/web dev --host",
     "web:check": "bun run --cwd apps/web check",
     "web:build": "bun run --cwd apps/web build",
     "web:deploy": "bun run web:build && bun run --cwd apps/web deploy",
-    "clean": "cargo clean && rm -rf apps/web/dist apps/web/.astro",
-    "test:setup-fragment": "scripts/verify-setup-fragment.sh",
-    "desktop:dev": "bun run --cwd apps/desktop app:dev",
-    "desktop:build": "bun run --cwd apps/desktop app:build",
-    "desktop:check": "bun run --cwd apps/desktop check && cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --locked"
+    "release:version": "scripts/bump-version.sh",
+    "clean": "cargo clean && cargo clean --manifest-path apps/desktop/src-tauri/Cargo.toml && rm -rf apps/web/dist apps/web/.astro apps/desktop/dist"
   },
   "workspaces": [
     "apps/*"

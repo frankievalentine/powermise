@@ -1,6 +1,7 @@
 {
   "name": "@powermise/web",
   "version": "0.1.0",
+  "description": "The powermise website and docs (Astro and Starlight), deployed to Cloudflare Pages.",
   "private": true,
   "type": "module",
   "scripts": {
