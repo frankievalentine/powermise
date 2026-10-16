@@ -1,6 +1,7 @@
 //! Newer versions of the tools macOS ships: git, bash, make, and curl through
 //! mise's Homebrew packages (in `conf.d/powermise-system.toml`, which also puts
-//! their folders first on PATH), and Ruby as a mise tool.
+//! each one's own `opt/<formula>/bin` folder first on PATH), and Ruby as a
+//! mise tool.
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -216,13 +217,10 @@ fn read_newer_tools() -> CommandResult<Vec<NewerTool>> {
                     };
                 };
                 let installed = cellar_version(formula);
-                let on_path = if spec.keg_only {
-                    config.paths.contains(&keg_path(formula))
-                } else {
-                    config.paths.iter().any(|path| path == &format!("{PREFIX}/bin"))
-                        // Homebrew's own setup line puts its folder on PATH.
-                        || Path::new(PREFIX).join("bin/brew").exists()
-                };
+                let on_path = config.paths().contains(&keg_path(formula))
+                    // Homebrew's own setup line puts its folder on PATH, but
+                    // not keg-only formulas'.
+                    || (!spec.keg_only && Path::new(PREFIX).join("bin/brew").exists());
                 NewerTool {
                     id: spec.id,
                     title: spec.title,
@@ -261,14 +259,10 @@ fn config_with(ids: &[String]) -> CommandResult<(PathBuf, powermise_setups::Syst
         .iter()
         .map(|formula| format!("brew:{formula}"))
         .collect();
-    let mut paths = vec![format!("{PREFIX}/bin")];
-    for spec in SPECS.iter().filter(|spec| spec.keg_only) {
-        if let Some(formula) = spec.formula.filter(|formula| formulas.contains(formula)) {
-            paths.insert(0, keg_path(formula));
-        }
-    }
     let mise = mise_config_dir()?;
-    let config = powermise_setups::read_system_tools(&mise).merged(&packages, &paths);
+    // Each formula's own folder goes on PATH, not `/opt/homebrew/bin`, which
+    // also holds their dependencies (Homebrew's python3) ahead of mise's tools.
+    let config = powermise_setups::read_system_tools(&mise).merged(&packages);
     Ok((mise, config))
 }
 

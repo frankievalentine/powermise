@@ -1,21 +1,26 @@
 //! Newer versions of the tools macOS ships (git, bash, make, curl):
 //! `conf.d/powermise-system.toml`, one file powermise owns. It declares the
-//! Homebrew packages, which mise installs itself, and puts their folders
-//! first on your PATH with `[env] _.path`. mise doesn't add Homebrew's folder
-//! to PATH on its own, and curl is keg-only (never linked into it). Deleting
-//! the file puts macOS's versions back.
+//! Homebrew packages, which mise installs itself, and puts each one's own
+//! `/opt/homebrew/opt/<formula>/bin` first on your PATH with `[env] _.path`.
+//! mise doesn't put Homebrew formulas on PATH on its own, and curl is
+//! keg-only (never linked into `/opt/homebrew/bin`). Deleting the file puts
+//! macOS's versions back.
 use std::{collections::BTreeMap, fs, path::Path, path::PathBuf};
 
+use powermise_compiler::{env_path_toml, homebrew_formula_paths};
+use powermise_domain::Platform;
 use powermise_state::{GeneratedFileChange, inspect_generated_file, write_atomically};
 
 use crate::SetupsError;
 
+/// `[bootstrap.packages]` the file declares. `[env] _.path` follows from the
+/// packages, so it isn't stored: rewriting the file drops anything else an
+/// older powermise put there (`/opt/homebrew/bin`, which also holds every
+/// formula's dependencies and would shadow mise's own tools).
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SystemToolsConfig {
     /// `brew:<formula>` → version.
     pub packages: BTreeMap<String, String>,
-    /// Folders mise puts first on PATH, in order.
-    pub paths: Vec<String>,
 }
 
 /// `<mise config dir>/conf.d/powermise-system.toml`.
@@ -42,35 +47,24 @@ pub fn read_system_tools(mise_config_dir: &Path) -> SystemToolsConfig {
                 .collect()
         })
         .unwrap_or_default();
-    let paths = table
-        .get("env")
-        .and_then(|env| env.get("_"))
-        .and_then(|underscore| underscore.get("path"))
-        .and_then(toml::Value::as_array)
-        .map(|paths| {
-            paths
-                .iter()
-                .filter_map(|path| path.as_str().map(str::to_owned))
-                .collect()
-        })
-        .unwrap_or_default();
-    SystemToolsConfig { packages, paths }
+    SystemToolsConfig { packages }
 }
 
 impl SystemToolsConfig {
-    /// The file plus these packages and folders (each added once).
-    pub fn merged(mut self, packages: &[String], paths: &[String]) -> Self {
+    /// The file plus these packages (each added once).
+    pub fn merged(mut self, packages: &[String]) -> Self {
         for package in packages {
             self.packages
                 .entry(package.clone())
                 .or_insert_with(|| "latest".into());
         }
-        for path in paths {
-            if !self.paths.contains(path) {
-                self.paths.push(path.clone());
-            }
-        }
         self
+    }
+
+    /// The folders mise puts first on PATH: each formula's own
+    /// `/opt/homebrew/opt/<formula>/bin`, which keg-only curl has too.
+    pub fn paths(&self) -> Vec<String> {
+        homebrew_formula_paths(self.packages.keys().map(String::as_str), Platform::Darwin)
     }
 
     pub fn contents(&self) -> String {
@@ -88,10 +82,7 @@ impl SystemToolsConfig {
                 out.push_str(&format!("{} = {}\n", quote(package), quote(version)));
             }
         }
-        if !self.paths.is_empty() {
-            let paths: Vec<String> = self.paths.iter().map(|path| quote(path)).collect();
-            out.push_str(&format!("\n[env]\n_.path = [{}]\n", paths.join(", ")));
-        }
+        out.push_str(&env_path_toml(&self.paths()));
         out
     }
 }
@@ -120,37 +111,59 @@ pub fn write_system_tools(
 mod tests {
     use super::*;
 
-    #[test]
-    fn adds_packages_and_paths_once() {
-        let dir = std::env::temp_dir().join(format!("powermise-system-{}", std::process::id()));
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("powermise-system-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
-        let first = SystemToolsConfig::default()
-            .merged(&["brew:git".into()], &["/opt/homebrew/bin".into()]);
+        dir
+    }
+
+    #[test]
+    fn adds_packages_once_with_their_own_folders() {
+        let dir = temp_dir("add");
+        let first = SystemToolsConfig::default().merged(&["brew:git".into()]);
         write_system_tools(&dir, &first).unwrap();
-        let second = read_system_tools(&dir).merged(
-            &["brew:curl".into(), "brew:git".into()],
-            &[
-                "/opt/homebrew/opt/curl/bin".into(),
-                "/opt/homebrew/bin".into(),
-            ],
-        );
+        let second = read_system_tools(&dir).merged(&["brew:curl".into(), "brew:git".into()]);
         let contents = second.contents();
         fs::remove_dir_all(&dir).unwrap();
         assert_eq!(second.packages.len(), 2);
-        assert_eq!(
-            second.paths,
-            ["/opt/homebrew/bin", "/opt/homebrew/opt/curl/bin"]
-        );
         // What mise reads: `[env] _.path` and `[bootstrap.packages]`.
         let table: toml::Table = contents.parse().unwrap();
         assert_eq!(
-            table["env"]["_"]["path"].as_array().unwrap().len(),
-            2,
+            table["env"]["_"]["path"].as_array().unwrap(),
+            &[
+                toml::Value::from("/opt/homebrew/opt/curl/bin"),
+                toml::Value::from("/opt/homebrew/opt/git/bin"),
+            ],
             "{contents}"
         );
         assert_eq!(
             table["bootstrap"]["packages"]["brew:curl"].as_str(),
             Some("latest")
+        );
+    }
+
+    #[test]
+    fn rewriting_drops_homebrews_shared_folder() {
+        let dir = temp_dir("migrate");
+        let path = system_tools_path(&dir);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(
+            &path,
+            "[bootstrap.packages]\n\"brew:curl\" = \"latest\"\n\"brew:git\" = \"latest\"\n\n\
+             [env]\n_.path = [\"/opt/homebrew/opt/curl/bin\", \"/opt/homebrew/bin\"]\n",
+        )
+        .unwrap();
+        let config = read_system_tools(&dir).merged(&["brew:make".into()]);
+        write_system_tools(&dir, &config).unwrap();
+        let contents = fs::read_to_string(&path).unwrap();
+        fs::remove_dir_all(&dir).unwrap();
+        assert!(!contents.contains("\"/opt/homebrew/bin\""), "{contents}");
+        assert!(
+            contents.contains(
+                "_.path = [\"/opt/homebrew/opt/curl/bin\", \"/opt/homebrew/opt/git/bin\", \"/opt/homebrew/opt/make/bin\"]"
+            ),
+            "{contents}"
         );
     }
 }
