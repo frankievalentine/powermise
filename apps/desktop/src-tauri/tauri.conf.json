@@ -28,13 +28,26 @@
     "active": true,
     "targets": "all",
     "category": "DeveloperTool",
-    "shortDescription": "Set up AI coding agents with mise",
+    "shortDescription": "An unofficial desktop companion for mise",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "longDescription": "powermise is an unofficial desktop companion for mise-en-place: browse and install tools, keep them up to date, manage projects, and check your setup's health — every action shows the mise command it runs.",
+    "publisher": "powermise",
+    "homepage": "https://powermise.dev",
+    "copyright": "Not affiliated with mise or jdx.",
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "12.0"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
   }
 }

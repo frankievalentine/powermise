@@ -1,5 +1,8 @@
 ---
 // The hero introduces the app; the live demo directly below is the proof.
+// The download button and install command follow the visitor's OS (see the
+// script below); without JavaScript they point at the install guide.
+const releases = 'https://github.com/frankievalentine/powermise/releases';
 ---
 
 <section class="home-hero" aria-labelledby="hero-heading">
@@ -13,15 +16,52 @@
       click shows the exact mise command it runs.
     </p>
     <div class="hero-actions">
-      <a class="button button-primary" href="#demo">Try the live demo <span aria-hidden="true">↓</span></a>
-      <a class="button button-secondary" href="/getting-started/">Get powermise</a>
+      <a class="button button-primary" href="/getting-started/" data-download>
+        <span data-download-label>Download powermise</span>
+      </a>
+      <a class="button button-secondary" href="#demo">Try the live demo <span aria-hidden="true">↓</span></a>
     </div>
-    <p class="hero-proof"><span aria-hidden="true">↳</span> Free and open source. Not affiliated with mise. Pre-release — build it from source today.</p>
+    <div class="hero-install">
+      <code data-install-command>curl -fsSL https://powermise.dev/install.sh | sh</code>
+      <button type="button" class="hero-install__copy" data-install-copy aria-label="Copy the install command">Copy</button>
+    </div>
+    <p class="hero-proof">
+      <span aria-hidden="true">↳</span> Free and open source. Not affiliated with mise.
+      <a href={`${releases}/latest`}>Other platforms</a>
+    </p>
   </div>
 </section>
 
 <script>
   import { initializeHeroField } from './heroField.ts';
+
+  // The right installer and install command for this visitor's OS.
+  const latest = 'https://github.com/frankievalentine/powermise/releases/latest/download';
+  const agent = navigator.userAgent;
+  const os = /Windows/i.test(agent) ? 'windows' : /Mac OS X|Macintosh/i.test(agent) ? 'macos' : /Linux|X11/i.test(agent) && !/Android/i.test(agent) ? 'linux' : null;
+  const downloads = {
+    macos: { label: 'Download for macOS', file: 'powermise-macos-universal.dmg' },
+    windows: { label: 'Download for Windows', file: 'powermise-windows-x64-setup.exe' },
+    linux: { label: 'Download for Linux', file: 'powermise-linux-x86_64.AppImage' },
+  } as const;
+  const link = document.querySelector<HTMLAnchorElement>('[data-download]');
+  const label = document.querySelector('[data-download-label]');
+  if (os && link && label) {
+    link.href = `${latest}/${downloads[os].file}`;
+    label.textContent = downloads[os].label;
+  }
+  const command = document.querySelector('[data-install-command]');
+  if (os === 'windows' && command) command.textContent = 'irm https://powermise.dev/install.ps1 | iex';
+  const copy = document.querySelector<HTMLButtonElement>('[data-install-copy]');
+  copy?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(command?.textContent ?? '');
+      copy.textContent = 'Copied';
+      setTimeout(() => (copy.textContent = 'Copy'), 1600);
+    } catch {
+      copy.textContent = 'Select and copy';
+    }
+  });
 
   const canvas = document.querySelector<HTMLCanvasElement>('[data-hero-field]');
   if (canvas && 'IntersectionObserver' in window && 'ResizeObserver' in window) {

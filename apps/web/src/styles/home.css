@@ -88,6 +88,62 @@
   justify-content: center;
 }
 
+/* The one-line install command under the buttons. */
+.home-hero .hero-install {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 1rem auto 0;
+  padding: 0.35rem 0.35rem 0.35rem 0.85rem;
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--pm-bg) 82%, transparent);
+  box-shadow: 0 0 0 1px var(--pm-line);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.home-hero .hero-install code {
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  color: var(--pm-ink);
+  font-family: var(--pm-font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+}
+
+/* On phones the command wraps rather than widening the page. */
+@media (max-width: 32rem) {
+  .home-hero .hero-install code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+.home-hero .hero-install__copy {
+  flex: none;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--pm-line-strong);
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--pm-ink-soft);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-hero .hero-install__copy:hover {
+  color: var(--pm-ink);
+}
+
+.home-hero .hero-proof a {
+  margin-left: 0.35rem;
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
 /* Small text sits on a soft plate so the dithered field never competes
    with it. */
 .home-hero .eyebrow,

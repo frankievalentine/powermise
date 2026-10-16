@@ -1,0 +1,155 @@
+name: Release
+
+# Builds the desktop app for macOS, Linux, and Windows on GitHub's runners
+# when a version tag is pushed (`git tag v0.2.0 && git push origin v0.2.0`),
+# and attaches the installers to a draft GitHub release to review and publish.
+# Files get stable names (powermise-macos-universal.dmg, …) so
+# /releases/latest/download/<name> — which the site's download button and
+# install scripts use — always points at the newest published release.
+#
+# Linux builds use Ubuntu 22.04 so they run on older distributions too.
+#
+# Builds are unsigned for now: macOS gets an ad-hoc signature (so it runs on
+# Apple Silicon), Windows none. Bump the version first with
+# scripts/bump-version.sh; the tag must match it.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: An existing version tag to build again, like v0.2.0
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  draft:
+    name: Draft release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Check the tag matches the app's version
+        run: |
+          version=$(jq -r .version apps/desktop/src-tauri/tauri.conf.json)
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::The tag is $TAG but tauri.conf.json says $version. Run scripts/bump-version.sh first."
+            exit 1
+          fi
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 ||
+            gh release create "$TAG" --draft --verify-tag --generate-notes --title "powermise ${TAG#v}"
+
+  build:
+    name: Build (${{ matrix.name }})
+    needs: draft
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            runner: macos-latest
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+            args: --target universal-apple-darwin --bundles app,dmg
+          - name: Linux x64
+            runner: ubuntu-22.04
+            args: --bundles appimage,deb,rpm
+          - name: Linux arm64
+            runner: ubuntu-22.04-arm
+            args: --bundles appimage,deb,rpm
+          - name: Windows
+            runner: windows-latest
+            args: --bundles nsis,msi
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        working-directory: apps/desktop
+        run: bun run tauri build ${{ matrix.args }}
+
+      - name: Name the installers
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          bundle=$(find apps/desktop/src-tauri/target -type d -path '*release/bundle' | head -n1)
+          case "$RUNNER_OS" in
+            macOS)
+              cp "$(find "$bundle/dmg" -name '*.dmg' | head -n1)" release/powermise-macos-universal.dmg
+              ;;
+            Linux)
+              arch=$(uname -m)
+              deb_arch=$([ "$arch" = aarch64 ] && echo arm64 || echo amd64)
+              cp "$(find "$bundle/appimage" -name '*.AppImage' | head -n1)" "release/powermise-linux-$arch.AppImage"
+              cp "$(find "$bundle/deb" -name '*.deb' | head -n1)" "release/powermise-linux-$deb_arch.deb"
+              cp "$(find "$bundle/rpm" -name '*.rpm' | head -n1)" "release/powermise-linux-$arch.rpm"
+              ;;
+            Windows)
+              cp "$(find "$bundle/nsis" -name '*-setup.exe' | head -n1)" release/powermise-windows-x64-setup.exe
+              cp "$(find "$bundle/msi" -name '*.msi' | head -n1)" release/powermise-windows-x64.msi
+              ;;
+          esac
+          ls -l release
+
+      - name: Upload to the draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" release/* --clobber
+
+  checksums:
+    name: Checksums
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add SHA256SUMS to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir dist && cd dist
+          gh release download "$TAG" --pattern 'powermise-*'
+          sha256sum powermise-* > SHA256SUMS
+          cat SHA256SUMS
+          gh release upload "$TAG" SHA256SUMS --clobber
