@@ -379,14 +379,19 @@ writes it, `~/.config/mise/conf.d/powermise-system.toml`:
 "brew:git" = "latest"
 
 [env]
-_.path = ["/opt/homebrew/opt/curl/bin", "/opt/homebrew/bin"]
+_.path = ["/opt/homebrew/opt/curl/bin", "/opt/homebrew/opt/git/bin"]
 ```
 
 mise installs the Homebrew packages itself (`mise bootstrap packages apply`) —
-Homebrew doesn't have to be installed — and `_.path` puts their folders ahead
-of macOS's in every terminal where mise is turned on. mise doesn't add
-Homebrew's folder to your PATH on its own, and curl is keg-only (Homebrew never
-links it there), so the file does both, with no edits to `.zshrc`. Ruby comes
+Homebrew doesn't have to be installed — and `_.path` puts each one's own folder
+ahead of macOS's in every terminal where mise is turned on, with no edits to
+`.zshrc`. mise doesn't put Homebrew formulas on your PATH on its own, and the
+`opt` folder works for curl too, which is keg-only (Homebrew never links it
+into `/opt/homebrew/bin`). It isn't all of `/opt/homebrew/bin`: `_.path` goes
+ahead of your mise tools, and that folder also holds Homebrew's copies of the
+formulas' dependencies — its `python3` or `node` — which would shadow them.
+Files written by an older powermise that list `/opt/homebrew/bin` lose it the
+next time powermise rewrites them. Ruby comes
 over as a mise tool instead (`mise use -g ruby@latest`). macOS's own copies
 stay where they are; delete the file to go back to them. Apps opened from the
 Dock or Finder don't read your shell, so they keep seeing macOS's versions.
