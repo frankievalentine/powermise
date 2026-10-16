@@ -234,6 +234,8 @@
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   color: var(--pm-ink-soft);
   font: 500 0.85rem/1 var(--pm-font-reading);
+  /* Anchored at the middle, it only gets half the width to lay out in. */
+  white-space: nowrap;
   cursor: pointer;
   transition:
     opacity 0.2s var(--pm-ease-out),
@@ -291,14 +293,18 @@
 
 /* Tour */
 
+/* The tour sizes to its own width (the stage also shrinks with the window's
+   height), in columns that divide the ten steps evenly: five by two, one
+   row when every label fits, two by five on a phone. Labels never wrap, so
+   every tab is the same size. */
 .demo-tour {
   margin-top: 1.25rem;
+  container-type: inline-size;
 }
 
 .demo-steps {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.5rem;
   margin: 0;
   padding: 0;
@@ -316,6 +322,7 @@
   background: transparent;
   color: var(--pm-ink-faint);
   font: 500 0.82rem/1.2 var(--pm-font-reading);
+  white-space: nowrap;
   cursor: pointer;
   transition:
     color 0.2s,
@@ -324,8 +331,33 @@
 }
 
 .demo-step__index {
+  flex: none;
   font-family: var(--pm-font-mono);
   font-size: 0.7rem;
+}
+
+.demo-step__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@container (min-width: 84rem) {
+  .demo-steps {
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 41.9rem) {
+  .demo-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 17rem) {
+  .demo-step__index {
+    display: none;
+  }
 }
 
 .demo-step.is-active .demo-step__tab {
@@ -338,10 +370,11 @@
   display: none;
 }
 
-/* The active step's caption spans the full row under the tabs. */
+/* The active step's caption spans the full row under the tabs, in room
+   the script sizes to the tallest caption at this width (--caption-space). */
 .demo-steps {
   position: relative;
-  padding-bottom: 7rem;
+  padding-bottom: var(--caption-space, 7rem);
 }
 
 .demo-step.is-active .demo-step__body {
@@ -349,7 +382,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  /* Right under the tabs; a shorter caption leaves its spare room below. */
+  top: calc(100% - var(--caption-space, 7rem));
   animation: caption-in 0.45s var(--pm-ease-out);
 }
 
@@ -374,14 +408,6 @@
   from {
     opacity: 0;
     transform: translateY(6px);
-  }
-}
-
-@media (max-width: 899px) {
-  .demo-steps {
-    grid-auto-flow: row;
-    grid-template-columns: repeat(3, 1fr);
-    padding-bottom: 9rem;
   }
 }
 

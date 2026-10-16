@@ -99,7 +99,7 @@ const steps = [
           <li class="demo-step" data-demo-step={index} data-route={JSON.stringify(step.route)}>
             <button type="button" class="demo-step__tab" data-demo-jump={index}>
               <span class="demo-step__index">{String(index + 1).padStart(2, '0')}</span>
-              {step.label}
+              <span class="demo-step__label">{step.label}</span>
             </button>
             <div class="demo-step__body">
               <h3>{step.title}</h3>
@@ -124,6 +124,25 @@ const steps = [
   const frame = document.querySelector<HTMLIFrameElement>('[data-demo-frame]');
   const activate = document.querySelector<HTMLButtonElement>('[data-demo-activate]');
   const steps = Array.from(document.querySelectorAll<HTMLElement>('[data-demo-step]'));
+  const stepList = document.querySelector<HTMLElement>('[data-demo-steps]');
+
+  // Room under the tabs for the tallest caption at this width, so a caption
+  // that wraps on a phone never covers the tabs.
+  if (stepList) {
+    const sizeCaptions = () => {
+      let tallest = 0;
+      for (const body of stepList.querySelectorAll<HTMLElement>('.demo-step__body')) {
+        const copy = body.cloneNode(true) as HTMLElement;
+        copy.style.cssText = `display:block;position:absolute;visibility:hidden;width:${stepList.clientWidth}px;animation:none`;
+        stepList.appendChild(copy);
+        tallest = Math.max(tallest, copy.offsetHeight);
+        copy.remove();
+      }
+      stepList.style.setProperty('--caption-space', `${tallest}px`);
+    };
+    sizeCaptions();
+    new ResizeObserver(sizeCaptions).observe(stepList);
+  }
 
   const APP_WIDTH = 1180;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
