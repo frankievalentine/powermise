@@ -259,9 +259,11 @@ Each row says what it becomes in mise and whether it's already installed.
 --dry-run` for your picks. **Review & Import** shows the file powermise writes —
 `conf.d/powermise-imported.toml`, its own, which it adds to on later imports and
 which you can delete to undo — then links versions, sets defaults, and installs
-only what isn't here yet. What Homebrew already installed stays Homebrew's; on
-your next Mac, `mise bootstrap` installs it all without Homebrew (and on
-Windows, through winget and Scoop).
+only what isn't here yet. Imported `brew:` formulas also get their folders on
+your PATH (`[env] _.path`, for example `/opt/homebrew/opt/jq/bin`), since mise
+installs formulas without adding them. What Homebrew already installed stays
+Homebrew's; on your next Mac, `mise bootstrap` installs it all without
+Homebrew (and on Windows, through winget and Scoop).
 
 ## Health
 

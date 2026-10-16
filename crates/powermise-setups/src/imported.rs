@@ -1,14 +1,19 @@
 //! What Import brought into mise: `conf.d/powermise-imported.toml`, one
 //! file powermise owns (like a setup's), so your own config is never edited
 //! and deleting the file takes the import back out of mise's config.
+//! Homebrew formulas also get `[env] _.path`, since mise installs them
+//! without putting them on PATH.
 use std::{collections::BTreeMap, fs, path::Path, path::PathBuf};
 
+use powermise_compiler::{env_path_toml, homebrew_formula_paths};
+use powermise_domain::Platform;
 use powermise_state::{GeneratedFileChange, inspect_generated_file, write_atomically};
 use serde::Serialize;
 
 use crate::SetupsError;
 
-/// `[tools]` and `[bootstrap.packages]` the import declares.
+/// `[tools]` and `[bootstrap.packages]` the import declares. `[env] _.path`
+/// follows from the packages, so it isn't stored.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 pub struct ImportedConfig {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
@@ -82,14 +87,29 @@ impl ImportedConfig {
         self
     }
 
+    /// The file for this machine. On an Intel Mac mise skips `brew:`
+    /// formulas, so there's nothing to put on PATH.
     pub fn contents(&self) -> Result<String, SetupsError> {
+        let target = crate::host_platform();
+        let target = crate::compile_options(target)
+            .homebrew_formulas
+            .then_some(target);
+        self.contents_for(target)
+    }
+
+    /// The file for `target` (none: no Homebrew formulas on PATH).
+    pub fn contents_for(&self, target: Option<Platform>) -> Result<String, SetupsError> {
+        let paths = target.map_or_else(Vec::new, |target| {
+            homebrew_formula_paths(self.bootstrap.packages.keys().map(String::as_str), target)
+        });
         let body = toml::to_string(self).map_err(|error| SetupsError::Render(error.to_string()))?;
         Ok(format!(
             "# Written by powermise's Import. Tools and packages you brought into mise\n\
 # from other version managers, Homebrew, a Brewfile, and so on. powermise adds\n\
 # to this file when you import more; delete it to take them out of mise's\n\
-# config (anything installed stays installed).\n\n{}",
-            body.trim_start()
+# config (anything installed stays installed).\n\n{}{}",
+            body.trim_start(),
+            env_path_toml(&paths)
         ))
     }
 }
@@ -131,7 +151,7 @@ mod tests {
             &[("flyctl".into(), "latest".into())],
             &["mas:441258766".into(), "brew-cask:ghostty".into()],
         );
-        let contents = second.contents().unwrap();
+        let contents = second.contents_for(Some(Platform::Darwin)).unwrap();
         fs::remove_dir_all(&dir).unwrap();
         assert!(
             contents.contains("\"npm:prettier\" = \"3.3.3\""),
@@ -147,5 +167,26 @@ mod tests {
                 .get("mas:441258766")
                 .is_some()
         );
+        // No `brew:` formulas, so nothing to put on PATH.
+        assert!(!contents.contains("[env]"), "{contents}");
+    }
+
+    #[test]
+    fn homebrew_formulas_go_on_path() {
+        let config =
+            ImportedConfig::default().merged(&[], &["brew:jq".into(), "brew-cask:ghostty".into()]);
+        let table: toml::Table = config
+            .contents_for(Some(Platform::Linux))
+            .unwrap()
+            .parse()
+            .unwrap();
+        let paths = table["env"]["_"]["path"].as_array().unwrap();
+        assert_eq!(paths.len(), 1);
+        assert_eq!(
+            paths[0].as_str(),
+            Some("/home/linuxbrew/.linuxbrew/opt/jq/bin")
+        );
+        // An Intel Mac skips formulas: nothing on PATH.
+        assert!(!config.contents_for(None).unwrap().contains("[env]"));
     }
 }

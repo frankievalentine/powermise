@@ -1,7 +1,7 @@
 //! Compiles AI Setups picks into a mise config fragment.
 //!
-//! The output is plain mise configuration — `[tools]` plus
-//! `[bootstrap.packages]` — that powermise writes to
+//! The output is plain mise configuration — `[tools]`, `[bootstrap.packages]`,
+//! and `[env] _.path` for Homebrew formulas — that powermise writes to
 //! `~/.config/mise/conf.d/powermise-<name>.toml`. mise does everything else:
 //! `mise bootstrap` installs it, `mise ls` shows it, and deleting the file
 //! removes it from the config.
@@ -25,13 +25,77 @@ pub struct CompiledMiseConfig {
     /// Merge entries for agents' MCP configs, keyed `"<target>/<id>"`.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub dotfiles: BTreeMap<String, DotfileMerge>,
+    /// `[env] _.path`: folders mise puts on PATH, in order.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub paths: Vec<String>,
 }
 
 impl CompiledMiseConfig {
-    /// Serializes this configuration using the TOML serializer.
+    /// Serializes this configuration using the TOML serializer, with
+    /// `paths` written the way mise's docs write them (`[env] _.path`).
     pub fn to_toml(&self) -> Result<String, CompilerError> {
-        toml::to_string(self).map_err(CompilerError::Serialize)
+        #[derive(Serialize)]
+        struct Body<'a> {
+            #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+            tools: &'a BTreeMap<String, String>,
+            #[serde(skip_serializing_if = "BootstrapConfig::is_empty")]
+            bootstrap: &'a BootstrapConfig,
+            #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+            dotfiles: &'a BTreeMap<String, DotfileMerge>,
+        }
+        let mut out = toml::to_string(&Body {
+            tools: &self.tools,
+            bootstrap: &self.bootstrap,
+            dotfiles: &self.dotfiles,
+        })
+        .map_err(CompilerError::Serialize)?;
+        out.push_str(&env_path_toml(&self.paths));
+        Ok(out)
     }
+}
+
+/// `[env] _.path = [...]` for `paths`, or nothing when there are none.
+pub fn env_path_toml(paths: &[String]) -> String {
+    if paths.is_empty() {
+        return String::new();
+    }
+    let quoted: Vec<String> = paths
+        .iter()
+        .map(|path| toml::Value::String(path.clone()).to_string())
+        .collect();
+    format!("\n[env]\n_.path = [{}]\n", quoted.join(", "))
+}
+
+/// Where mise's `brew` manager installs on `target`: Apple Silicon Macs and
+/// Linux (WSL included). It doesn't run on Intel Macs or Windows.
+pub fn homebrew_prefix(target: Platform) -> Option<&'static str> {
+    match target {
+        Platform::Darwin => Some("/opt/homebrew"),
+        Platform::Linux | Platform::Wsl => Some("/home/linuxbrew/.linuxbrew"),
+        Platform::Win32 => None,
+    }
+}
+
+/// The folders that put `packages`' Homebrew formulas on PATH on `target`:
+/// each formula's own `<prefix>/opt/<formula>/bin`. mise installs them
+/// without touching PATH, and `<prefix>/bin` would be the wrong fix: it also
+/// holds their dependencies' commands (Homebrew's `python3`, `node`), and
+/// `_.path` goes ahead of mise's own tools. The `opt` link exists for
+/// keg-only formulas too, and follows upgrades.
+pub fn homebrew_formula_paths<'a>(
+    packages: impl IntoIterator<Item = &'a str>,
+    target: Platform,
+) -> Vec<String> {
+    let Some(prefix) = homebrew_prefix(target) else {
+        return Vec::new();
+    };
+    packages
+        .into_iter()
+        .filter_map(|key| key.strip_prefix("brew:"))
+        // A tap's formula (`owner/tap/name`) is linked by its name.
+        .map(|formula| formula.rsplit('/').next().unwrap_or(formula))
+        .map(|formula| format!("{prefix}/opt/{formula}/bin"))
+        .collect()
 }
 
 /// The bootstrap section of a mise configuration.
@@ -259,6 +323,15 @@ pub fn compile_with(
             options,
         )?;
     }
+    compiled.config.paths = homebrew_formula_paths(
+        compiled
+            .config
+            .bootstrap
+            .packages
+            .keys()
+            .map(String::as_str),
+        target,
+    );
     Ok(compiled)
 }
 
@@ -427,7 +500,7 @@ mod tests {
         }
     }
 
-    use Platform::{Darwin, Linux, Win32};
+    use Platform::{Darwin, Linux, Win32, Wsl};
     use ToolProviderKind::{
         BootstrapApt, BootstrapBrew, BootstrapBrewCask, MacosApp, MiseTool, Scoop, System, Winget,
     };
@@ -455,7 +528,71 @@ mod tests {
             .unwrap();
         assert_eq!(
             output,
-            "[tools]\n\"npm:@openai/codex\" = \"0.51.0\"\nzulu = \"22\"\n\n[bootstrap.packages]\n\"brew-cask:beta\" = \"latest\"\n\"brew:alpha\" = \"latest\"\n"
+            "[tools]\n\"npm:@openai/codex\" = \"0.51.0\"\nzulu = \"22\"\n\n[bootstrap.packages]\n\"brew-cask:beta\" = \"latest\"\n\"brew:alpha\" = \"latest\"\n\n[env]\n_.path = [\"/opt/homebrew/opt/alpha/bin\"]\n"
+        );
+    }
+
+    #[test]
+    fn homebrew_formulas_go_on_path_by_their_own_folders() {
+        let catalog = tools(vec![
+            tool(
+                "jq",
+                vec![provider(BootstrapBrew, "jq", "1", &[Darwin, Linux, Wsl])],
+            ),
+            tool(
+                "pg",
+                vec![provider(
+                    BootstrapBrew,
+                    "postgresql@17",
+                    "1",
+                    &[Darwin, Linux, Wsl],
+                )],
+            ),
+            tool(
+                "tapped",
+                vec![provider(
+                    BootstrapBrew,
+                    "owner/tap/thing",
+                    "1",
+                    &[Darwin, Linux, Wsl],
+                )],
+            ),
+            tool(
+                "cask",
+                vec![provider(BootstrapBrewCask, "zed", "1", &[Darwin])],
+            ),
+        ]);
+        let paths = |target| {
+            compile(&selection(&["jq", "pg", "tapped"]), &catalog, target)
+                .unwrap()
+                .config
+                .paths
+        };
+        assert_eq!(
+            paths(Darwin),
+            [
+                "/opt/homebrew/opt/jq/bin",
+                "/opt/homebrew/opt/thing/bin",
+                "/opt/homebrew/opt/postgresql@17/bin",
+            ]
+        );
+        assert_eq!(paths(Linux)[0], "/home/linuxbrew/.linuxbrew/opt/jq/bin");
+        assert_eq!(paths(Wsl)[0], "/home/linuxbrew/.linuxbrew/opt/jq/bin");
+        // Casks are apps, not commands; nothing goes on PATH for them.
+        let casks = compile(&selection(&["cask"]), &catalog, Darwin).unwrap();
+        assert!(casks.config.paths.is_empty());
+        assert!(!casks.config.to_toml().unwrap().contains("[env]"));
+        // What mise reads: `[env] _.path`.
+        let toml: toml::Table = compile(&selection(&["jq"]), &catalog, Darwin)
+            .unwrap()
+            .config
+            .to_toml()
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert_eq!(
+            toml["env"]["_"]["path"][0].as_str(),
+            Some("/opt/homebrew/opt/jq/bin")
         );
     }
 
