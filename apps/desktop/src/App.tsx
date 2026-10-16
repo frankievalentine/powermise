@@ -517,9 +517,11 @@ function toolbarTitle(route: Route, context: AppContext): string {
     case "harness":
       return context.catalog.harnessById.get(route.id)?.title ?? route.id;
     case "mcp":
+      return "MCP Servers";
     case "integrations":
+      return "Plugins";
     case "skills":
-      return "Harnesses";
+      return "Skills";
     case "setup":
       return route.name;
     case "editor":
@@ -678,12 +680,12 @@ function Sidebar({ route, root, context }: { route: Route; root: Route; context:
 
         <div className="sidebar-section">
           <div className="sidebar-heading">
-            Harnesses
+            AI Setups
             <button onClick={() => navigate({ kind: "editor" })} aria-label="New setup" title="New Setup">
               <Plus size={14} />
             </button>
           </div>
-          {item(["harnesses", "harness", "mcp", "integrations", "skills"], "Browse Harnesses", Cpu)}
+          {item(["harnesses", "harness", "mcp", "integrations", "skills"], "Browse", Cpu)}
           {selections.map((selection) => {
             const active =
               (route.kind === "setup" && route.name === selection.name) ||

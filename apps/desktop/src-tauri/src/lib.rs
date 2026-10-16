@@ -168,13 +168,26 @@ const LINK_HOSTS: &[&str] = &[
 
 /// Opens a link in the default browser. Only https links to [`LINK_HOSTS`],
 /// so nothing a page shows can make the app open arbitrary programs or files.
+/// A homepage the MCP server catalog lists (a company's own docs or site).
+fn catalog_homepage(url: &str) -> bool {
+    powermise_setups::CatalogPaths::resolve(None)
+        .ok()
+        .and_then(|paths| powermise_registry::load_mcp_catalog(&paths.mcp).ok())
+        .is_some_and(|catalog| {
+            catalog
+                .mcp_servers
+                .iter()
+                .any(|server| server.homepage.as_deref() == Some(url))
+        })
+}
+
 #[tauri::command]
 fn open_url(url: String) -> CommandResult<()> {
     let host = url
         .strip_prefix("https://")
         .and_then(|rest| rest.split(['/', '#', '?']).next())
         .unwrap_or_default();
-    let allowed = LINK_HOSTS.contains(&host)
+    let allowed = (LINK_HOSTS.contains(&host) || catalog_homepage(&url))
         && !url.chars().any(|character| {
             character.is_whitespace() || character.is_control() || character == '"'
         });

@@ -92,7 +92,7 @@ export function SkillsView({ context, query }: { context: AppContext; query: str
         <HarnessesTabs context={context} current="skills" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Harnesses</h1>
+            <h1 className="page-title">Skills</h1>
             <p className="page-subtitle">
               Skills are folders of instructions an agent loads when they’re relevant — how to fill a PDF, or how your
               team writes React. powermise installs them with the skills CLI from skills.sh, which mise runs for you.

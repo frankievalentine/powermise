@@ -1,4 +1,4 @@
-// The browser demo's Harnesses › MCP Servers page: what's on, a few agents
+// The browser demo's AI Setups › MCP Servers page: what's on, a few agents
 // "set up" on the demo Mac, and servers someone added outside powermise.
 // Mirrors src-tauri/src/mcp.rs. Nothing here touches the machine.
 import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED } from "../catalog";
@@ -124,7 +124,7 @@ export function mcpPreview(
   ].join(" && ");
   return {
     fragmentPath: FRAGMENT,
-    fragment: next.length ? "# Written by powermise: the MCP servers turned on in Harnesses › MCP Servers.\n" : null,
+    fragment: next.length ? "# Written by powermise: the MCP servers turned on in AI Setups › MCP Servers.\n" : null,
     files: next.map(({ title, target, contents }) => ({ title, target, contents })),
     removals,
     skipped: [],

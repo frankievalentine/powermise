@@ -262,6 +262,8 @@ mod tests {
             title: id.into(),
             description: id.into(),
             homepage: None,
+            publisher: None,
+            category: Default::default(),
             tool: tool.map(Into::into),
             version: tool.map(|_| "1.0.0".into()),
             command: tool.map(|_| format!("{id}-mcp")),

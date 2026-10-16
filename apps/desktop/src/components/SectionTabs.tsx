@@ -17,7 +17,7 @@ export function MyToolsTabs({ context, current }: { context: AppContext; current
   );
 }
 
-/** Browse Harnesses: the harnesses, and what they can bring along. */
+/** AI Setups › Browse: the harnesses, and what they can bring along. */
 export function HarnessesTabs({
   context,
   current,
@@ -27,7 +27,7 @@ export function HarnessesTabs({
 }) {
   return (
     <PageTabs
-      label="Browse harnesses"
+      label="Browse"
       current={current}
       onSelect={(kind) => context.navigate({ kind })}
       tabs={[

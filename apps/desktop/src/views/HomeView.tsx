@@ -187,7 +187,7 @@ export function HomeView({ context }: { context: AppContext }) {
             />
             <Glance
               icon={<Cpu size={18} />}
-              title="Harnesses"
+              title="AI Setups"
               value={selections.length ? `${selections.length} ${selections.length === 1 ? "setup" : "setups"}` : "Not set up"}
               note={`${selections.filter((selection) => selection.applied).length} applied`}
               onClick={() =>

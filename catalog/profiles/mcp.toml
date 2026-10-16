@@ -6,6 +6,14 @@ catalog_revision = "2"
 # installs and runs (`tool`, `version`, `command`) or a remote server (`url`).
 # powermise writes them into each agent's own config file with a mise
 # dotfiles merge entry, so mise owns only those keys.
+#
+# `category = "services"` marks a company's own hosted server for its
+# product. Each one's address comes from the company's entry in the official
+# MCP Registry (registry.modelcontextprotocol.io), published under a
+# namespace that company verified it owns (`com.stripe/…`, or
+# `io.github.<their org>/…`). They sign in with OAuth in the agent, so no
+# keys go in any file. Popular, widely used services only: anything else can
+# be added with Add Server.
 
 [[mcp_servers]]
 id = "context7"
@@ -28,6 +36,7 @@ command = "mcp-server-sequential-thinking"
 [[mcp_servers]]
 id = "playwright"
 title = "Playwright"
+publisher = "Microsoft"
 description = "Lets the agent open web pages, click, type, and read them in a real browser."
 homepage = "https://github.com/microsoft/playwright-mcp"
 tool = "npm:@playwright/mcp"
@@ -37,6 +46,7 @@ command = "playwright-mcp"
 [[mcp_servers]]
 id = "chrome-devtools"
 title = "Chrome DevTools"
+publisher = "Google"
 description = "Lets the agent inspect, debug, and measure performance in Chrome."
 homepage = "https://github.com/ChromeDevTools/chrome-devtools-mcp"
 tool = "npm:chrome-devtools-mcp"
@@ -67,3 +77,162 @@ title = "DeepWiki"
 description = "Answers questions about public GitHub repositories from their generated documentation. Runs remotely; nothing to install."
 homepage = "https://docs.devin.ai/work-with-devin/deepwiki-mcp"
 url = "https://mcp.deepwiki.com/mcp"
+
+[[mcp_servers]]
+id = "github"
+title = "GitHub"
+description = "Repositories, issues, pull requests, and Actions."
+publisher = "GitHub"
+category = "services"
+homepage = "https://github.com/github/github-mcp-server"
+url = "https://api.githubcopilot.com/mcp/"
+
+[[mcp_servers]]
+id = "gitlab"
+title = "GitLab"
+description = "Projects, issues, merge requests, and pipelines on GitLab.com."
+publisher = "GitLab"
+category = "services"
+homepage = "https://gitlab.com/gitlab-org/gitlab"
+url = "https://gitlab.com/api/v4/mcp"
+
+[[mcp_servers]]
+id = "linear"
+title = "Linear"
+description = "Find, create, and update issues and projects in Linear."
+publisher = "Linear"
+category = "services"
+homepage = "https://linear.app"
+url = "https://mcp.linear.app/mcp"
+
+[[mcp_servers]]
+id = "notion"
+title = "Notion"
+description = "Search, read, and edit pages and databases in your Notion workspace."
+publisher = "Notion"
+category = "services"
+url = "https://mcp.notion.com/mcp"
+
+[[mcp_servers]]
+id = "atlassian"
+title = "Atlassian"
+description = "Jira, Confluence, and Loom: search, create, and update your work."
+publisher = "Atlassian"
+category = "services"
+homepage = "https://github.com/atlassian/atlassian-mcp-server"
+url = "https://mcp.atlassian.com/v2/mcp"
+
+[[mcp_servers]]
+id = "sentry"
+title = "Sentry"
+description = "Errors, issues, and traces from Sentry, for debugging with the agent."
+publisher = "Sentry"
+category = "services"
+homepage = "https://github.com/getsentry/sentry-mcp"
+url = "https://mcp.sentry.dev/mcp"
+
+[[mcp_servers]]
+id = "stripe"
+title = "Stripe"
+description = "Customers, products, payments, and Stripe's docs."
+publisher = "Stripe"
+category = "services"
+homepage = "https://github.com/stripe/agent-toolkit"
+url = "https://mcp.stripe.com"
+
+[[mcp_servers]]
+id = "figma"
+title = "Figma"
+description = "Design context from your Figma files, for building what's designed."
+publisher = "Figma"
+category = "services"
+homepage = "https://github.com/figma/mcp-server-guide"
+url = "https://mcp.figma.com/mcp"
+
+[[mcp_servers]]
+id = "canva"
+title = "Canva"
+description = "Create, search, edit, and export Canva designs."
+publisher = "Canva"
+category = "services"
+url = "https://mcp.canva.com/mcp"
+
+[[mcp_servers]]
+id = "supabase"
+title = "Supabase"
+description = "Manage Supabase projects: databases, tables, migrations, and logs."
+publisher = "Supabase"
+category = "services"
+homepage = "https://github.com/supabase/mcp"
+url = "https://mcp.supabase.com/mcp"
+
+[[mcp_servers]]
+id = "neon"
+title = "Neon"
+description = "Manage Neon projects and their Postgres databases."
+publisher = "Neon"
+category = "services"
+homepage = "https://github.com/neondatabase/mcp-server-neon"
+url = "https://mcp.neon.tech/mcp"
+
+[[mcp_servers]]
+id = "vercel"
+title = "Vercel"
+description = "Your Vercel projects, deployments, and logs, plus Vercel's docs."
+publisher = "Vercel"
+category = "services"
+homepage = "https://github.com/vercel/vercel-mcp-overview"
+url = "https://mcp.vercel.com"
+
+[[mcp_servers]]
+id = "cloudflare-docs"
+title = "Cloudflare Docs"
+description = "Searches Cloudflare's documentation. No sign-in needed."
+publisher = "Cloudflare"
+category = "services"
+homepage = "https://github.com/cloudflare/mcp-server-cloudflare"
+url = "https://docs.mcp.cloudflare.com/mcp"
+
+[[mcp_servers]]
+id = "posthog"
+title = "PostHog"
+description = "Product analytics, feature flags, and experiments in PostHog."
+publisher = "PostHog"
+category = "services"
+homepage = "https://github.com/PostHog/posthog"
+url = "https://mcp.posthog.com/mcp"
+
+[[mcp_servers]]
+id = "hugging-face"
+title = "Hugging Face"
+description = "Models, datasets, and Spaces on the Hugging Face Hub."
+publisher = "Hugging Face"
+category = "services"
+url = "https://huggingface.co/mcp"
+
+[[mcp_servers]]
+id = "microsoft-learn"
+title = "Microsoft Learn"
+description = "Current Microsoft and Azure documentation and code samples. No sign-in needed."
+publisher = "Microsoft"
+category = "services"
+homepage = "https://github.com/MicrosoftDocs/mcp"
+url = "https://learn.microsoft.com/api/mcp"
+
+[[mcp_servers]]
+id = "zapier"
+title = "Zapier"
+description = "Actions in thousands of apps, through your Zapier account."
+publisher = "Zapier"
+category = "services"
+homepage = "https://github.com/zapier/zapier-mcp"
+url = "https://mcp.zapier.com/api/v1/connect"
+
+[[mcp_servers]]
+id = "exa"
+title = "Exa"
+description = "Web search and page contents for research."
+publisher = "Exa"
+category = "services"
+homepage = "https://github.com/exa-labs/exa-mcp-server"
+url = "https://mcp.exa.ai/mcp"

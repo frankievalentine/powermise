@@ -261,7 +261,11 @@ One section of the app. A setup is a selection file
       add your own servers (npm, Python, mise tool, command, or remote, with env).
 - [ ] MCP API keys: a Configure sheet that writes keys only into the agent's own
       settings, never into mise's config or powermise's files.
-- [ ] MCP Registry browser: search the official MCP registry and add from it.
+- [x] Official company MCP servers (GitHub, Linear, Notion, Stripe, …) in the
+      catalog, with addresses from each company's domain-verified entry in the
+      official MCP Registry. A full registry search was tried and dropped: it's
+      an open feed of unreviewed servers, so anything beyond the curated list
+      goes through Add Server.
 - [x] Selection schema v2: drop `machine_roles`, `preferences.auto_prune`, and
       `preferences.update_system_packages`. Version 1 files load and are upgraded
       on the next save.

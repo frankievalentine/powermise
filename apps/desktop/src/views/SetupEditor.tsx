@@ -311,7 +311,7 @@ export function SetupEditor({
               </div>
               <p className="section-note">
                 Installed with each agent’s own plugin command after mise sets the agent up. Browse thousands more in
-                Harnesses › Plugins.
+                AI Setups › Plugins.
               </p>
               <div className="list">
                 {pluginChoices.map((entry) => {

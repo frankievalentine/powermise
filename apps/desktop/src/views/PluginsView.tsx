@@ -63,7 +63,7 @@ export function PluginsView({ context, query }: { context: AppContext; query: st
         <HarnessesTabs context={context} current="integrations" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Harnesses</h1>
+            <h1 className="page-title">Plugins</h1>
             <p className="page-subtitle">
               Plugins and extensions add commands, skills, and connections to an agent. powermise installs them with the
               agent’s own command, so they work exactly as if you’d added them yourself.
@@ -94,7 +94,7 @@ export function PluginsView({ context, query }: { context: AppContext; query: st
           <div className="callout warn">
             <AlertTriangle size={14} />
             <span>
-              {report.data.error}. Add {title} with a setup in Harnesses, then come back here.
+              {report.data.error}. Add {title} with a setup in AI Setups, then come back here.
             </span>
           </div>
         )}

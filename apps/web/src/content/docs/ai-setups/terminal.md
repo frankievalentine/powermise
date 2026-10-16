@@ -153,7 +153,7 @@ mise x -- gemini extensions install https://github.com/gemini-cli-extensions/cod
 Applying a setup runs these after `mise bootstrap` for plugins that aren't
 installed yet. Most Codex plugins sign in to a service while installing, so
 powermise opens those in your terminal instead. Removing a setup leaves its
-plugins installed, like its tools; remove them in **Harnesses › Plugins**.
+plugins installed, like its tools; remove them in **AI Setups › Plugins**.
 
 ## MCP servers
 
@@ -196,7 +196,7 @@ newer.
 
 ### The MCP Servers page
 
-Servers turned on in **Harnesses › MCP Servers** work the same way, in one
+Servers turned on in **AI Setups › MCP Servers** work the same way, in one
 file of their own: `conf.d/powermise-mcp.toml`, with merge sources in
 `conf.d/powermise-mcp.files/` and entries named `powermise-mcp`. What's on
 for each agent, and the servers you added, are saved in

@@ -11,12 +11,12 @@ depends on, and optional desktop apps. AI Setups need mise 2026.10 or newer;
 
 ## In the app
 
-Under **Harnesses** in the sidebar — the apps and CLIs that run AI coding
-agents (Claude Code, Codex, Cursor…):
+Under **AI Setups** in the sidebar:
 
-- **Browse Harnesses** — the catalog, with what each harness installs on each
-  platform, and tabs for the **MCP Servers**, **Plugins**, and **Skills** they
-  can bring along.
+- **Browse** — the harnesses, the apps and CLIs that run AI coding agents
+  (Claude Code, Codex, Cursor…), with what each one installs on each platform,
+  and tabs for the **MCP Servers**, **Plugins**, and **Skills** they can bring
+  along.
 - **Your setups** — listed below it. Create one with **+**, pick
   harnesses, and the side panel shows exactly what will be installed.
   **Export…** on a setup's page saves it as a file; **Import a Setup File…** in
@@ -50,7 +50,17 @@ without a setup:
 - **Servers** — each server, with a button for every agent set up on this
   computer. Click the agents you want it in; **Show More Agents** lists the
   rest. Remote servers can't go in Claude Desktop, which only runs servers
-  itself.
+  itself. They come in two groups:
+  - **For your agent** — abilities for the agent itself, like current library
+    docs (Context7), a browser (Playwright, Chrome DevTools), or memory.
+  - **From the companies that make them** — official servers that GitHub,
+    GitLab, Linear, Notion, Atlassian, Sentry, Stripe, Figma, Canva, Supabase,
+    Neon, Vercel, Cloudflare, PostHog, Hugging Face, Microsoft, Zapier, and Exa
+    host for their own products. The agent asks you to sign in the first time
+    it connects, so no keys are kept anywhere. Each address is the one the
+    company published in the official
+    [MCP Registry](https://registry.modelcontextprotocol.io) under a domain it
+    verified, and only popular, widely used services are listed.
 - **Add Server…** — a server of your own: an npm or Python package (mise
   installs it the first time it runs), any mise tool, a command already on
   your computer, or a remote address, with arguments and environment

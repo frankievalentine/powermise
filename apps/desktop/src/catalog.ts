@@ -1,3 +1,4 @@
+import { trustCatalogLinks } from "./links";
 import type {
   CatalogBundle,
   Integration,
@@ -30,6 +31,7 @@ export function indexCatalog(bundle: CatalogBundle): CatalogIndex {
   const tools = bundle.tools.tools;
   const integrations = bundle.integrations.integrations;
   const mcpServers = bundle.mcp.mcp_servers;
+  trustCatalogLinks(mcpServers.map((server) => server.homepage));
   return {
     revision: bundle.revision,
     harnesses: all.filter((harness) => harness.id !== "base"),
@@ -156,6 +158,7 @@ export function desktopMcpClient(index: CatalogIndex, harness: Harness, platform
 
 /** How an MCP server runs, in words. */
 export function mcpRunsAs(server: McpServer): string {
+  if (server.url && server.publisher) return `By ${server.publisher} · hosted by them, nothing to install`;
   if (server.url) return "Remote server · nothing to install";
   if (!server.tool) return `Runs ${[server.command, ...server.args].join(" ")}`;
   const backend = server.tool.includes(":") ? server.tool.split(":")[0] : "mise";

@@ -15,6 +15,7 @@ import { HarnessesTabs } from "../components/SectionTabs";
 import { Sheet } from "../components/Sheet";
 import { CommandBlock, Monogram, Section, Segmented } from "../components/ui";
 import { useAsync } from "../hooks";
+
 import { prettyPath } from "../mise";
 
 const same = (a: McpPanel, b: McpPanel) => JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
@@ -30,7 +31,7 @@ function normalize(panel: McpPanel): McpPanel {
   };
 }
 
-/** Harnesses › MCP Servers: turn servers on for each agent, see what each
+/** AI Setups › MCP Servers: turn servers on for each agent, see what each
  *  agent's config has now, and add servers of your own (src-tauri/src/mcp.rs). */
 export function McpServersView({ context, query }: { context: AppContext; query: string }) {
   const { catalog, env, mise, run } = context;
@@ -123,6 +124,95 @@ export function McpServersView({ context, query }: { context: AppContext; query:
     }
   };
 
+  const groups = [
+    {
+      title: "For your agent",
+      note: null,
+      servers: servers.filter((server) => !custom.has(server.id) && server.category !== "services"),
+    },
+    {
+      title: "From the companies that make them",
+      note: "Each company’s own server for its product. The agent asks you to sign in the first time it connects, so no keys are kept anywhere.",
+      servers: servers.filter((server) => server.category === "services"),
+    },
+    { title: "Added by you", note: null, servers: servers.filter((server) => custom.has(server.id)) },
+  ];
+  const renderRow = (server: McpServer) => (
+      <div className="list-row mcp-server-row" key={server.id}>
+        <Monogram id={server.id} title={server.title} size={28} />
+        <div className="row-main">
+          <div className="row-title">
+            {canOpen(server.homepage) ? (
+              <button
+                className="title-link"
+                onClick={() => void api.openUrl(server.homepage!)}
+                title={`Open ${server.title}’s page`}
+              >
+                {server.title}
+                <ExternalLink size={11} aria-hidden />
+              </button>
+            ) : (
+              server.title
+            )}
+            {custom.has(server.id) && <span className="badge">Added by you</span>}
+          </div>
+          <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
+            {server.description}
+          </div>
+          <div className="row-subtitle">
+            {mcpRunsAs(server)}
+            {server.tool && (
+              <>
+                {" · "}
+                <span className="mono">
+                  {server.tool}@{server.version}
+                </span>
+              </>
+            )}
+          </div>
+          {shown.length > 0 && (
+            <div className="chip-row mcp-agent-chips" role="group" aria-label={`Agents ${server.title} is on for`}>
+              {shown.map((agent) => {
+                const blocked = !!server.url && !agent.takesRemote;
+                const on = isOn(server.id, agent.id);
+                return (
+                  <button
+                    key={agent.id}
+                    type="button"
+                    className={`chip-button${on ? " selected" : ""}`}
+                    aria-pressed={on}
+                    aria-label={agent.title}
+                    disabled={blocked && !on}
+                    title={blocked ? `${agent.title} only runs servers itself, not remote ones` : undefined}
+                    onClick={() => toggle(server.id, agent.id)}
+                  >
+                    {agent.title}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div className="row-trailing">
+          {custom.has(server.id) ? (
+            <>
+              <button className="icon-button" aria-label={`Edit ${server.title}`} title="Edit" onClick={() => setEditing(server)}>
+                <Pencil size={14} />
+              </button>
+              <button
+                className="icon-button"
+                aria-label={`Remove ${server.title}`}
+                title="Remove"
+                onClick={() => removeServer(server.id)}
+              >
+                <Trash2 size={14} />
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+  );
+
   const configuredAgents = agents.filter(
     (agent) => agent.detected || (agent.configured?.length ?? 0) > 0 || agent.state,
   );
@@ -133,7 +223,7 @@ export function McpServersView({ context, query }: { context: AppContext; query:
         <HarnessesTabs context={context} current="mcp" />
         <div className="page-header">
           <div>
-            <h1 className="page-title">Harnesses</h1>
+            <h1 className="page-title">MCP Servers</h1>
             <p className="page-subtitle">
               MCP servers give an agent extra abilities, like reading current library docs or using a browser. Turn
               one on for the agents you use: mise installs it and adds it to each agent’s own config.
@@ -179,83 +269,18 @@ export function McpServersView({ context, query }: { context: AppContext; query:
               </button>
             </p>
           ) : null}
-          <div className="list">
-            {servers.map((server) => (
-              <div className="list-row mcp-server-row" key={server.id}>
-                <Monogram id={server.id} title={server.title} size={28} />
-                <div className="row-main">
-                  <div className="row-title">
-                    {canOpen(server.homepage) ? (
-                      <button
-                        className="title-link"
-                        onClick={() => void api.openUrl(server.homepage!)}
-                        title={`Open ${server.title}’s page`}
-                      >
-                        {server.title}
-                        <ExternalLink size={11} aria-hidden />
-                      </button>
-                    ) : (
-                      server.title
-                    )}
-                    {custom.has(server.id) && <span className="badge">Added by you</span>}
-                  </div>
-                  <div className="row-subtitle" style={{ whiteSpace: "normal" }}>
-                    {server.description}
-                  </div>
-                  <div className="row-subtitle">
-                    {mcpRunsAs(server)}
-                    {server.tool && (
-                      <>
-                        {" · "}
-                        <span className="mono">
-                          {server.tool}@{server.version}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  {shown.length > 0 && (
-                    <div className="chip-row mcp-agent-chips" role="group" aria-label={`Agents ${server.title} is on for`}>
-                      {shown.map((agent) => {
-                        const blocked = !!server.url && !agent.takesRemote;
-                        const on = isOn(server.id, agent.id);
-                        return (
-                          <button
-                            key={agent.id}
-                            type="button"
-                            className={`chip-button${on ? " selected" : ""}`}
-                            aria-pressed={on}
-                            aria-label={agent.title}
-                            disabled={blocked && !on}
-                            title={blocked ? `${agent.title} only runs servers itself, not remote ones` : undefined}
-                            onClick={() => toggle(server.id, agent.id)}
-                          >
-                            {agent.title}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-                <div className="row-trailing">
-                  {custom.has(server.id) ? (
-                    <>
-                      <button className="icon-button" aria-label={`Edit ${server.title}`} title="Edit" onClick={() => setEditing(server)}>
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        className="icon-button"
-                        aria-label={`Remove ${server.title}`}
-                        title="Remove"
-                        onClick={() => removeServer(server.id)}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </>
-                  ) : null}
-                </div>
+          {groups.map((group) =>
+            group.servers.length ? (
+              <div className="mcp-group" key={group.title}>
+                <h3 className="mcp-group-title">{group.title}</h3>
+                {group.note && <p className="section-note">{group.note}</p>}
+                <div className="list">{group.servers.map(renderRow)}</div>
               </div>
-            ))}
-          </div>
+            ) : null,
+          )}
+          {groups.every((group) => !group.servers.length) && (
+            <p className="section-note">No servers match “{query.trim()}”.</p>
+          )}
         </section>
 
         {dirty && (
@@ -275,7 +300,13 @@ export function McpServersView({ context, query }: { context: AppContext; query:
         {configuredAgents.length > 0 && (
           <Section
             title="In each agent’s settings now"
-            note="What each agent’s own config file lists, including servers you or the agent added. Setups add servers too: one stays in an agent’s settings while anything in powermise still adds it."
+            note={
+              <>
+                What each agent’s config file lists now; green ones came from powermise. What’s on here is kept in{" "}
+                <span className="mono selectable">{prettyPath(view.data?.fragmentPath ?? "", env.home)}</span>, and
+                mise merges in only those servers, leaving the rest of each file alone.
+              </>
+            }
           >
             <div className="list">
               {configuredAgents.map((agent) => (
@@ -285,14 +316,6 @@ export function McpServersView({ context, query }: { context: AppContext; query:
           </Section>
         )}
 
-        {view.data && (
-          <p className="section-note">
-            powermise keeps what’s on in{" "}
-            <span className="mono selectable">{prettyPath(view.data.fragmentPath, env.home)}</span>, which mise reads
-            like any of your config files. Each agent’s settings change only with a mise dotfiles merge, which owns just
-            these servers and leaves everything else in the file alone.
-          </p>
-        )}
       </div>
 
       <ReviewSheet
@@ -432,6 +455,9 @@ function ReviewSheet({
   );
 }
 
+/** The command a package most likely installs: its name without a scope. */
+const commandFor = (pkg: string) => pkg.split("/").pop()?.split("[")[0] ?? "";
+
 type Kind = "npm" | "pipx" | "mise" | "command" | "remote";
 
 const KINDS: { value: Kind; label: string }[] = [
@@ -458,8 +484,6 @@ function kindOf(server: McpServer): Kind {
   return "mise";
 }
 
-/** The command a package most likely installs: its name without a scope. */
-const commandFor = (pkg: string) => pkg.split("/").pop()?.split("[")[0] ?? "";
 
 /** Adds or edits a server of your own. */
 function ServerSheet({
@@ -508,17 +532,17 @@ function ServerSheet({
       setClients(defaultClients);
       return;
     }
-    const current = kindOf(editing);
-    setKind(current);
-    setName(editing.id);
-    setPkg(editing.tool?.replace(/^(npm|pipx):/, "") ?? "");
-    setVersion(editing.version ?? "latest");
-    setCommand(editing.command ?? "");
+    const server = editing;
+    setKind(kindOf(server));
+    setName(server.id);
+    setPkg(server.tool?.replace(/^(npm|pipx):/, "") ?? "");
+    setVersion(server.version ?? "latest");
+    setCommand(server.command ?? "");
     setCommandTouched(true);
-    setArgs(editing.args.join(" "));
-    setUrl(editing.url ?? "");
-    setEnv(Object.entries(editing.env ?? {}));
-    setClients(clientsOf(editing.id));
+    setArgs(server.args.join(" "));
+    setUrl(server.url ?? "");
+    setEnv(Object.entries(server.env ?? {}));
+    setClients(clientsOf(server.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
 
@@ -657,7 +681,7 @@ function ServerSheet({
                     className="text-field mono"
                     value={value}
                     aria-label="Value"
-                    placeholder="info"
+                    placeholder="value"
                     spellCheck={false}
                     onChange={(event) =>
                       setEnv(env.map((entry, at) => (at === index ? [entry[0], event.target.value] : entry)))
@@ -736,3 +760,4 @@ function ServerSheet({
     </Sheet>
   );
 }
+

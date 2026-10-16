@@ -418,14 +418,15 @@ Reads: `mise settings ls --all --json-extended`
 
 ## AI Setups
 
-The **Harnesses** section of the sidebar. Harnesses are the apps and CLIs that
+The **AI Setups** section of the sidebar. Harnesses are the apps and CLIs that
 run AI coding agents (Claude Code, Codex, Cursor…). Browse them, then build a
 setup that installs everything they need. See [AI Setups](/ai-setups/).
 
-![Browse Harnesses, the catalog of AI coding harnesses](../../assets/app-tour/ai-agents.png)
+![AI Setups › Browse, the catalog of AI coding harnesses](../../assets/app-tour/ai-agents.png)
 
-**MCP Servers** turns servers on agent by agent, adds your own, and shows what
-each agent's settings list right now. See [MCP servers](/ai-setups/#mcp-servers).
+**MCP Servers** turns servers on agent by agent, including official ones from
+companies like GitHub, Linear, Notion, and Stripe, adds your own, and shows
+what each agent's settings list right now. See [MCP servers](/ai-setups/#mcp-servers).
 
 ![MCP Servers, with a button per agent for each server](../../assets/app-tour/mcp-servers.png)
 

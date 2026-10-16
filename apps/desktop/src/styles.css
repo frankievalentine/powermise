@@ -2652,7 +2652,7 @@ button {
   margin-bottom: 8px;
 }
 
-/* Harnesses › MCP Servers */
+/* AI Setups › MCP Servers */
 /* Pinned to the bottom while there are changes, so toggling never moves the list. */
 .banner.mcp-pending {
   position: sticky;
@@ -2731,4 +2731,19 @@ button {
   gap: 6px;
   align-items: center;
   margin-bottom: 6px;
+}
+
+.mcp-group + .mcp-group {
+  margin-top: 22px;
+}
+
+.mcp-group-title {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mcp-group .section-note {
+  margin-top: -4px;
 }

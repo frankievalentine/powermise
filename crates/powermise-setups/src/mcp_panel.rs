@@ -189,7 +189,7 @@ pub fn compile_panel(
         None
     } else {
         Some(format!(
-            "# Written by powermise: the MCP servers turned on in Harnesses › MCP\n\
+            "# Written by powermise: the MCP servers turned on in AI Setups › MCP\n\
              # Servers. mise installs their tools and merges each agent's servers\n\
              # into that agent's own config file. Turn servers off in powermise to\n\
              # take them back out of those files.\n\n{}",
@@ -253,6 +253,8 @@ mod tests {
             title: "Mine".into(),
             description: "Added by you".into(),
             homepage: None,
+            publisher: None,
+            category: Default::default(),
             tool: Some("npm:example-mcp".into()),
             version: Some("latest".into()),
             command: Some("example-mcp".into()),

@@ -28,7 +28,7 @@ tools. mise lives in the terminal. powermise puts it in a window:
   other version managers, Homebrew and your Brewfile, winget and Scoop, and
   global npm, pipx, cargo, and gem packages, with a dry run before anything
   changes.
-- **Harnesses** — install a curated AI coding environment (Claude Code, Codex,
+- **AI Setups** — install a curated AI coding environment (Claude Code, Codex,
   ChatGPT, Amp, and more) in one step, and export it to your other computers. See
   [AI Setups](/ai-setups/).
 - **This Computer**, **Settings**, and **History** — machine-wide setup, mise's

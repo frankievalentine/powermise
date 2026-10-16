@@ -1,4 +1,4 @@
-//! Harnesses › MCP Servers: which servers are on for each agent
+//! AI Setups › MCP Servers: which servers are on for each agent
 //! (powermise_setups::mcp_panel), what each agent's own config has right
 //! now, and servers people add themselves.
 use std::{collections::BTreeSet, path::PathBuf};

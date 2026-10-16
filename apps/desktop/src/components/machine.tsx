@@ -30,18 +30,7 @@ export function formatBytes(bytes: number): string {
 }
 
 /** Hosts the app opens links to (the backend enforces the same list). */
-const LINK_HOSTS = ["mise.jdx.dev", "github.com", "macos-defaults.com", "skills.sh", "docs.devin.ai"];
-
-/** Whether `url` is a link the app can open in the browser. */
-export function canOpen(url: string | null | undefined): url is string {
-  if (!url) return false;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" && LINK_HOSTS.includes(parsed.hostname);
-  } catch {
-    return false;
-  }
-}
+export { canOpen, trustCatalogLinks } from "../links";
 
 /** A link to mise's docs or GitHub, opened in the default browser. */
 export function ExternalLinkButton({ url, children }: { url: string; children: React.ReactNode }) {

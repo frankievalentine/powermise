@@ -178,6 +178,11 @@ pub struct McpServer {
     pub description: String,
     #[serde(default)]
     pub homepage: Option<String>,
+    /// Who makes it, for a company's own server (`Stripe`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(default)]
+    pub category: McpCategory,
     /// The mise tool that provides the server, such as `npm:@upstash/context7-mcp`.
     #[serde(default)]
     pub tool: Option<String>,
@@ -195,6 +200,17 @@ pub struct McpServer {
     /// written in files powermise keeps).
     #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub env: std::collections::BTreeMap<String, String>,
+}
+
+/// What an MCP server is for, which groups the MCP Servers page.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum McpCategory {
+    /// Abilities for the agent itself: docs, a browser, memory.
+    #[default]
+    Tools,
+    /// A company's own hosted server for its product.
+    Services,
 }
 
 /// An agent's MCP configuration file. powermise adds servers to it with a

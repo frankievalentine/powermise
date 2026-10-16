@@ -57,6 +57,10 @@ export interface McpServer {
   title: string;
   description: string;
   homepage: string | null;
+  /** Who makes it, for a company's own server. */
+  publisher?: string;
+  /** `services`: a company's own hosted server for its product. */
+  category?: "tools" | "services";
   tool: string | null;
   version: string | null;
   command: string | null;
@@ -66,7 +70,7 @@ export interface McpServer {
   env?: Record<string, string>;
 }
 
-/** Harnesses › MCP Servers: a server and the agents it's on for. */
+/** AI Setups › MCP Servers: a server and the agents it's on for. */
 export interface PanelServer {
   id: string;
   clients: McpClientId[];
