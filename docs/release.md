@@ -39,14 +39,37 @@ A change that makes existing selection files unreadable is a major version.
   `conf.d/powermise-<name>.toml` files.
 - mise is updated independently (Health offers `mise self-update`).
 
+## Releasing
+
+1. `scripts/bump-version.sh <version>` sets the version in
+   `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/src-tauri/Cargo.toml`
+   (and its lock file), and both `package.json` files.
+2. Commit, tag `v<version>`, and push the tag.
+3. `.github/workflows/release.yml` checks the tag matches the version, builds
+   every platform on GitHub's runners, and attaches the installers and
+   `SHA256SUMS` to a draft release.
+4. Review the draft and publish it. The site's download button and install
+   scripts use `/releases/latest/download/<file>`, so they follow the newest
+   published release.
+
 ## Release artifacts
 
-The desktop app, built with Tauri (`bun run desktop:build`), for:
+The desktop app, built with Tauri, under stable file names:
 
-- macOS (Apple Silicon and Intel)
-- Linux (x86_64)
-- Windows (x86_64)
+| Platform | Files |
+| --- | --- |
+| macOS (one universal build for Apple Silicon and Intel) | `powermise-macos-universal.dmg` |
+| Linux x86_64 | `powermise-linux-x86_64.AppImage`, `powermise-linux-amd64.deb`, `powermise-linux-x86_64.rpm` |
+| Linux arm64 | `powermise-linux-aarch64.AppImage`, `powermise-linux-arm64.deb`, `powermise-linux-aarch64.rpm` |
+| Windows x64 | `powermise-windows-x64-setup.exe` (per-user, no administrator prompt), `powermise-windows-x64.msi` |
 
-The CI matrix (`ci.yml`) builds and tests the library crates on all three on
-each commit and checks a compiled setup against real mise on macOS and Linux.
-No hosted sync service is used.
+Builds aren't code-signed yet: macOS gets an ad-hoc signature so it opens on
+Apple Silicon, and the first launch of a downloaded installer takes one extra
+step (see the site's Getting started page). The install scripts
+(`apps/web/public/install.sh` and `install.ps1`, served at
+`powermise.dev/install.sh` and `/install.ps1`) verify every download against
+`SHA256SUMS`.
+
+The CI matrix (`ci.yml`) builds and tests the library crates on all three
+platforms on each commit and checks a compiled setup against real mise on macOS
+and Linux. No hosted sync service is used.

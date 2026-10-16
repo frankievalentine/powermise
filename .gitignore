@@ -16,3 +16,6 @@ apps/desktop/src-tauri/gen/
 
 # OS
 .DS_Store
+
+# Internal notes; kept locally, not published.
+docs/archive/

@@ -10,9 +10,7 @@
 > projects' tools, environments, and tasks — without memorizing commands. Setting up
 > AI coding environments is one feature built on top of it.
 
-This file is the living plan. It replaces `BUILD_PLAN.md`, which is archived at
-[`docs/archive/BUILD_PLAN.md`](docs/archive/BUILD_PLAN.md) as the record of the
-original AI-harness-first design.
+This file is the living plan.
 
 ## Principles
 
