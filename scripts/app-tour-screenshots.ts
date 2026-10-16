@@ -50,6 +50,7 @@ const shots: { file: string; route: unknown; wait?: number; before?: string[] }[
   { file: "this-computer", route: { kind: "machine" } },
   { file: "settings", route: { kind: "settings" } },
   { file: "ai-agents", route: { kind: "harnesses" } },
+  { file: "mcp-servers", route: { kind: "mcp" }, wait: 1500 },
   { file: "ai-setup", route: { kind: "setup", name: "engineering-agents" }, wait: 2500 },
 ];
 

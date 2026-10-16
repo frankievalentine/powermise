@@ -2651,3 +2651,84 @@ button {
   justify-content: flex-end;
   margin-bottom: 8px;
 }
+
+/* Harnesses › MCP Servers */
+/* Pinned to the bottom while there are changes, so toggling never moves the list. */
+.banner.mcp-pending {
+  position: sticky;
+  bottom: 12px;
+  z-index: 3;
+  justify-content: space-between;
+  margin: 12px 0 0;
+  border: 1px solid var(--separator-strong);
+  background: var(--sheet);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  color: var(--text);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.mcp-server-row {
+  align-items: flex-start;
+}
+
+.mcp-server-row .row-title .badge {
+  margin-left: 8px;
+  vertical-align: 1px;
+}
+
+/* A name that links to the thing's page: the title's look, a link on hover. */
+.title-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.title-link svg {
+  color: var(--text-tertiary);
+}
+
+.title-link:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.title-link:hover svg {
+  color: currentColor;
+}
+
+.mcp-agent-chips {
+  margin-top: 8px;
+}
+
+.chip-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.chip-button:disabled:hover {
+  background: var(--fill);
+  color: var(--text-secondary);
+}
+
+.mcp-form-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.mcp-env-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}

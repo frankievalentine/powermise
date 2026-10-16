@@ -84,6 +84,10 @@ pub fn fragment_path(mise_config_dir: &Path, name: &str) -> PathBuf {
         .join(format!("powermise-{name}.toml"))
 }
 
+/// Names of powermise's own `conf.d/powermise-<name>.toml` files, which a
+/// setup's fragment would overwrite.
+pub const RESERVED_SELECTION_NAMES: [&str; 4] = ["imported", "macos", "mcp", "system"];
+
 /// Validates a selection name for generated file names, mise environment
 /// names, and managed markers: lowercase letters and digits in non-empty
 /// segments joined by single hyphens. This is the single naming rule every
@@ -97,12 +101,16 @@ pub fn validate_selection_name(selection: &str) -> Result<(), StateError> {
                     .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
         });
 
-    if valid {
-        Ok(())
-    } else {
+    if !valid {
         Err(StateError::InvalidSelectionName {
             selection: selection.into(),
         })
+    } else if RESERVED_SELECTION_NAMES.contains(&selection) {
+        Err(StateError::ReservedSelectionName {
+            selection: selection.into(),
+        })
+    } else {
+        Ok(())
     }
 }
 

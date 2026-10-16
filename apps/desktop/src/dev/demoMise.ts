@@ -176,6 +176,8 @@ function describe(action: MiseAction): string {
       return `${action.telemetry ? "" : "DISABLE_TELEMETRY=1 "}mise x npm:skills@1.7.2 -- skills update -g -y`;
     case "skillsSyncTools":
       return "mise skills sync --global";
+    case "applyMcp":
+      return mcpHook.describe();
     case "applySetup":
       return `mise bootstrap --yes --only packages,tools && mise dotfiles apply --yes ${applySetupTargets(action.name).join(" ")}`.trim();
     case "pruneTools":
@@ -240,6 +242,8 @@ function perform(action: MiseAction): string[] {
       return bootstrapHook();
     case "applySetup":
       return [...bootstrapHook(), ...applySetupHook(action.name)];
+    case "applyMcp":
+      return mcpHook.apply();
     case "agentPlugin":
       return pluginHook(action.agent, action.id, action.remove);
     case "skillsAdd":
@@ -490,6 +494,12 @@ function agentPluginCommand(agent: AgentCli, id: string, remove: boolean): strin
 }
 
 /** Applies a setup's MCP servers in the demo; returns the output lines. */
+/** The MCP Servers page's apply command and run (dev/demoMcp.ts). */
+let mcpHook = { describe: () => "", apply: (): string[] => [] };
+export function setMcpHook(hook: typeof mcpHook) {
+  mcpHook = hook;
+}
+
 let applySetupHook: (name: string) => string[] = () => [];
 /** The agent config files a demo setup merges MCP servers into. */
 let applySetupTargets: (name: string) => string[] = () => [];

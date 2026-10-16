@@ -9,7 +9,8 @@ import toolsToml from "../../../../catalog/profiles/tools.toml?raw";
 import integrationsToml from "../../../../catalog/profiles/integrations.toml?raw";
 import mcpToml from "../../../../catalog/profiles/mcp.toml?raw";
 import { MCP_CLIENT_TITLE, MCP_CLIENT_UNSUPPORTED } from "../catalog";
-import { demoMise, NOT_HANDLED, setBootstrapHook, setPluginHook, setSkillsHook } from "./demoMise";
+import { demoMise, NOT_HANDLED, setBootstrapHook, setMcpHook, setPluginHook, setSkillsHook } from "./demoMise";
+import { applyMcp, applyMcpCommand, checkMcpServer, mcpPanelView, mcpPreview, writeMcp } from "./demoMcp";
 import { CURATED_SKILLS } from "../data/skillsCurated";
 import { demoHasMise } from "./demoMachine";
 export { browserEvents } from "./demoMise";
@@ -18,6 +19,8 @@ import type {
   InstalledSkill,
   SkillsReport,
   McpClientId,
+  McpPanel,
+  McpServer,
   PluginReport,
   SetupPlugin,
   McpTarget,
@@ -54,7 +57,16 @@ const catalog: CatalogBundle = {
   },
   tools: parse(toolsToml) as unknown as CatalogBundle["tools"],
   integrations: parse(integrationsToml) as unknown as CatalogBundle["integrations"],
-  mcp: parse(mcpToml) as unknown as CatalogBundle["mcp"],
+  mcp: {
+    mcp_servers: withDefaults((parse(mcpToml) as unknown as CatalogBundle["mcp"]).mcp_servers, {
+      homepage: null,
+      tool: null,
+      version: null,
+      command: null,
+      args: [],
+      url: null,
+    }),
+  },
 };
 
 const HOME = "/Users/demo";
@@ -324,6 +336,17 @@ const demoTargets = (name: string) => {
   const setup = setups.find((entry) => entry.name === name);
   return setup ? compile(setup, "darwin").mcpTargets.map((entry) => entry.target) : [];
 };
+const mcpPath = (client: McpClientId) => MCP_PATHS[client]?.("darwin") ?? null;
+/** The servers applied demo setups add to each agent. */
+function setupMcpSources() {
+  return setups
+    .filter((setup) => setup.mcpApplied)
+    .flatMap((setup) =>
+      compile(setup, "darwin").mcpTargets.map((target) => ({ name: setup.name, client: target.client, servers: target.servers })),
+    );
+}
+setMcpHook({ describe: () => applyMcpCommand(catalog.mcp.mcp_servers, mcpPath), apply: applyMcp });
+
 setBootstrapHook(
   demoBootstrap,
   (name) => {
@@ -406,6 +429,14 @@ export async function browserPreview<T>(command: string, args: Record<string, un
       } satisfies EnvironmentInfo as T;
     case "get_catalog":
       return catalog as T;
+    case "mcp_panel":
+      return mcpPanelView(mcpPath, setupMcpSources()) as T;
+    case "mcp_preview":
+      return mcpPreview(args.panel as McpPanel, catalog.mcp.mcp_servers, mcpPath, setupMcpSources()) as T;
+    case "write_mcp":
+      return writeMcp(args.panel as McpPanel) as T;
+    case "check_mcp_server":
+      return checkMcpServer(args.server as McpServer, catalog.mcp.mcp_servers) as T;
     case "list_selections":
       return [...setups].sort((a, b) => a.name.localeCompare(b.name)).map(saved) as T;
     case "export_setup":

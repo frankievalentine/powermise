@@ -41,6 +41,31 @@ a mise dotfiles merge that owns only those servers, and installs the plugins you
 pick with each agent's own plugin command. The **Plugins** tab browses every
 plugin Claude Code and Codex offer, and Gemini CLI extensions by link.
 
+## MCP servers
+
+MCP servers give an agent extra abilities, like reading current library docs
+or using a browser. The **MCP Servers** tab turns them on agent by agent,
+without a setup:
+
+- **Servers** — each server, with a button for every agent set up on this
+  computer. Click the agents you want it in; **Show More Agents** lists the
+  rest. Remote servers can't go in Claude Desktop, which only runs servers
+  itself.
+- **Add Server…** — a server of your own: an npm or Python package (mise
+  installs it the first time it runs), any mise tool, a command already on
+  your computer, or a remote address, with arguments and environment
+  variables. Environment variables are saved in plain files, so put API keys
+  in the agent's own settings instead.
+- **In each agent's settings now** — what each agent's config file lists
+  right now. Green servers are ones powermise added (hover to see whether this
+  page or a setup did); the rest you or the agent added.
+
+Changes wait in a bar at the bottom until you click **Review and Apply…**,
+which shows each agent's servers as mise will merge them, anything that comes
+out, and the commands that run: `mise install` for the servers' tools, then
+`mise dotfiles apply` for just those agents' files. See
+[From the terminal](/ai-setups/terminal/#the-mcp-servers-page).
+
 ## Skills
 
 Skills are folders of instructions an agent loads when they're relevant. The

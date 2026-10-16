@@ -1,8 +1,12 @@
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 
 /** A modal sheet: dimming scrim, background pushed back, spring entrance that
- *  scales from slightly smaller and fades — and the same path on exit. */
+ *  scales from slightly smaller and fades — and the same path on exit.
+ *  It renders into `<body>`, so a sheet opened from inside a page covers the
+ *  whole window (the page's own transform and stacking would otherwise hold
+ *  it in, under the sidebar). */
 export function Sheet({
   open,
   onDismiss,
@@ -25,7 +29,7 @@ export function Sheet({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, dismissible, onDismiss]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -53,6 +57,7 @@ export function Sheet({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

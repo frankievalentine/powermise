@@ -193,3 +193,13 @@ you remove the setup, powermise takes exactly the servers it added back out of
 each file — by name, keeping the rest of the file as it was. A file it can't
 parse (JSON with comments, say) is left alone. This needs mise 2026.10 or
 newer.
+
+### The MCP Servers page
+
+Servers turned on in **Harnesses › MCP Servers** work the same way, in one
+file of their own: `conf.d/powermise-mcp.toml`, with merge sources in
+`conf.d/powermise-mcp.files/` and entries named `powermise-mcp`. What's on
+for each agent, and the servers you added, are saved in
+`~/.config/powermise/mcp.toml`. A server a setup also adds stays in an
+agent's settings until neither adds it. "mcp" is reserved, along with
+"imported", "macos", and "system", so no setup can take those names.

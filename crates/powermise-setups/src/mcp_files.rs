@@ -100,9 +100,12 @@ fn remove_stale_servers(
             .filter(|file| file.file_name == name)
             .flat_map(|file| file.servers.iter().map(String::as_str))
             .collect();
+        // Another setup (or the MCP Servers page) may add the same server
+        // to this agent; it stays until none does.
+        let elsewhere = provided_elsewhere(directory, &name, client);
         let stale: Vec<String> = server_names(client, &old)
             .into_iter()
-            .filter(|server| !keep.contains(server.as_str()))
+            .filter(|server| !keep.contains(server.as_str()) && !elsewhere.contains(server))
             .collect();
         if stale.is_empty() {
             continue;
@@ -122,25 +125,91 @@ fn remove_stale_servers(
     Ok(removed)
 }
 
+/// Servers other powermise source folders beside `directory`
+/// (`conf.d/powermise-*.files`) add to the same agent.
+fn provided_elsewhere(directory: &Path, file_name: &str, client: McpClient) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    let Some(conf_d) = directory.parent() else {
+        return names;
+    };
+    for (_, folder) in source_folders(conf_d) {
+        if folder == directory {
+            continue;
+        }
+        if let Ok(contents) = fs::read_to_string(folder.join(file_name)) {
+            names.extend(server_names(client, &contents));
+        }
+    }
+    names
+}
+
+/// `conf.d/powermise-<name>.files` folders, by name.
+fn source_folders(conf_d: &Path) -> Vec<(String, PathBuf)> {
+    let Ok(entries) = fs::read_dir(conf_d) else {
+        return Vec::new();
+    };
+    let mut folders: Vec<(String, PathBuf)> = entries
+        .filter_map(Result::ok)
+        .filter(|entry| entry.path().is_dir())
+        .filter_map(|entry| {
+            let file_name = entry.file_name().to_string_lossy().into_owned();
+            let name = file_name
+                .strip_prefix("powermise-")?
+                .strip_suffix(".files")?
+                .to_owned();
+            Some((name, entry.path()))
+        })
+        .collect();
+    folders.sort();
+    folders
+}
+
+/// The source file name an agent's servers go in (`codex.toml`).
+pub fn source_file_name(client: McpClient) -> String {
+    format!(
+        "{}.{}",
+        client.id(),
+        if client.is_toml() { "toml" } else { "json" }
+    )
+}
+
+/// The servers in an agent's own config file right now: an empty list when
+/// there's no file yet, `None` when it can't be read (JSON with comments).
+pub fn configured_servers(client: McpClient, path: &Path) -> Option<Vec<String>> {
+    let contents = match fs::read_to_string(path) {
+        Ok(contents) => contents,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Some(Vec::new()),
+        Err(_) => return None,
+    };
+    if contents.trim().is_empty() {
+        return Some(Vec::new());
+    }
+    let parses = if client.is_toml() {
+        contents.parse::<toml::Table>().is_ok()
+    } else {
+        serde_json::from_str::<serde_json::Value>(&contents).is_ok()
+    };
+    parses.then(|| server_names(client, &contents))
+}
+
+/// Which powermise sources add servers to an agent: `(name, servers)`, where
+/// the name is a setup's, or `mcp` for the MCP Servers page.
+pub fn powermise_sources(mise_config_dir: &Path, client: McpClient) -> Vec<(String, Vec<String>)> {
+    let file_name = source_file_name(client);
+    source_folders(&mise_config_dir.join("conf.d"))
+        .into_iter()
+        .filter_map(|(name, folder)| {
+            let contents = fs::read_to_string(folder.join(&file_name)).ok()?;
+            Some((name, server_names(client, &contents)))
+        })
+        .collect()
+}
+
 /// The client a source file belongs to, from its name (`codex.toml`).
 fn client_for(file_name: &str) -> Option<McpClient> {
     let id = file_name.rsplit_once('.')?.0;
-    ALL_CLIENTS.into_iter().find(|client| client.id() == id)
+    McpClient::ALL.into_iter().find(|client| client.id() == id)
 }
-
-const ALL_CLIENTS: [McpClient; 11] = [
-    McpClient::ClaudeCode,
-    McpClient::ClaudeDesktop,
-    McpClient::Codex,
-    McpClient::GeminiCli,
-    McpClient::Opencode,
-    McpClient::Cursor,
-    McpClient::Vscode,
-    McpClient::CopilotCli,
-    McpClient::Cline,
-    McpClient::Amp,
-    McpClient::Zed,
-];
 
 /// The server names in a source file.
 fn server_names(client: McpClient, contents: &str) -> Vec<String> {
@@ -284,11 +353,7 @@ mod tests {
         McpFile {
             client,
             target: client.config_path(Platform::Linux).unwrap(),
-            file_name: format!(
-                "{}.{}",
-                client.id(),
-                if client.is_toml() { "toml" } else { "json" }
-            ),
+            file_name: source_file_name(client),
             contents: contents.into(),
             servers: servers.iter().map(|server| (*server).into()).collect(),
         }
@@ -367,6 +432,48 @@ mod tests {
                 .is_empty()
         );
         assert_eq!(fs::read_to_string(&path).unwrap(), jsonc);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn keeps_a_server_another_source_still_adds() {
+        let root = temp("shared");
+        let (home, mise) = (root.join("home"), root.join("mise"));
+        fs::create_dir_all(&home).unwrap();
+        fs::write(
+            home.join(".claude.json"),
+            "{\n  \"mcpServers\": {\n    \"context7\": {}\n  }\n}\n",
+        )
+        .unwrap();
+        let context7 = [file(
+            McpClient::ClaudeCode,
+            &["context7"],
+            r#"{"mcpServers":{"context7":{}}}"#,
+        )];
+        write_mcp_files(&mise, "work", &context7, &home, Platform::Linux).unwrap();
+        write_mcp_files(&mise, "mcp", &context7, &home, Platform::Linux).unwrap();
+        assert_eq!(
+            powermise_sources(&mise, McpClient::ClaudeCode),
+            [
+                ("mcp".to_owned(), vec!["context7".to_owned()]),
+                ("work".to_owned(), vec!["context7".to_owned()])
+            ]
+        );
+
+        // Turning it off on the MCP Servers page leaves the setup's copy.
+        let removed = write_mcp_files(&mise, "mcp", &[], &home, Platform::Linux).unwrap();
+        assert!(removed.is_empty());
+        let path = home.join(".claude.json");
+        assert_eq!(
+            configured_servers(McpClient::ClaudeCode, &path),
+            Some(vec!["context7".to_owned()])
+        );
+        // Removing the setup too takes it out.
+        remove_mcp_files(&mise, "work", &home, Platform::Linux).unwrap();
+        assert_eq!(
+            configured_servers(McpClient::ClaudeCode, &path),
+            Some(vec![])
+        );
         fs::remove_dir_all(root).unwrap();
     }
 }

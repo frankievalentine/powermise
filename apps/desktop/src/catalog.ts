@@ -157,7 +157,8 @@ export function desktopMcpClient(index: CatalogIndex, harness: Harness, platform
 /** How an MCP server runs, in words. */
 export function mcpRunsAs(server: McpServer): string {
   if (server.url) return "Remote server · nothing to install";
-  const backend = server.tool?.split(":")[0];
+  if (!server.tool) return `Runs ${[server.command, ...server.args].join(" ")}`;
+  const backend = server.tool.includes(":") ? server.tool.split(":")[0] : "mise";
   const kind = backend === "npm" ? "npm package" : backend === "pipx" ? "Python package" : `${backend} tool`;
   return `${kind} · mise installs and runs it`;
 }

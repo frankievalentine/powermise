@@ -168,9 +168,10 @@ pub struct McpServerCatalog {
     pub mcp_servers: Vec<McpServer>,
 }
 
-/// An MCP server: either a program mise installs and runs (`tool`,
-/// `version`, `command`), or a remote server at `url`.
-#[derive(Debug, Deserialize, Serialize)]
+/// An MCP server: a program mise installs and runs (`tool`, `version`,
+/// `command`), a remote server at `url`, or — for servers people add
+/// themselves — a `command` already on their computer.
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct McpServer {
     pub id: String,
     pub title: String,
@@ -190,6 +191,10 @@ pub struct McpServer {
     /// A remote (streamable HTTP) server.
     #[serde(default)]
     pub url: Option<String>,
+    /// Environment variables the server runs with (not secrets: they're
+    /// written in files powermise keeps).
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub env: std::collections::BTreeMap<String, String>,
 }
 
 /// An agent's MCP configuration file. powermise adds servers to it with a
@@ -291,6 +296,27 @@ impl McpClient {
             Self::Zed => "context_servers",
             _ => "mcpServers",
         }
+    }
+
+    /// Every client, in the order powermise lists them.
+    pub const ALL: [Self; 11] = [
+        Self::ClaudeCode,
+        Self::ClaudeDesktop,
+        Self::Codex,
+        Self::GeminiCli,
+        Self::Opencode,
+        Self::Cursor,
+        Self::Vscode,
+        Self::CopilotCli,
+        Self::Cline,
+        Self::Amp,
+        Self::Zed,
+    ];
+
+    /// Whether it connects to remote servers (Claude's desktop app only runs
+    /// servers itself).
+    pub fn takes_remote(self) -> bool {
+        !matches!(self, Self::ClaudeDesktop | Self::Zed)
     }
 
     /// Whether the config file is TOML (Codex); the rest are JSON.

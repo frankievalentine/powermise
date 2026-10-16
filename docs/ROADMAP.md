@@ -256,9 +256,12 @@ One section of the app. A setup is a selection file
 - [x] Version-gate Apply on mise 2026.10 and point at Health to update.
 - [x] `scripts/verify-setup-fragment.sh` checks a compiled setup against real mise
       in CI; `scripts/harness-matrix.sh` regenerates the harness reference table.
-- [ ] Configure MCP servers and integrations for real. Needs catalog data per entry
-      (launch command, args, credentials) and each agent's settings location and format.
-      Until then they're reported as "Manual setup".
+- [x] MCP Servers page: turn servers on per agent outside setups
+      (`conf.d/powermise-mcp.toml`), read what each agent's settings list now, and
+      add your own servers (npm, Python, mise tool, command, or remote, with env).
+- [ ] MCP API keys: a Configure sheet that writes keys only into the agent's own
+      settings, never into mise's config or powermise's files.
+- [ ] MCP Registry browser: search the official MCP registry and add from it.
 - [x] Selection schema v2: drop `machine_roles`, `preferences.auto_prune`, and
       `preferences.update_system_packages`. Version 1 files load and are upgraded
       on the next save.

@@ -8,7 +8,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 mod mcp;
-pub use mcp::{DotfileMerge, McpFile, compile_mcp, edit_id, files_dir_name};
+pub use mcp::{DotfileMerge, McpFile, compile_mcp, compile_mcp_plan, edit_id, files_dir_name};
 
 use powermise_domain::{MacArch, Platform, ToolCatalog, ToolProvider, ToolProviderKind};
 use powermise_registry::ResolvedSelection;

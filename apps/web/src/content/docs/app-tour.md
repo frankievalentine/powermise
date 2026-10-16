@@ -424,4 +424,9 @@ setup that installs everything they need. See [AI Setups](/ai-setups/).
 
 ![Browse Harnesses, the catalog of AI coding harnesses](../../assets/app-tour/ai-agents.png)
 
+**MCP Servers** turns servers on agent by agent, adds your own, and shows what
+each agent's settings list right now. See [MCP servers](/ai-setups/#mcp-servers).
+
+![MCP Servers, with a button per agent for each server](../../assets/app-tour/mcp-servers.png)
+
 ![A saved AI setup, showing its agents and what's installed on this computer](../../assets/app-tour/ai-setup.png)

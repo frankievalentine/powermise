@@ -10,6 +10,8 @@
 //! Servers mise installs run as `<mise> x <tool>@<version> -- <command>`: the
 //! absolute path to mise works from desktop apps that don't see your shell's
 //! `PATH`, and the tool is also added to `[tools]` so it's installed up front.
+use std::collections::BTreeSet;
+
 use powermise_domain::{McpClient, McpServer, McpServerCatalog, Platform, ToolProviderKind};
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -74,7 +76,27 @@ pub fn compile_mcp(
     if servers.is_empty() || clients.is_empty() {
         return Ok(());
     }
-    for server in &servers {
+    let plan: Vec<(McpClient, Vec<&McpServer>)> = clients
+        .iter()
+        .map(|&client| (client, servers.clone()))
+        .collect();
+    compile_mcp_plan(compiled, setup, &plan, target, mise_command)
+}
+
+/// Like [`compile_mcp`], with each agent's own servers (the MCP Servers
+/// page turns servers on per agent).
+pub fn compile_mcp_plan(
+    compiled: &mut Compiled,
+    setup: &str,
+    plan: &[(McpClient, Vec<&McpServer>)],
+    target: Platform,
+    mise_command: &str,
+) -> Result<(), CompilerError> {
+    let mut seen = BTreeSet::new();
+    for server in plan.iter().flat_map(|(_, servers)| servers) {
+        if !seen.insert(server.id.as_str()) {
+            continue;
+        }
         if let (Some(tool), Some(version)) = (&server.tool, &server.version) {
             insert(
                 &mut compiled.config.tools,
@@ -90,7 +112,11 @@ pub fn compile_mcp(
             });
         }
     }
-    for &client in clients {
+    for (client, servers) in plan {
+        let client = *client;
+        if servers.is_empty() {
+            continue;
+        }
         let path = match client.config_path(target) {
             Ok(path) => path,
             Err(reason) => {
@@ -103,7 +129,7 @@ pub fn compile_mcp(
         };
         let mut names = Vec::new();
         let mut entries = serde_json::Map::new();
-        for server in &servers {
+        for server in servers {
             match entry(client, server, mise_command) {
                 Some(entry) => {
                     names.push(server.id.clone());
@@ -175,39 +201,55 @@ fn entry(client: McpClient, server: &McpServer, mise: &str) -> Option<Value> {
             McpClient::ClaudeDesktop | McpClient::Zed => None,
         };
     }
-    let (tool, version, command) = (
-        server.tool.as_deref()?,
-        server.version.as_deref()?,
-        server.command.as_deref()?,
-    );
-    let mut args = vec![
-        "x".to_owned(),
-        format!("{tool}@{version}"),
-        "--".to_owned(),
-        command.to_owned(),
-    ];
-    args.extend(server.args.iter().cloned());
-    Some(match client {
-        McpClient::ClaudeCode => {
-            json!({ "type": "stdio", "command": mise, "args": args, "env": {} })
+    // A tool mise installs runs through mise; a command of your own runs as is.
+    let (program, args) = match (
+        server.tool.as_deref(),
+        server.version.as_deref(),
+        server.command.as_deref(),
+    ) {
+        (Some(tool), Some(version), Some(command)) => {
+            let mut args = vec![
+                "x".to_owned(),
+                format!("{tool}@{version}"),
+                "--".to_owned(),
+                command.to_owned(),
+            ];
+            args.extend(server.args.iter().cloned());
+            (mise.to_owned(), args)
         }
-        McpClient::Vscode => json!({ "type": "stdio", "command": mise, "args": args }),
+        (None, _, Some(command)) => (command.to_owned(), server.args.clone()),
+        _ => return None,
+    };
+    let mut entry = match client {
+        McpClient::ClaudeCode => {
+            json!({ "type": "stdio", "command": program, "args": args, "env": {} })
+        }
+        McpClient::Vscode => json!({ "type": "stdio", "command": program, "args": args }),
         McpClient::CopilotCli => {
-            json!({ "type": "local", "command": mise, "args": args, "tools": ["*"] })
+            json!({ "type": "local", "command": program, "args": args, "tools": ["*"] })
         }
         McpClient::Opencode => {
-            let mut command = vec![mise.to_owned()];
+            let mut command = vec![program];
             command.extend(args);
             json!({ "type": "local", "command": command, "enabled": true })
         }
-        McpClient::Cline => json!({ "command": mise, "args": args, "disabled": false }),
+        McpClient::Cline => json!({ "command": program, "args": args, "disabled": false }),
         McpClient::ClaudeDesktop
         | McpClient::Codex
         | McpClient::GeminiCli
         | McpClient::Cursor
         | McpClient::Amp
-        | McpClient::Zed => json!({ "command": mise, "args": args }),
-    })
+        | McpClient::Zed => json!({ "command": program, "args": args }),
+    };
+    if !server.env.is_empty() {
+        let key = if client == McpClient::Opencode {
+            "environment"
+        } else {
+            "env"
+        };
+        entry[key] = json!(server.env);
+    }
+    Some(entry)
 }
 
 #[cfg(test)]
@@ -225,6 +267,7 @@ mod tests {
             command: tool.map(|_| format!("{id}-mcp")),
             args: vec![],
             url: url.map(Into::into),
+            env: Default::default(),
         };
         McpServerCatalog {
             schema_version: 1,
@@ -321,5 +364,37 @@ mod tests {
             "/home/me/.local/bin/mise"
         );
         assert_eq!(config["mcp"]["deepwiki"]["type"], "remote");
+    }
+
+    #[test]
+    fn each_agent_gets_its_own_servers_with_env_and_plain_commands() {
+        let catalog = catalog();
+        let mut own = catalog.mcp_servers[0].clone();
+        own.id = "mine".into();
+        own.tool = None;
+        own.version = None;
+        own.command = Some("docker".into());
+        own.args = vec!["run".into(), "-i".into(), "example/mcp".into()];
+        own.env.insert("LOG_LEVEL".into(), "debug".into());
+        let plan = [
+            (McpClient::ClaudeCode, vec![&catalog.mcp_servers[0], &own]),
+            (McpClient::Opencode, vec![&own]),
+            (McpClient::Codex, vec![]),
+        ];
+        let mut compiled = Compiled::default();
+        compile_mcp_plan(&mut compiled, "mcp", &plan, Platform::Linux, "mise").unwrap();
+        assert_eq!(compiled.mcp_files.len(), 2);
+        let claude: Value = serde_json::from_str(&compiled.mcp_files[0].contents).unwrap();
+        assert_eq!(claude["mcpServers"]["mine"]["command"], "docker");
+        assert_eq!(claude["mcpServers"]["mine"]["env"]["LOG_LEVEL"], "debug");
+        assert_eq!(claude["mcpServers"]["context7"]["command"], "mise");
+        let opencode: Value = serde_json::from_str(&compiled.mcp_files[1].contents).unwrap();
+        assert_eq!(opencode["mcp"]["mine"]["command"][0], "docker");
+        assert_eq!(opencode["mcp"]["mine"]["environment"]["LOG_LEVEL"], "debug");
+        assert_eq!(
+            compiled.config.dotfiles["~/.claude.json/powermise-mcp"].source,
+            "powermise-mcp.files/claude-code.json"
+        );
+        assert_eq!(compiled.installs.len(), 1);
     }
 }

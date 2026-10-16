@@ -316,6 +316,9 @@ pub enum MiseAction {
     ApplySetup {
         name: String,
     },
+    /// Installs the MCP Servers page's server tools and merges its servers
+    /// into the agents' configs (src/mcp.rs).
+    ApplyMcp,
     /// `skills add` for these agents (every skill in `source` when `skills`
     /// is empty).
     SkillsAdd {
@@ -613,6 +616,7 @@ impl MiseAction {
             | Self::UpdateMiseWithManager
             | Self::SystemFix { .. }
             | Self::UseNewerTools { .. }
+            | Self::ApplyMcp
             | Self::ApplySetup { .. } => {
                 return Err("this action doesn't run mise".into());
             }
@@ -764,6 +768,18 @@ impl MiseAction {
             }
             return Ok(Job::Steps(steps));
         }
+        if let Self::ApplyMcp = self {
+            let client = client()?;
+            let mut steps: Vec<Job> = crate::mcp::saved_apply_steps()?
+                .into_iter()
+                .map(|command| Job::Mise(client.clone(), command))
+                .collect();
+            return match steps.len() {
+                0 => Err("no MCP servers are on".into()),
+                1 => Ok(steps.remove(0)),
+                _ => Ok(Job::Steps(steps)),
+            };
+        }
         if let Self::UseNewerTools { ids, ruby } = self {
             let client = client()?;
             let packages: Vec<String> = crate::newer_tools::formulas_for(ids)?
@@ -851,6 +867,7 @@ pub fn describe_action(action: MiseAction) -> CommandResult<String> {
         MiseAction::RelaunchApp { .. }
             | MiseAction::SystemFix { .. }
             | MiseAction::UseNewerTools { .. }
+            | MiseAction::ApplyMcp
     ) {
         return Ok(action.job()?.display());
     }

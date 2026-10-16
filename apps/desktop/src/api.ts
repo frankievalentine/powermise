@@ -62,6 +62,59 @@ export interface McpServer {
   command: string | null;
   args: string[];
   url: string | null;
+  /** Environment variables (not secrets: they're kept in powermise's files). */
+  env?: Record<string, string>;
+}
+
+/** Harnesses › MCP Servers: a server and the agents it's on for. */
+export interface PanelServer {
+  id: string;
+  clients: McpClientId[];
+}
+
+export interface McpPanel {
+  servers: PanelServer[];
+  /** Servers people added themselves. */
+  custom: McpServer[];
+}
+
+/** A server in an agent's config, and which powermise sources add it
+ *  (`mcp` for the MCP Servers page, otherwise a setup's name). */
+export interface ConfiguredServer {
+  name: string;
+  from: string[];
+}
+
+/** One agent's MCP config on this computer. */
+export interface McpAgent {
+  id: McpClientId;
+  title: string;
+  path: string | null;
+  /** Why powermise can't add servers here. */
+  unavailable: string | null;
+  detected: boolean;
+  takesRemote: boolean;
+  /** What's in its config now; null when the file can't be read. */
+  configured: ConfiguredServer[] | null;
+  /** mise's state for the page's merge entry, when the page adds servers here. */
+  state: string | null;
+}
+
+export interface McpPanelView {
+  panel: McpPanel;
+  agents: McpAgent[];
+  fragmentPath: string;
+}
+
+export interface McpPreview {
+  fragmentPath: string;
+  /** The new `powermise-mcp.toml`, or null when it's deleted. */
+  fragment: string | null;
+  files: { title: string; target: string; contents: string }[];
+  removals: { title: string; server: string; path: string }[];
+  skipped: { id: string; reason: string }[];
+  /** What mise runs afterwards, if anything. */
+  command: string | null;
 }
 
 export type ToolProviderKind =
@@ -407,6 +460,7 @@ export type MiseAction =
   | { kind: "bootstrapPackagesAndTools" }
   /** Packages and tools, then the setup's MCP servers into agents' configs. */
   | { kind: "applySetup"; name: string }
+  | { kind: "applyMcp" }
   | { kind: "agentPlugin"; agent: AgentCli; id: string; remove: boolean }
   | { kind: "skillsAdd"; source: string; skills: string[]; agents: string[]; telemetry: boolean }
   | { kind: "skillsRemove"; name: string; telemetry: boolean }
@@ -916,6 +970,10 @@ export const api = {
   newerTools: () => call<NewerTool[]>("newer_tools"),
   newerToolsPreview: (ids: string[]) => call<NewerToolsFile>("newer_tools_preview", { ids }),
   writeNewerTools: (ids: string[]) => call<string>("write_newer_tools", { ids }),
+  mcpPanel: () => call<McpPanelView>("mcp_panel"),
+  mcpPreview: (panel: McpPanel) => call<McpPreview>("mcp_preview", { panel }),
+  writeMcp: (panel: McpPanel) => call<RemovedServer[]>("write_mcp", { panel }),
+  checkMcpServer: (server: McpServer) => call<void>("check_mcp_server", { server }),
   systemFixInTerminal: (id: string) => call<void>("system_fix_in_terminal", { id }),
   globalPackages: () => call<GlobalPackage[]>("global_packages"),
   installedPrograms: () => call<InstalledProgram[]>("installed_programs"),
@@ -978,9 +1036,13 @@ export const onMiseOutput = (handler: (event: OutputEvent) => void) =>
 export const onMiseFinished = (handler: (entry: ActivityEntry) => void) =>
   subscribe<ActivityEntry>("mise-finished", handler);
 
+/** Names powermise's own `conf.d` files use (powermise-state's
+ *  RESERVED_SELECTION_NAMES). */
+export const RESERVED_SETUP_NAMES = ["imported", "macos", "mcp", "system"];
+
 /** Matches the one naming rule powermise enforces for setups. */
 export function isValidSetupName(name: string): boolean {
-  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(name);
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(name) && !RESERVED_SETUP_NAMES.includes(name);
 }
 
 export interface QuietResult {

@@ -3,6 +3,7 @@ import { AlertTriangle, FileUp, Info } from "lucide-react";
 import {
   api,
   isValidSetupName,
+  RESERVED_SETUP_NAMES,
   PLATFORMS,
   PLATFORM_LABEL,
   type Platform,
@@ -103,7 +104,9 @@ export function SetupEditor({
   const nameError =
     name.length === 0
       ? null
-      : !isValidSetupName(name)
+      : RESERVED_SETUP_NAMES.includes(name)
+        ? "powermise uses this name for its own files. Pick another."
+        : !isValidSetupName(name)
         ? "Use lowercase letters, numbers, and single hyphens — for example “work-laptop”."
         : nameTaken
           ? "A setup with this name already exists."

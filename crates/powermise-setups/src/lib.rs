@@ -8,13 +8,21 @@
 mod catalog;
 mod imported;
 mod mcp_files;
+mod mcp_panel;
 mod selection;
 mod system_tools;
 
 pub use imported::{
     ImportedConfig, imported_path, inspect_imported, read_imported, write_imported,
 };
-pub use mcp_files::{RemovedServer, expand_home, files_dir, remove_mcp_files, write_mcp_files};
+pub use mcp_files::{
+    RemovedServer, configured_servers, expand_home, files_dir, powermise_sources, remove_mcp_files,
+    source_file_name, write_mcp_files,
+};
+pub use mcp_panel::{
+    CompiledPanel, McpPanel, PANEL_NAME, PanelServer, compile_panel, panel_fragment_path,
+    panel_path, read_panel, validate_custom, write_panel,
+};
 pub use selection::SelectionStore;
 pub use system_tools::{
     SystemToolsConfig, inspect_system_tools, read_system_tools, system_tools_path,

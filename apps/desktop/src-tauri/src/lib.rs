@@ -10,6 +10,7 @@
 //! - This module: shared environment helpers and app startup.
 mod machine;
 mod macos;
+mod mcp;
 mod mise_commands;
 mod newer_tools;
 mod plugins;
@@ -231,6 +232,10 @@ pub fn run() {
             projects::generate_preview,
             projects::open_terminal,
             setups::get_catalog,
+            mcp::mcp_panel,
+            mcp::mcp_preview,
+            mcp::write_mcp,
+            mcp::check_mcp_server,
             setups::list_selections,
             setups::save_selection,
             setups::export_setup,

@@ -50,6 +50,9 @@ pub enum StateError {
         "invalid selection name `{selection}`; expected lowercase letters, numbers, and hyphens"
     )]
     InvalidSelectionName { selection: String },
+    /// A selection name is taken by a file powermise writes for itself.
+    #[error("`{selection}` is a name powermise uses for its own files; pick another")]
+    ReservedSelectionName { selection: String },
 }
 
 /// Returns the lowercase SHA-256 hexadecimal digest for `contents`.
