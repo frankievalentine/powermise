@@ -59,17 +59,27 @@ const chrome = spawn(browser, [
   `--remote-debugging-port=${port}`,
   `--user-data-dir=${profile}`,
   "--no-first-run",
+  // GitHub's Ubuntu runners block the user namespaces Chrome's sandbox needs.
+  ...(process.env.CI && process.platform === "linux" ? ["--no-sandbox"] : []),
   "about:blank",
 ]);
+// Kept to explain a browser that never starts.
+let chromeLog = "";
+chrome.stderr?.on("data", (chunk) => (chromeLog = (chromeLog + chunk).slice(-4000)));
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 let targets: { type: string; webSocketDebuggerUrl: string }[] = [];
-for (let tries = 0; tries < 50 && !targets.length; tries++) {
+for (let tries = 0; tries < 150 && !targets.length; tries++) {
   await sleep(200);
   try {
     targets = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()).filter(
       (target: { type: string }) => target.type === "page",
     );
   } catch {}
+}
+if (!targets.length) {
+  chrome.kill();
+  console.error(`${browser} didn't start within 30 seconds.\n${chromeLog}`);
+  process.exit(1);
 }
 const ws = new WebSocket(targets[0].webSocketDebuggerUrl);
 await new Promise((resolve) => ws.addEventListener("open", resolve, { once: true }));
