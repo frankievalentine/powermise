@@ -55,8 +55,6 @@ mise itself.
 
 powermise is an early release for macOS, Windows, and Linux. Installers aren't
 code-signed yet, so the first launch takes one extra click — see
-[Getting started](/getting-started/#opening-it-the-first-time). The
-[roadmap](https://github.com/frankievalentine/powermise/blob/main/ROADMAP.md)
-has the full plan.
+[Getting started](/getting-started/#opening-it-the-first-time).
 
 [Get started →](/getting-started/)
