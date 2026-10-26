@@ -185,10 +185,18 @@
 }
 
 .demo-stage {
-  /* As wide as the page allows, but short enough that the pinned window
-     and its tour fit on screen (the app is 1180 × 740). */
-  max-width: min(var(--pm-page-max), calc((100vh - 18rem) * 1180 / 740));
+  /* Unpinned, the window alone still fits on screen. */
+  max-width: min(var(--pm-page-max), calc((100vh - 6rem) * 1180 / 740));
   margin: 0 auto;
+}
+
+/* Where the demo pins (AppDemo.astro), short enough that the window, its
+   tabs, and the longest caption fit on screen (the app is 1180 × 740). This
+   is a first guess; the script measures and fits it exactly. */
+@media (min-width: 900px) and (min-height: 720px) {
+  .demo-stage {
+    max-width: min(var(--pm-page-max), calc((100vh - 18rem) * 1180 / 740));
+  }
 }
 
 .demo-window {

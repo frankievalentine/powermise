@@ -175,21 +175,20 @@ const steps = [
 
   // Room under the tabs for the tallest caption at this width, so a caption
   // that wraps on a phone never covers the tabs.
-  if (stepList) {
-    const sizeCaptions = () => {
-      let tallest = 0;
-      for (const body of stepList.querySelectorAll<HTMLElement>('.demo-step__body')) {
-        const copy = body.cloneNode(true) as HTMLElement;
-        copy.style.cssText = `display:block;position:absolute;visibility:hidden;width:${stepList.clientWidth}px;animation:none`;
-        stepList.appendChild(copy);
-        tallest = Math.max(tallest, copy.offsetHeight);
-        copy.remove();
-      }
-      stepList.style.setProperty('--caption-space', `${tallest}px`);
-    };
-    sizeCaptions();
-    new ResizeObserver(sizeCaptions).observe(stepList);
-  }
+  const sizeCaptions = () => {
+    if (!stepList) return;
+    let tallest = 0;
+    for (const body of stepList.querySelectorAll<HTMLElement>('.demo-step__body')) {
+      const copy = body.cloneNode(true) as HTMLElement;
+      copy.style.cssText = `display:block;position:absolute;visibility:hidden;width:${stepList.clientWidth}px;animation:none`;
+      stepList.appendChild(copy);
+      tallest = Math.max(tallest, copy.offsetHeight);
+      copy.remove();
+    }
+    stepList.style.setProperty('--caption-space', `${tallest}px`);
+  };
+  sizeCaptions();
+  if (stepList) new ResizeObserver(sizeCaptions).observe(stepList);
 
   const APP_WIDTH = 1180;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -280,8 +279,34 @@ const steps = [
   // resamples the app's text — and once it lands the transform is cleared,
   // so the browser draws the window sharp instead of reusing the tilted
   // snapshot.
-  media.add('(min-width: 900px) and (prefers-reduced-motion: no-preference)', () => {
+  // Pinning needs room for the window, the tabs in one or two rows, and the
+  // longest caption; shorter windows scroll normally and the tabs steer.
+  media.add('(min-width: 900px) and (min-height: 720px) and (prefers-reduced-motion: no-preference)', () => {
     if (!stage || !frameWindow) return;
+
+    // Pinned, the whole stage — window, platform buttons, tabs, and the
+    // longest caption — has to fit on screen below its pin offset. What sits
+    // under the window depends on the width (tabs can wrap to more rows), so
+    // measure it, size the window to the room that's left, and repeat until
+    // it settles. CSS's max-width is only the first guess.
+    const fitStage = () => {
+      const room = window.innerHeight * 0.94 - 16;
+      stage.style.maxWidth = '';
+      for (let pass = 0; pass < 4; pass++) {
+        sizeCaptions();
+        const below = stage.offsetHeight - frameWindow.offsetHeight;
+        const width = Math.max(560, Math.floor(((room - below) * APP_WIDTH) / 740));
+        const next = `min(var(--pm-page-max), ${width}px)`;
+        if (stage.style.maxWidth === next) break;
+        stage.style.maxWidth = next;
+      }
+    };
+    // Fit now, and again at the start of every refresh GSAP runs (load,
+    // resize, fonts arriving): it unpins first, so the measurements are of
+    // the stage in place, and it then pins at the new size.
+    fitStage();
+    ScrollTrigger.addEventListener('refreshInit', fitStage);
+
     const settle = (self: ScrollTrigger) => {
       if (self.progress >= 1) gsap.set(frameWindow, { clearProps: 'transform' });
     };
@@ -313,11 +338,13 @@ const steps = [
     });
     return () => {
       pin = undefined;
+      ScrollTrigger.removeEventListener('refreshInit', fitStage);
+      stage.style.maxWidth = '';
     };
   });
 
-  // Small screens and reduced motion: no pinning; the tabs steer the demo.
-  media.add('(max-width: 899px), (prefers-reduced-motion: reduce)', () => {
+  // Small or short screens and reduced motion: no pinning; the tabs steer the demo.
+  media.add('(max-width: 899px), (max-height: 719px), (prefers-reduced-motion: reduce)', () => {
     pin = undefined;
   });
 
